@@ -29,3 +29,30 @@
 ## 제한·후속
 
 - 이 PR 자체는 요청에 따라 사용자가 검토·병합한다.
+
+## 2026-10-21 — PR 후 자동 리뷰(최대 2회)
+
+### 변경
+
+- PR을 올린 뒤 자동 코드 리뷰를 최대 2회 거치는 단계를 병합 앞에 추가했다. 리뷰 → 보완 커밋 → 2차 리뷰 → 보완 커밋 순서이며, 2차 보완 커밋 뒤에는 더 리뷰하지 않는다. 보완점이 없으면 바로 CI 확인과 병합으로 간다.
+- 이 PR에서 고치기에 큰 수정(범위 밖 기능, 설계·데이터 구조 변경, 여러 모듈 수정, 별도 검증이 필요한 작업)은 새 이슈카드로 분리한다. 분리하면 main이 깨지거나 보안·데이터 손상 위험이 남는 결함은 병합을 보류하고 사용자에게 알린다.
+- 각 리뷰 차수의 결과(지적, 반영 커밋, 분리 이슈, 보완점 없음)는 PR 코멘트와 docs 작업 기록에 남긴다. 리뷰 중 새 커밋이 생기면 이전 CI 결과로 병합하지 않고 최종 head의 필수 CI 통과 후 병합한다.
+- `skills/english-study-implementation/SKILL.md`: 새 "5. PR 후 자동 코드 리뷰(최대 2회)" 단계를 추가하고 병합 단계를 "6. CI 통과 후 병합"으로 바꿨다. YAML description도 갱신했다.
+- 짧은 요약 반영: `AGENTS.md` 절차(5 리뷰, 6 병합), `README.md`, `docs/project-setup.md`(절대 규칙 2·Git 전략 순서·리뷰·병합·파일 역할 표·AGENTS 템플릿), `skills/english-study-{foundation,testing}/SKILL.md`. `.claude/skills/`는 `npm run skills:sync`로 갱신했다.
+- 기존 금지 사항(실패·실행 중 검사 상태 병합, `--admin`·브랜치 보호 우회, 자기 PR 승인, `main` 직접 푸시, force push)과 순차·스택 PR 처리는 유지했다.
+
+### 이유
+
+사용자가 PR 후 자동 리뷰 깊이를 최대 2회로 제한하고, 큰 수정은 새 이슈로 분리한 뒤, CI 통과 후 병합하도록 요청했다.
+
+### 검증
+
+| 명령                                                                                          | 결과                                     |
+| --------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| `npm run skills:sync` → `npm run skills:check`                                                | pass (`.claude/skills matches skills/.`) |
+| `npm run test:skills`                                                                         | pass 4/0/0 (pass/fail/skip)              |
+| `PYTHONUTF8=1 py -3 quick_validate.py` (skill-creator) — `skills/` 3종, `.claude/skills/` 3종 | pass 6/6 (`Skill is valid!`)             |
+| Prettier 3.9.10(workout-memo 설치본) `--check` — 변경한 Markdown 파일                         | pass                                     |
+| `npm run check`                                                                               | 미실행: `node_modules` 미설치            |
+
+앱 코드 변경이 없어 앱 테스트는 추가하지 않았다. 이 저장소는 `node_modules`가 없고 설치는 사용자 확인 대상이라 설치하지 않았다. 전체 검사는 PR의 GitHub Actions `verify`·`docker-build`로 확인한다.
