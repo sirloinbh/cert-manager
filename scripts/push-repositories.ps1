@@ -1,3 +1,4 @@
+# Managed file. Edit it in sirloinbh/project-standards templates/app/scripts/
 # Sync the deploy sub-repositories from this umbrella monorepo. Run only when the user asks.
 $ErrorActionPreference = 'Stop'
 $repos = @{ frontend='english-study-frontend'; backend='english-study-backend'; database='english-study-db' }
