@@ -1,5 +1,5 @@
 {
-  "centralSha": "7a47662beb53746a4bb08b2d2c7e708165eb2f70",
+  "centralSha": "f5bcc28609146d357c3af225bedc3f77868c27aa",
   "profile": "app",
   "project": "english-study",
   "files": {
@@ -80,7 +80,7 @@
     },
     ".github/workflows/ci.yml": {
       "mode": "full",
-      "sha256": "2b18b65bde8937fabeb9da46f0ddfa09e9cbb823ec8923692160a05e8ec191a9",
+      "sha256": "d1feb6e247ee2e6e1caa76b9a05a8e864ebbb57e005f8b50d4b648d9e7cfeb5e",
       "source": "templates/app/.github/workflows/ci.yml.tmpl"
     },
     ".gitignore": {
