@@ -13,7 +13,7 @@
 ## 함께 볼 것
 
 - `npm run knip` 결과: 미사용 파일 2개(`.claude/hooks/block-package-installs.mjs`, `backend/src/standard/http.ts`), 미사용 export 1개(`backend/src/app.ts`의 `serviceTimeZone`). `knip`은 아직 `npm run check`에 들어 있지 않다. 앞의 두 파일은 중앙 관리 파일이라 중앙 `knip.json` 설정에서 다룬다.
-- 모바일 빈 화면 안내 문구가 단어 중간에서 줄바꿈된다(`EmptyState`, 중앙 관리 파일). 고치려면 project-standards에 이슈를 연다.
+- 모바일 빈 화면 안내 문구가 단어 중간에서 줄바꿈된다. 호출부 `frontend/src/app.tsx`에서 고치는 [#22](https://github.com/sirloinbh/english-study/issues/22)로 분리했다.
 - 이 PC의 Volta 기본 Node(24.22.1)가 프로젝트 고정 버전(24.21.0)과 달라 `npm install`·`npm ci`가 엔진 검사에서 막힌다. 설치할 때는 `volta run --node 24.21.0 --npm 11.19.0 npm ...`을 쓴다.
 
 ## 실행 경계
