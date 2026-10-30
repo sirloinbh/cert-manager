@@ -1,11 +1,11 @@
 import { expect, test } from 'vitest';
 
+import { deadlineCountdown } from './certification-data';
 import {
   addMonths,
   currentAttempt,
   type ExamAttempt,
   expiringSoon,
-  expiryCountdown,
   expiryState,
   type LatestAttempt,
   reachedGoal,
@@ -52,9 +52,9 @@ test.each([
 });
 
 test('the countdown names the last valid day and counts past it', () => {
-  expect(expiryCountdown(10)).toBe('10일 남음');
-  expect(expiryCountdown(0)).toBe('오늘까지');
-  expect(expiryCountdown(-3)).toBe('3일 지남');
+  expect(deadlineCountdown(10)).toBe('10일 남음');
+  expect(deadlineCountdown(0)).toBe('오늘까지');
+  expect(deadlineCountdown(-3)).toBe('3일 지남');
 });
 
 test('the goal is reached only when both numbers exist and the score meets the target', () => {

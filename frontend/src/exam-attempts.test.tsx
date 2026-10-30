@@ -68,6 +68,8 @@ function fakeApi(
       if (path === '/api/health') return reply(200, { ok: true, today });
       if (path === '/api/exam-attempts/latest')
         return reply(200, { today, attempts: options.latest ?? [] });
+      if (path === '/api/study-tasks/today') return reply(200, { today, tasks: [] });
+      if (path === '/api/certifications/1/plan') return reply(200, { today, stages: [] });
       if (path === '/api/certifications') return reply(200, { today, certifications: [goal] });
       if (path === '/api/certifications/1') {
         if (method === 'PUT' && options.goalUpdateFails)

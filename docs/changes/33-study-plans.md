@@ -1,0 +1,47 @@
+# #33 자격증별 공부 계획 기능 만들기
+
+- 이슈: [#33](https://github.com/sirloinbh/cert-manager/issues/33)
+- 브랜치: `feat/33-study-plans`
+- 설계: [서비스 범위와 데이터 구조](../design/scope-and-data-model.md) 4절(순서 열)·5절(`study_stages`, `study_tasks`)
+
+## 목적
+
+목표만 등록해서는 언제 무엇을 공부할지 알 수 없다. 목표마다 단계와 할 일을 적고, 진행률과 시험일까지 남은 날, 오늘 할 일을 볼 수 있게 한다. 실제 계획 내용은 [#34](https://github.com/sirloinbh/cert-manager/issues/34)에서 쓴다.
+
+## 변경 — 2026-10-30
+
+- DB: `database/migrations/004_study_plans.sql`로 `study_stages`, `study_tasks`를 만들었다. 열은 설계 5절 그대로다. 순서 UNIQUE는 설계 4절대로 `DEFERRABLE INITIALLY DEFERRED`인 표 제약이다.
+- API: `backend/src/routes/study-plans.ts`
+  - `GET /api/certifications/:id/plan`: 단계를 순서대로, 단계마다 할 일을 순서대로 묶어 준다. 없는 목표는 404.
+  - `POST /api/certifications/:id/stages`, `PUT`·`DELETE /api/study-stages/:id`. 단계를 지우면 그 할 일도 지워진다.
+  - `POST /api/study-stages/:id/tasks`, `PUT`·`DELETE /api/study-tasks/:id`.
+  - `PATCH /api/study-tasks/:id/completion`: `{ completed }`. 이미 끝낸 할 일을 다시 끝내도 처음 끝낸 시점을 지킨다.
+  - `GET /api/study-tasks/today`: 끝내지 않았고 마감이 오늘이거나 지난 할 일을 마감 빠른 순으로, 목표 이름과 함께 준다.
+  - 새 단계와 할 일은 맨 뒤에 붙는다(`MAX(position) + 1`). 응답마다 `daysUntilDue`(오늘부터 마감까지 날 수, 지났으면 음수)를 넣는다.
+- 화면
+  - 목표 상세에 "공부 계획" 절을 넣었다. 전체 진행률, 목표 시험일까지 남은 날, 단계별 기간과 진행률, 할 일 체크, 마감일과 남은 날을 보여 준다. 끝내지 않고 마감이 지난 할 일은 빨간색으로 표시한다. 할 일이 없는 단계는 진행률을 표시하지 않는다.
+  - 단계·할 일 추가·수정 대화상자, 삭제 확인. 단계를 지울 때는 함께 지워지는 할 일 수를 적는다.
+  - 대시보드 "오늘 할 일" 카드. 할 일을 누르면 그 목표의 상세로 간다.
+- 공통으로 옮긴 코드: 응시 기록 화면에 있던 "다시 읽는 동안 목록 유지"를 `useReloading`(`frontend/src/use-load.ts`)으로, 포커스 복원을 `useSectionFocus`(`frontend/src/use-section-focus.ts`)로, 남은 날 문구를 `deadlineCountdown`(`frontend/src/certification-data.ts`)으로 옮겨 두 화면이 함께 쓴다.
+
+고치지 않은 것: 단계와 할 일의 순서 바꾸기 화면은 만들지 않았다. 이슈의 할 일에 없고, 지금은 추가한 순서대로 보인다. 지연 UNIQUE는 설계대로 넣어 두었고, 두 행을 맞바꾸는 트랜잭션이 통과하는 것을 통합 테스트로 확인했다.
+
+## 테스트
+
+| 파일                                           | 검증한 동작                                                                                                                                                                         |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `backend/test/study-plans.test.ts`             | 계획 묶기와 숫자 ID, 오늘 날짜 전달, 제목 다듬기와 날짜 기본값, 잘못된 입력 9가지가 한국어 400이고 DB에 닿지 않음, 없는 항목 404 7가지, 잘못된 ID 400, 삭제 204                     |
+| `backend/test/study-plans.integration.test.ts` | 실제 DB에서 순서 번호, 묶기, 오늘 할 일(지남·오늘 포함, 내일·날짜 없음 제외), 완료와 취소, 처음 끝낸 시점 유지, 수정 뒤 순서·완료 유지, 순서 맞바꾸기, 함께 삭제, 테이블 제약       |
+| `frontend/src/study-plan-data.test.ts`         | 진행률, 할 일 없는 단계, 지남 판정(끝낸 일 제외), 기간 문구                                                                                                                         |
+| `frontend/src/study-plan.test.tsx`             | 첫 단계·할 일 추가, 체크하면 단계·전체 진행률이 바로 바뀜, 연속 클릭 한 번만 전송, 체크 실패, 시험일 표시, 지남 표시, 수정, 날짜 지우기, 삭제와 포커스, 저장 중 닫기, 대시보드 카드 |
+
+`frontend/src/app.test.tsx`, `frontend/src/certifications.test.tsx`, `frontend/src/exam-attempts.test.tsx`의 가짜 API는 계획 요청에 빈 목록을 돌려주도록 고쳤다.
+
+## 검증
+
+- 마이그레이션: 빈 테스트 DB(Docker `postgres:17-alpine`)에 자동 적용한 뒤 `004`를 다시 실행했다. `already exists, skipping` 알림만 나오고 오류가 없었다.
+- `TEST_DATABASE_URL=… npm run check`: 통과(exit 0). 포맷·lint·타입 통과, 백엔드 28개 통과(건너뜀 0), 프런트엔드 133개 통과, 스킬 4개 통과, 빌드 성공.
+- `npm run knip`: 결과 없음. `node .standards/check.mjs`: 통과. `node .standards/secret-scan.mjs`: 의심 항목 없음.
+- 브라우저(Playwright, Vite 5206 + 백엔드 3106 + 임시 DB). 콘솔 오류·경고 없음, 가로 넘침 없음.
+  - 모바일 390×844: 단계 추가, 할 일 4개 추가, 체크하면 전체·단계 진행률 0% → 25%, 2일 지남 빨간색, "목표 시험일까지: 44일 남음". 대시보드 "오늘 할 일"에 지난 일과 오늘 일만 나옴.
+  - PC 1440×900: 대시보드 할 일 링크로 상세 이동, 둘째 단계 추가, 할 일 수정, 체크로 50%, 단계 삭제 뒤 포커스가 "공부 계획" 제목, 끝낸 할 일이 대시보드에서 빠짐.

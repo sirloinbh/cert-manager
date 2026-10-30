@@ -34,6 +34,7 @@ import { controlClass, toNumber } from './form-fields';
 import { RequestError } from './lib/api';
 import { errorText, useNotice } from './lib/use-notice';
 import { cn } from './lib/utils';
+import { StudyPlan } from './study-plan';
 import { useLoad } from './use-load';
 
 // Screens for certification goals (#30). API calls and display rules are in certification-data.ts;
@@ -389,6 +390,7 @@ export function CertificationDetail({ paths }: { paths: CertificationPaths }) {
         />
       </dl>
       <ExamAttempts key={item.id} certification={item} onMarkPassed={markPassed} />
+      <StudyPlan key={`plan-${item.id}`} certification={item} />
     </section>
   );
 }

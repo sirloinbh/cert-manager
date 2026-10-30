@@ -151,7 +151,7 @@ export function registerCertificationRoutes(app: Express, pool: Pool, today: () 
     res.json({ certification: toCertification(rows[0]) });
   });
 
-  // Exam attempts (#32) go with the goal; study plans (#33) will too.
+  // Exam attempts (#32) and study plans (#33) go with the goal.
   app.delete('/api/certifications/:id', async (req, res) => {
     const id = parseId(req.params.id, '자격증 목표');
     const { rowCount } = await pool.query('DELETE FROM certifications WHERE id = $1', [id]);

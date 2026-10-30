@@ -4,6 +4,7 @@ import { types } from 'pg';
 
 import { registerCertificationRoutes } from './routes/certifications.js';
 import { registerExamAttemptRoutes } from './routes/exam-attempts.js';
+import { registerStudyPlanRoutes } from './routes/study-plans.js';
 import { errorHandler, notFound, serviceDate } from './standard/http.js';
 
 // DATE columns stay YYYY-MM-DD strings so the service time zone never shifts them.
@@ -20,6 +21,7 @@ export function createApp(pool: Pool, options: { today?: () => string } = {}) {
   });
   registerCertificationRoutes(app, pool, today);
   registerExamAttemptRoutes(app, pool, today);
+  registerStudyPlanRoutes(app, pool, today);
   app.use('/api', notFound);
   app.use(errorHandler);
   return app;

@@ -15,6 +15,7 @@ import { EmptyState } from './components/ui/empty-state';
 import { Toaster } from './components/ui/sonner';
 import { ExpiringCertifications } from './exam-attempts';
 import { type Health, healthText } from './health';
+import { TodayTasks } from './study-plan';
 
 // Every page URL lives here (central docs/directory-rules.md, docs/design/scope-and-data-model.md section 3).
 const pages = {
@@ -113,6 +114,7 @@ export function App() {
               >
                 <div className="grid gap-4 lg:grid-cols-2">
                   <UpcomingExams paths={certificationPaths} />
+                  <TodayTasks paths={certificationPaths} />
                   <ExpiringCertifications paths={certificationPaths} />
                 </div>
               </Page>
