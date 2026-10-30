@@ -475,13 +475,14 @@ function TaskRow({
           className={cn('mt-1', busy && 'opacity-60')}
           checked={done}
           aria-busy={busy || undefined}
+          aria-disabled={busy || undefined}
           onCheckedChange={(next) => onCheck(next === true)}
         />
         <div className="flex min-w-0 flex-col gap-0.5">
           <Label
             htmlFor={id}
             className={cn(
-              'text-body font-normal wrap-anywhere break-keep',
+              'text-body leading-normal font-normal wrap-anywhere break-keep',
               done && 'text-muted-foreground line-through',
             )}
           >
@@ -572,11 +573,9 @@ export function TodayTasks({ paths }: { paths: CertificationPaths }) {
                   </span>
                 </div>
                 {task.daysUntilDue === null ? null : (
+                  // Not cn(): tailwind-merge takes text-body-sm for a color and drops it (project-standards#357).
                   <strong
-                    className={cn(
-                      'shrink-0 text-body-sm font-semibold',
-                      isOverdue(task) && 'text-destructive',
-                    )}
+                    className={`shrink-0 text-body-sm font-semibold ${isOverdue(task) ? 'text-destructive' : ''}`}
                   >
                     {deadlineCountdown(task.daysUntilDue)}
                   </strong>

@@ -424,7 +424,7 @@ test('the dashboard card lists overdue and due tasks with their goal', async () 
     '단어 외우기',
     '기출 풀기',
   ]);
-  expect(within(items[0]).getByText('3일 지남')).toHaveClass('text-destructive');
+  expect(within(items[0]).getByText('3일 지남')).toHaveClass('text-destructive', 'text-body-sm');
   expect(within(items[1]).getByText('오늘까지')).not.toHaveClass('text-destructive');
   expect(within(items[0]).getByText('토익')).toBeInTheDocument();
   expect(within(items[0]).getByRole('link')).toHaveAttribute('href', '/certifications/1');
@@ -451,6 +451,11 @@ test('checking moves the progress before the server answers', async () => {
     '100',
   );
   expect(screen.getByRole('checkbox', { name: '기출 풀기' })).toHaveAttribute('aria-busy', 'true');
+  // A click meanwhile is ignored, and the checkbox says so.
+  expect(screen.getByRole('checkbox', { name: '기출 풀기' })).toHaveAttribute(
+    'aria-disabled',
+    'true',
+  );
   // Another task can be checked meanwhile, and both are sent.
   fireEvent.click(screen.getByRole('checkbox', { name: '단어 외우기' }));
   expect(screen.getByText('전체 진행률 1/2 · 50%')).toBeInTheDocument();
