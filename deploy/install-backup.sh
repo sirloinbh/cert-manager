@@ -2,10 +2,10 @@
 # 중앙 관리 파일. 수정은 sirloinbh/project-standards의 templates/app/deploy/에서
 # Installs and starts the nightly dump, weekly restore check, 5-minute health and daily report timers
 # (#262, #284, #285). Run once as root on the server; adding HEALTHCHECK_URL_* to .env later needs no rerun:
-#   sudo bash /opt/english-study/deploy/install-backup.sh
+#   sudo bash /opt/cert-manager/deploy/install-backup.sh
 set -euo pipefail
 dir=$(cd "$(dirname "$0")" && pwd)
-db=english
+db=cert
 install -d -o ubuntu -g ubuntu -m 700 "/var/backups/$db"
 for unit in backup restore-check health report; do
   install -m 644 "$dir/$unit.service" "/etc/systemd/system/$db-$unit.service"

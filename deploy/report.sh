@@ -1,13 +1,13 @@
 #!/bin/bash
 # 중앙 관리 파일. 수정은 sirloinbh/project-standards의 templates/app/deploy/에서
-# Daily one-line server report for english-study (#285), sent as the body of the healthchecks.io
+# Daily one-line server report for cert-manager (#285), sent as the body of the healthchecks.io
 # "report" signal (deploy/notify.sh). It records what ADR-0009 asked to measure on the shared
 # server: memory, disk, this app's container memory and the deployed commit.
 #   report.sh          build the line and send it (fail signal over the thresholds)
 #   report.sh line     only print the line
 # Thresholds (server .env, optional): REPORT_MEMORY_PERCENT (default 85), REPORT_DISK_PERCENT (default 90).
 set -euo pipefail
-cd /opt/english-study
+cd /opt/cert-manager
 export IMAGE_TAG=${IMAGE_TAG:-$(cat .deployed 2>/dev/null || echo none)}
 
 env_value() { sed -n "s/^$1=//p" .env 2>/dev/null | tail -n 1 | tr -d "\"'\r"; }

@@ -1,16 +1,16 @@
 #!/bin/bash
 # 중앙 관리 파일. 수정은 sirloinbh/project-standards의 templates/app/deploy/에서
-# Database backups of english-study on the Lightsail server (#262).
-#   backup.sh dump [label]  pg_dump to /var/backups/english (14 days), row counts beside it,
+# Database backups of cert-manager on the Lightsail server (#262).
+#   backup.sh dump [label]  pg_dump to /var/backups/cert (14 days), row counts beside it,
 #                           and a copy to S3 when the server .env names a bucket
 #                           (exit 3: dumped, but the S3 copy failed)
 #   backup.sh verify        restore the newest dump into a throwaway postgres container and
 #                           compare its row counts with the ones taken at dump time
-# Started daily by english-backup.timer, weekly by english-restore-check.timer,
+# Started daily by cert-backup.timer, weekly by cert-restore-check.timer,
 # and by remote-deploy.sh before each deploy (label "predeploy").
 set -euo pipefail
-cd /opt/english-study
-db=english
+cd /opt/cert-manager
+db=cert
 dir=/var/backups/$db
 # Before install-backup.sh created the server folder, dumps stay in the app folder (ignored by Git).
 if [ ! -w "$dir" ]; then dir=$PWD/backups; fi
@@ -75,8 +75,8 @@ upload() {
   printf 'user = "%s:%s"\n' "$id" "$secret" |
     curl -fsS -K - --aws-sigv4 "aws:amz:$region:s3" \
       -H 'x-amz-content-sha256: UNSIGNED-PAYLOAD' \
-      --upload-file "$file" "https://$bucket.s3.$region.amazonaws.com/english-study/$(basename "$file")" > /dev/null
-  echo "uploaded english-study/$(basename "$file") to s3://$bucket"
+      --upload-file "$file" "https://$bucket.s3.$region.amazonaws.com/cert-manager/$(basename "$file")" > /dev/null
+  echo "uploaded cert-manager/$(basename "$file") to s3://$bucket"
 }
 
 dump() {

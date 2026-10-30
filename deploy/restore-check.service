@@ -1,6 +1,6 @@
 # 중앙 관리 파일. 수정은 sirloinbh/project-standards의 templates/app/deploy/에서
 [Unit]
-Description=영어 공부 weekly restore check of the newest database dump
+Description=자격증 관리 weekly restore check of the newest database dump
 After=docker.service
 Requires=docker.service
 
@@ -8,7 +8,7 @@ Requires=docker.service
 Type=oneshot
 User=ubuntu
 Group=docker
-WorkingDirectory=/opt/english-study
-ExecStart=/bin/bash -c 'cp /opt/english-study/deploy/backup.sh /tmp/english-restore-check.sh && exec /bin/bash /tmp/english-restore-check.sh verify'
+WorkingDirectory=/opt/cert-manager
+ExecStart=/bin/bash -c 'cp /opt/cert-manager/deploy/backup.sh /tmp/cert-restore-check.sh && exec /bin/bash /tmp/cert-restore-check.sh verify'
 TimeoutStartSec=30min
 Nice=10

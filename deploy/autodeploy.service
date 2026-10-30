@@ -1,6 +1,6 @@
 # 중앙 관리 파일. 수정은 sirloinbh/project-standards의 templates/app/deploy/에서
 [Unit]
-Description=영어 공부 pull-based deployment of origin/main
+Description=자격증 관리 pull-based deployment of origin/main
 After=network-online.target docker.service
 Wants=network-online.target
 
@@ -8,8 +8,8 @@ Wants=network-online.target
 Type=oneshot
 User=ubuntu
 Group=docker
-WorkingDirectory=/opt/english-study
+WorkingDirectory=/opt/cert-manager
 # Copied first: the deploy checks out a new commit while this script runs.
-ExecStart=/bin/bash -c 'cp /opt/english-study/deploy/autodeploy.sh /tmp/english-autodeploy.sh && exec /bin/bash /tmp/english-autodeploy.sh'
+ExecStart=/bin/bash -c 'cp /opt/cert-manager/deploy/autodeploy.sh /tmp/cert-autodeploy.sh && exec /bin/bash /tmp/cert-autodeploy.sh'
 TimeoutStartSec=45min
 Nice=10

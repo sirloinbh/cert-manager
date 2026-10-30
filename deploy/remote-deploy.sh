@@ -1,16 +1,16 @@
 #!/bin/bash
 # 중앙 관리 파일. 수정은 sirloinbh/project-standards의 templates/app/deploy/에서
-# Runs on the Lightsail server from /opt/english-study, started by scripts/deploy.ps1 or
+# Runs on the Lightsail server from /opt/cert-manager, started by scripts/deploy.ps1 or
 # by autodeploy.sh.
 #   deploy <ref>  build the commit, back up, migrate, start, health check; on failure
 #                 start the previous images again
 #   rollback      start the previously deployed images again
 # Images are tagged by commit, so a rollback does not rebuild. Migrations are
 # forward-only; restoring data from the pre-deploy dump is a separate, manual step.
-# compose.yaml must tag images english-backend:${IMAGE_TAG} and
-# english-frontend:${IMAGE_TAG} and publish the web port as ${WEB_BIND}:${WEB_PORT}.
+# compose.yaml must tag images cert-backend:${IMAGE_TAG} and
+# cert-frontend:${IMAGE_TAG} and publish the web port as ${WEB_BIND}:${WEB_PORT}.
 set -euo pipefail
-cd /opt/english-study
+cd /opt/cert-manager
 # One deploy at a time across every app on the server (ADR-0009). The autodeploy timer
 # already holds the lock and sets the flag.
 if [ -z "${APPS_DEPLOY_LOCKED:-}" ]; then
@@ -91,7 +91,7 @@ case "${1:-}" in
     keep="$tag|$(cat .previous 2>/dev/null || echo none)"
     # Split quotes keep the Go template away from the central template renderer.
     tag_format='{''{.Tag}}'
-    for image in english-backend english-frontend; do
+    for image in cert-backend cert-frontend; do
       docker image ls "$image" --format "$tag_format" | { grep -vxE "$keep" || true; } |
         xargs -r -I{} docker image rm "$image:{}" > /dev/null
     done

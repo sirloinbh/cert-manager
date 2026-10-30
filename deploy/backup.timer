@@ -1,6 +1,6 @@
 # 중앙 관리 파일. 수정은 sirloinbh/project-standards의 templates/app/deploy/에서
 [Unit]
-Description=Dump the english-study database every night
+Description=Dump the cert-manager database every night
 
 [Timer]
 # 03:30 Seoul, after the 03:00 Lightsail snapshot. Apps take turns through /run/lock/apps-backup.lock.

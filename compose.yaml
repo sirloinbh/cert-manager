@@ -2,8 +2,8 @@ services:
   db:
     image: postgres:17-alpine
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-english}
-      POSTGRES_USER: ${POSTGRES_USER:-english}
+      POSTGRES_DB: ${POSTGRES_DB:-cert}
+      POSTGRES_USER: ${POSTGRES_USER:-cert}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Copy .env.example to .env and set password}
       TZ: Asia/Seoul
     ports: ['127.0.0.1:15406:5432']
@@ -19,7 +19,7 @@ services:
   api:
     build: { context: ./backend, secrets: [npm_token] }
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-english}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-english}
+      DATABASE_URL: postgres://${POSTGRES_USER:-cert}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-cert}
       PORT: 3106
       TZ: Asia/Seoul
     depends_on:

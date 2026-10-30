@@ -1,13 +1,13 @@
 #!/bin/bash
 # 중앙 관리 파일. 수정은 sirloinbh/project-standards의 templates/app/deploy/에서
-# Pull-based continuous deployment, run every 2 minutes by english-autodeploy.timer.
+# Pull-based continuous deployment, run every 2 minutes by cert-autodeploy.timer.
 # Deploys origin/main only after every GitHub Actions check run of that commit passed.
 # The firewall stays closed to GitHub: the server polls the public repository and API.
 #   autodeploy.sh            check and deploy if needed
 #   autodeploy.sh ci-state   print pass|fail|pending for check-runs JSON on stdin (tests)
 set -euo pipefail
-repo=sirloinbh/english-study
-app=/opt/english-study
+repo=sirloinbh/cert-manager
+app=/opt/cert-manager
 
 # pass: every check run completed with success/skipped/neutral; fail: any other result;
 # pending: none reported yet or still running.

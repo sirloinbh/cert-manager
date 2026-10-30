@@ -7,7 +7,7 @@ description: Follow the issue, numbered branch, implementation with docs, tests,
 
 # 구현 절차
 
-이 스킬은 `sirloinbh/english-study` 리포의 변경 작업에 적용한다. 프로젝트 루트의 `AGENTS.md`(있으면 `AGENTS.project.md`도)와 관련 문서를 먼저 읽는다. 아래 순서를 지키고, 검증한 PR을 결과로 제공한다.
+이 스킬은 `sirloinbh/cert-manager` 리포의 변경 작업에 적용한다. 프로젝트 루트의 `AGENTS.md`(있으면 `AGENTS.project.md`도)와 관련 문서를 먼저 읽는다. 아래 순서를 지키고, 검증한 PR을 결과로 제공한다.
 
 함께 쓰는 스킬:
 
