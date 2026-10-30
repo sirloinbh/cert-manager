@@ -15,7 +15,7 @@ export function createApp(pool: Pool, options: { today?: () => string } = {}) {
   app.use(express.json({ limit: '256kb' }));
   app.get('/api/health', async (_req, res) => {
     await pool.query('SELECT 1');
-    res.json({ ok: true, service: 'english-study', today: today() });
+    res.json({ ok: true, service: 'cert-manager', today: today() });
   });
   registerCertificationRoutes(app, pool, today);
   app.use('/api', notFound);

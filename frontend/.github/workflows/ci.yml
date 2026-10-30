@@ -12,4 +12,4 @@ jobs:
       - run: npm run build
       - uses: actions/upload-artifact@v4
         with: { name: frontend-dist, path: dist }
-      - run: docker build -t english-study-frontend .
+      - run: docker build -t cert-manager-frontend .

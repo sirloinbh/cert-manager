@@ -1,6 +1,6 @@
-# 영어 공부
+# 자격증 관리
 
-단어장 등 영어 공부를 기록하고 복습하는 개인 서비스입니다. 사용자는 본인 한 명이며 로그인 없이 로컬에서 사용합니다.
+자격증 정보·시험 일정·공부 기록을 관리하고, 자격증과 별개로 영어 공부도 기록하고 복습하는 개인 서비스입니다. 사용자는 본인 한 명이며 로그인 없이 로컬에서 사용합니다.
 
 ## 개발 기준
 
@@ -15,7 +15,7 @@ Copy-Item .env.example .env
 docker compose up --build -d
 ```
 
-접속: http://localhost:8106 . `.env`의 비밀번호를 바꾼 뒤 실행하세요. 데이터는 `english-study-data` 볼륨에 저장되며 `docker compose down -v`는 데이터를 삭제합니다.
+접속: http://localhost:8106 . `.env`의 비밀번호를 바꾼 뒤 실행하세요. 데이터는 `cert-manager-data` 볼륨에 저장되며 `docker compose down -v`는 데이터를 삭제합니다.
 
 개발 실행:
 
@@ -34,7 +34,7 @@ Vite http://localhost:5206, API http://localhost:3106/api/health, 호스트 DB �
 
 ## 저장소 구성
 
-이 저장소는 전체 소스를 담은 우산 모노레포입니다. `frontend`, `backend`, `database`는 `git subtree split`으로 배포용 비공개 저장소 `english-study-frontend`, `english-study-backend`, `english-study-db`에 동기화합니다(`scripts/push-repositories.ps1`, 요청 시에만). AWS 인프라는 공유 저장소 `shared-aws-infrastructure`에서 관리합니다.
+이 저장소는 전체 소스를 담은 우산 모노레포입니다. `frontend`, `backend`, `database`는 `git subtree split`으로 배포용 비공개 저장소 `cert-manager-frontend`, `cert-manager-backend`, `cert-manager-db`에 동기화합니다(`scripts/push-repositories.ps1`, 요청 시에만). AWS 인프라는 공유 저장소 `shared-aws-infrastructure`에서 관리합니다.
 
 ## 문서
 
