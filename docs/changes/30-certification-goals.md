@@ -61,6 +61,14 @@ PR #41의 1차 리뷰(작성 맥락과 분리된 읽기 전용 에이전트)에�
 - 낮음(테스트): 위 세 경우를 테스트에 넣었다. `backend/test/certifications.test.ts`에 배열 본문·문자열 본문·0년 날짜, `frontend/src/certifications.test.tsx`에 삭제 실패(대화상자 유지, 오류 표시, 주소 그대로). `daysUntilExam`은 SQL에서 계산해 가짜 DB 단위 테스트로는 검증할 수 없고, CI에서 실행되는 DB 통합 테스트가 확인한다.
 - 검증: `TEST_DATABASE_URL=… npm run check` 통과. 백엔드 12개 통과(건너뜀 0), 프런트엔드 67개 통과, 스킬 4개 통과, 빌드 성공. `npm run knip` 결과 없음.
 
+## 2차 자동 리뷰 — 2026-10-30
+
+1차 반영 커밋과 PR 전체를 다시 봤다. 보완점 없음.
+
+- 1차 지적 4건의 수정이 맞다고 확인했다. 배열 본문의 한국어 문구, 1900-01-01 하한, 삭제 실패 토스트, 테스트가 해당한다.
+- 리뷰어가 가정으로 남긴 "토스트가 대화상자 위에 보인다"는 토큰 값으로 확인했다. `--z-toast`는 70, `--z-modal`은 50이다(`@sirloinbh/design-tokens`).
+- 리뷰는 최대 2회라 여기서 끝낸다.
+
 ## CodeQL 알림 — 2026-10-30
 
 - 첫 푸시에서 CodeQL이 `js/missing-rate-limiting`(요청 횟수 제한 없음) 5건을 냈다. 새 API 경로 5개가 모두 해당한다. CodeQL은 필수 검사가 아니다(필수: `ci / verify`, `ci / docker-build`).
