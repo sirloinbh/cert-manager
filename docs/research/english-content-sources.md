@@ -28,6 +28,18 @@
 - 이 프로젝트는 Node.js라서 Python 도구를 새로 들여와야 한다.
 - 그래서 사용자 요구사항의 "안 되면" 경로로 간다.
 
+### 다른 가사 출처 비교
+
+| 출처                       | 가사 전문                                | API 키      | 이용 조건·제한                                                   | 판단                      |
+| -------------------------- | ---------------------------------------- | ----------- | ---------------------------------------------------------------- | ------------------------- |
+| 유튜브 뮤직 (`ytmusicapi`) | 받을 수 있음                             | 로그인 쿠키 | 비공식 방식이고 YouTube 약관이 자동화된 접근을 금지              | 쓰지 않음                 |
+| Genius API                 | 주지 않음. 곡 정보와 웹 페이지 주소만 줌 | 필요        | 가사를 얻으려면 웹 페이지를 긁어야 함                            | 쓰지 않음                 |
+| Musixmatch API             | 무료 등급은 가사의 약 30%만 줌           | 필요        | 전문은 상업 계약이 필요(가격 비공개)                             | 쓰지 않음                 |
+| **LRCLIB**                 | 받을 수 있음(일반·시간 정보 가사)        | 필요 없음   | 무료 공개 서비스. 요청 제한을 지켜야 함. 가사 라이선스 표기 없음 | **사용**                  |
+| 직접 붙여 넣기             | 사용자가 넣음                            | 없음        | 외부 서비스 없음. 곡이 많으면 손이 많이 감                       | LRCLIB에 없는 곡에만 사용 |
+
+Genius·Musixmatch의 제한은 공식 약관이 아니라 개발자 글과 API 목록 사이트에서 확인한 내용이다. 둘 다 쓰지 않으므로 더 확인하지 않았다.
+
 ### LRCLIB
 
 [LRCLIB](https://lrclib.net/docs)는 무료로 공개된 가사 데이터베이스다.
@@ -82,7 +94,7 @@
 테일러 스위프트의 정규 앨범은 12장이다(2026-10 기준). 마지막은 2025-10-03에 나온 _The Life of a Showgirl_이다.
 
 1. 정규 앨범 12장의 기본판 수록곡: _Taylor Swift_, _Fearless_, _Speak Now_, _Red_, _1989_, _reputation_, _Lover_, _folklore_, _evermore_, _Midnights_, _The Tortured Poets Department_, _The Life of a Showgirl_
-2. Taylor's Version 4장(_Fearless_, _Red_, _Speak Now_, _1989_)의 From the Vault 곡만. 다시 녹음한 곡은 가사가 원곡과 같아 중복이다.
+2. Taylor's Version 4장(_Fearless_, _Red_, _Speak Now_, _1989_)의 From the Vault 곡만. 다시 녹음한 곡은 가사가 대부분 원곡과 같아 넣지 않는다. 가사가 바뀐 곡(예: _Speak Now (Taylor's Version)_의 "Better than Revenge")은 원곡 가사를 쓰고, 바뀐 줄은 곡 메모에 적는다.
 3. 디럭스판 보너스 곡, 싱글·OST 곡은 2단계로 미룬다.
 
 같은 곡이 여러 앨범에 있으면 곡 하나로 저장하고 수록 앨범을 여러 개 연결한다.
@@ -114,6 +126,8 @@
 - [ytmusicapi 문서](https://ytmusicapi.readthedocs.io/en/stable/)
 - [YouTube 서비스 약관](https://www.youtube.com/static?template=terms)
 - [LRCLIB API 문서](https://lrclib.net/docs)
+- Genius API가 가사를 주지 않는다는 기록: [Getting Song Lyrics from Genius’s API + Scraping](https://bigishdata.com/2016/09/27/getting-song-lyrics-from-geniuss-api-scraping/)
+- Musixmatch 무료 등급 30% 제한: [Musixmatch API (API 목록)](https://freeapihub.com/apis/musixmatch)
 - [MusicBrainz API 요청 제한](https://musicbrainz.org/doc/MusicBrainz_API/Rate_Limiting)
 - [NGSL 1.2](https://www.newgeneralservicelist.com/new-general-service-list)
 - [kaikki.org](https://kaikki.org/)
