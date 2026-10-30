@@ -1,18 +1,45 @@
-import { LayoutDashboard, Settings2 } from 'lucide-react';
+import { Award, BookOpenText, LayoutDashboard, Music, Settings2 } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
+import { BrowserRouter, generatePath, Navigate, Route, Routes } from 'react-router';
 
+import {
+  CertificationDetail,
+  CertificationList,
+  type CertificationPaths,
+  EditCertification,
+  NewCertification,
+  UpcomingExams,
+} from './certifications';
 import { AppShell, type NavItem } from './components/layout/app-shell';
 import { EmptyState } from './components/ui/empty-state';
 import { Toaster } from './components/ui/sonner';
 import { type Health, healthText } from './health';
 
-// Every page URL lives here (central docs/directory-rules.md).
-const pages = { overview: '/', settings: '/settings' } as const;
+// Every page URL lives here (central docs/directory-rules.md, docs/design/scope-and-data-model.md section 3).
+const pages = {
+  overview: '/',
+  certifications: '/certifications',
+  newCertification: '/certifications/new',
+  certification: '/certifications/:id',
+  editCertification: '/certifications/:id/edit',
+  songs: '/songs',
+  words: '/words',
+  settings: '/settings',
+} as const;
+
+const certificationPaths: CertificationPaths = {
+  list: pages.certifications,
+  create: pages.newCertification,
+  detail: (id) => generatePath(pages.certification, { id: String(id) }),
+  edit: (id) => generatePath(pages.editCertification, { id: String(id) }),
+};
 
 // Main menu (LNB) items, in display order.
 const nav: NavItem[] = [
   { to: pages.overview, label: '대시보드', icon: LayoutDashboard },
+  { to: pages.certifications, label: '자격증', icon: Award },
+  { to: pages.songs, label: '팝송 가사', icon: Music },
+  { to: pages.words, label: '단어장', icon: BookOpenText },
   { to: pages.settings, label: '설정', icon: Settings2 },
 ];
 
@@ -80,7 +107,47 @@ export function App() {
             element={
               <Page
                 title="대시보드"
-                description="단어장 등 영어 공부를 기록하고 복습하는 개인 서비스"
+                description="자격증 목표와 영어 공부에서 오늘 볼 것을 모아 봅니다."
+                health={health}
+              >
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <UpcomingExams paths={certificationPaths} />
+                </div>
+              </Page>
+            }
+          />
+          <Route
+            path={pages.certifications}
+            element={<CertificationList paths={certificationPaths} />}
+          />
+          <Route
+            path={pages.newCertification}
+            element={<NewCertification paths={certificationPaths} />}
+          />
+          <Route
+            path={pages.certification}
+            element={<CertificationDetail paths={certificationPaths} />}
+          />
+          <Route
+            path={pages.editCertification}
+            element={<EditCertification paths={certificationPaths} />}
+          />
+          <Route
+            path={pages.songs}
+            element={
+              <Page
+                title="팝송 가사"
+                description="팝송 가사 원문과 번역을 줄 단위로 봅니다."
+                health={health}
+              />
+            }
+          />
+          <Route
+            path={pages.words}
+            element={
+              <Page
+                title="단어장"
+                description="가사에 자주 나오는 단어와 어원을 봅니다."
                 health={health}
               />
             }
