@@ -11,13 +11,15 @@ const statuses = ['planned', 'studying', 'registered', 'taken', 'passed', 'faile
 const validityKinds = ['months', 'none', 'unknown'] as const;
 
 // A real calendar day as YYYY-MM-DD: 2026-02-30 is rejected, not rolled over to March.
+// Year 0 passes the Date round trip but PostgreSQL rejects it, so the range starts at 1900.
 const calendarDate = z
   .string({ message: '목표 시험일은 YYYY-MM-DD 형식이어야 합니다' })
   .regex(/^\d{4}-\d{2}-\d{2}$/, '목표 시험일은 YYYY-MM-DD 형식이어야 합니다')
   .refine((value) => {
     const date = new Date(`${value}T00:00:00Z`);
     return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
-  }, '목표 시험일이 실제 날짜가 아닙니다');
+  }, '목표 시험일이 실제 날짜가 아닙니다')
+  .refine((value) => value >= '1900-01-01', '목표 시험일은 1900-01-01 이후여야 합니다');
 
 const shortText = (label: string) =>
   z
@@ -27,42 +29,46 @@ const shortText = (label: string) =>
 
 // PUT replaces the whole goal, so POST and PUT share one input; omitted optional fields take their defaults.
 const certificationInput = z
-  .object({
-    name: z
-      .string({ message: '자격증 이름을 입력해 주세요' })
-      .trim()
-      .min(1, '자격증 이름을 입력해 주세요')
-      .max(200, '자격증 이름은 200자 이하로 입력해 주세요'),
-    category: z.enum(categories, { message: '분류는 영어, 개발, 생활 중 하나여야 합니다' }),
-    issuer: shortText('주관 기관').default(''),
-    status: z
-      .enum(statuses, {
-        message: '상태는 계획, 공부 중, 접수, 응시 완료, 합격, 불합격 중 하나여야 합니다',
-      })
-      .default('planned'),
-    goalText: shortText('목표 설명').default(''),
-    targetScore: z
-      .number({ message: '목표 점수는 숫자여야 합니다' })
-      .int('목표 점수는 정수여야 합니다')
-      .min(0, '목표 점수는 0 이상이어야 합니다')
-      .max(100000, '목표 점수는 100000 이하여야 합니다')
-      .nullable()
-      .default(null),
-    targetExamDate: calendarDate.nullable().default(null),
-    validityKind: z
-      .enum(validityKinds, {
-        message: '유효기간 종류는 개월 수, 만료 없음, 모름 중 하나여야 합니다',
-      })
-      .default('unknown'),
-    validityMonths: z
-      .number({ message: '유효기간 개월 수는 숫자여야 합니다' })
-      .int('유효기간 개월 수는 정수여야 합니다')
-      .min(1, '유효기간 개월 수는 1 이상이어야 합니다')
-      .max(1200, '유효기간 개월 수는 1200 이하여야 합니다')
-      .nullable()
-      .default(null),
-    memo: z.string({ message: '메모는 문자열이어야 합니다' }).default(''),
-  })
+  .object(
+    {
+      name: z
+        .string({ message: '자격증 이름을 입력해 주세요' })
+        .trim()
+        .min(1, '자격증 이름을 입력해 주세요')
+        .max(200, '자격증 이름은 200자 이하로 입력해 주세요'),
+      category: z.enum(categories, { message: '분류는 영어, 개발, 생활 중 하나여야 합니다' }),
+      issuer: shortText('주관 기관').default(''),
+      status: z
+        .enum(statuses, {
+          message: '상태는 계획, 공부 중, 접수, 응시 완료, 합격, 불합격 중 하나여야 합니다',
+        })
+        .default('planned'),
+      goalText: shortText('목표 설명').default(''),
+      targetScore: z
+        .number({ message: '목표 점수는 숫자여야 합니다' })
+        .int('목표 점수는 정수여야 합니다')
+        .min(0, '목표 점수는 0 이상이어야 합니다')
+        .max(100000, '목표 점수는 100000 이하여야 합니다')
+        .nullable()
+        .default(null),
+      targetExamDate: calendarDate.nullable().default(null),
+      validityKind: z
+        .enum(validityKinds, {
+          message: '유효기간 종류는 개월 수, 만료 없음, 모름 중 하나여야 합니다',
+        })
+        .default('unknown'),
+      validityMonths: z
+        .number({ message: '유효기간 개월 수는 숫자여야 합니다' })
+        .int('유효기간 개월 수는 정수여야 합니다')
+        .min(1, '유효기간 개월 수는 1 이상이어야 합니다')
+        .max(1200, '유효기간 개월 수는 1200 이하여야 합니다')
+        .nullable()
+        .default(null),
+      memo: z.string({ message: '메모는 문자열이어야 합니다' }).default(''),
+    },
+    // express.json() accepts an array or a bare value too; the message stays Korean.
+    { message: '요청 본문은 JSON 객체여야 합니다' },
+  )
   .superRefine((input, ctx) => {
     if (input.validityKind === 'months' && input.validityMonths === null) {
       ctx.addIssue({

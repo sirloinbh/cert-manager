@@ -91,6 +91,13 @@ test('invalid input is a Korean 400 and never reaches the database', async () =>
     [{ name: '토익', category: 'english', targetScore: -1 }, '목표 점수는 0 이상이어야 합니다'],
     [{ name: '토익', category: 'english', targetExamDate: '2026-02-30' }, '실제 날짜가 아닙니다'],
     [{ name: '토익', category: 'english', targetExamDate: '2026/12/13' }, 'YYYY-MM-DD'],
+    [
+      { name: '토익', category: 'english', targetExamDate: '0000-01-01' },
+      '1900-01-01 이후여야 합니다',
+    ],
+    [[], '요청 본문은 JSON 객체여야 합니다'],
+    // A bare JSON string never reaches the route: express.json() (strict) rejects it first.
+    ['토익', '요청 본문의 JSON 형식이 올바르지 않습니다'],
     [{ name: '토익', category: 'english', validityKind: 'months' }, '개월 수를 입력해 주세요'],
     [
       { name: '토익', category: 'english', validityKind: 'none', validityMonths: 24 },

@@ -304,7 +304,6 @@ export function CertificationDetail({ paths }: { paths: CertificationPaths }) {
   const { id = '' } = useParams();
   const loaded = useLoad(id, loadOne);
   const navigate = useNavigate();
-  const notice = useNotice();
 
   if (loaded.state !== 'ok') {
     return (
@@ -327,7 +326,8 @@ export function CertificationDetail({ paths }: { paths: CertificationPaths }) {
     } catch (error) {
       // Already gone counts as deleted; anything else keeps the dialog open with the reason.
       if (!(error instanceof RequestError && error.status === 404)) {
-        notice.error(error, '목표를 지우지 못했습니다');
+        // The open dialog covers the page, so the reason goes in a toast above it.
+        toast.error(errorText(error, '목표를 지우지 못했습니다'));
         throw error;
       }
     }
@@ -366,7 +366,6 @@ export function CertificationDetail({ paths }: { paths: CertificationPaths }) {
           </>
         }
       />
-      <Notice notice={notice.notice} />
       <dl className="rounded-xl border bg-card px-4 text-card-foreground shadow-sm">
         <Field label="분류" value={categoryLabels[item.category]} />
         <Field label="상태" value={<StatusBadge status={item.status} />} />

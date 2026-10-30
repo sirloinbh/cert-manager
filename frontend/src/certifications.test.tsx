@@ -30,7 +30,7 @@ const goal = (
 type Sent = { method: string; path: string; body?: Record<string, unknown> };
 
 // An in-memory stand-in for the API that keeps the server's list order and status codes.
-function fakeApi(initial: Certification[] = []) {
+function fakeApi(initial: Certification[] = [], options: { deleteFails?: boolean } = {}) {
   let store = [...initial];
   let nextId = Math.max(0, ...store.map((item) => item.id)) + 1;
   const sent: Sent[] = [];
@@ -77,6 +77,7 @@ function fakeApi(initial: Certification[] = []) {
         store = store.map((item) => (item.id === id ? updated : item));
         return reply(200, { certification: updated });
       }
+      if (options.deleteFails) return reply(500, { error: '서버 오류가 발생했습니다' });
       store = store.filter((item) => item.id !== id);
       return reply(204);
     }),
@@ -241,6 +242,19 @@ test('deleting asks first, says what goes with it, and the goal leaves the list'
   expect(await screen.findByRole('link', { name: 'AWS Cloud Practitioner' })).toBeInTheDocument();
   expect(screen.queryByRole('link', { name: '토익' })).toBeNull();
   expect(sent.find((call) => call.method === 'DELETE')?.path).toBe('/api/certifications/1');
+});
+
+test('a failed delete keeps the dialog open and says why above it', async () => {
+  fakeApi([toeic], { deleteFails: true });
+  open('/certifications/1');
+  fireEvent.click(await screen.findByRole('button', { name: '삭제' }));
+  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }));
+  expect(await screen.findByText('서버 오류가 발생했습니다')).toBeInTheDocument();
+  expect(screen.getByRole('dialog', { name: '목표를 지울까요?' })).toBeInTheDocument();
+  await waitFor(() =>
+    expect(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' })).toBeEnabled(),
+  );
+  expect(window.location.pathname).toBe('/certifications/1');
 });
 
 test('a goal that no longer exists says so instead of an empty page', async () => {
