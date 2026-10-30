@@ -108,6 +108,7 @@ test(
           call(`/api/study-tasks/${id}/completion`, { method: 'PATCH', body: { completed } });
         const finished = (await finish(overdue.id, true)).data.task as Task;
         assert.ok(finished.completedAt);
+        assert.equal(finished.daysUntilDue, -1, 'completion answers the same fields as the plan');
         const again = (await finish(overdue.id, true)).data.task as Task;
         assert.equal(again.completedAt, finished.completedAt);
         assert.deepEqual(await todayTitles(), [['기출 풀기', '#33 토익']]);
@@ -137,6 +138,12 @@ test(
           [stage.title, stage.position, stage.startDate],
           ['마무리', 2, '2026-11-08'],
         );
+
+        const moved = await call(`/api/study-tasks/${undated.id}`, {
+          method: 'PUT',
+          body: { title: '모의고사', dueDate: '2026-11-01' },
+        });
+        assert.equal((moved.data.task as Task).daysUntilDue, 2);
 
         // A deleted position is not reused by mistake: the next row still goes last.
         assert.equal(

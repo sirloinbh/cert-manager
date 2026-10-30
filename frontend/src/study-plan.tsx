@@ -39,6 +39,7 @@ import {
   studyPlanApi,
   type StudyStage,
   type StudyTask,
+  withChoices,
 } from './study-plan-data';
 import { useLoad, useReloading } from './use-load';
 import { useSectionFocus } from './use-section-focus';
@@ -65,7 +66,7 @@ function ProgressLine({ label, tasks }: { label: string; tasks: StudyTask[] }) {
   if (!value) return null;
   return (
     <div className="flex flex-col gap-1">
-      <p className="text-body-sm">
+      <p className="text-body-sm wrap-anywhere">
         {label} {value.done}/{value.total} · {value.percent}%
       </p>
       <ProgressBar label={label} value={value.percent} />
@@ -173,6 +174,18 @@ const withoutStage = (id: number) => (plan: Plan) => ({
   ...plan,
   stages: plan.stages.filter((stage) => stage.id !== id),
 });
+const withStage = (saved: Omit<StudyStage, 'tasks'>) => (plan: Plan) => ({
+  ...plan,
+  stages: plan.stages.some((stage) => stage.id === saved.id)
+    ? plan.stages.map((stage) => (stage.id === saved.id ? { ...stage, ...saved } : stage))
+    : [...plan.stages, { ...saved, tasks: [] }],
+});
+const withNewTask = (saved: StudyTask) => (plan: Plan) => ({
+  ...plan,
+  stages: plan.stages.map((stage) =>
+    stage.id === saved.stageId ? { ...stage, tasks: [...stage.tasks, saved] } : stage,
+  ),
+});
 const withTask = (saved: StudyTask) => (plan: Plan) => ({
   ...plan,
   stages: plan.stages.map((stage) => ({
@@ -192,8 +205,8 @@ export function StudyPlan({ certification }: { certification: Certification }) {
     target: { kind: 'stage', stage: null },
   });
   const [saving, setSaving] = useState(false);
-  // Tasks whose checkbox is being saved; a second click waits for the first answer.
-  const [checking, setChecking] = useState<number[]>([]);
+  // What was chosen for tasks still being saved. A click before the answer arrives is ignored.
+  const [checking, setChecking] = useState<Record<number, boolean>>({});
   const focus = useSectionFocus();
   const titleId = useId();
 
@@ -204,6 +217,7 @@ export function StudyPlan({ certification }: { certification: Certification }) {
 
   const save = async (text: string, dates: Record<string, string | null>) => {
     const { target } = editing;
+    let change: (plan: Plan) => Plan;
     setSaving(true);
     try {
       if (target.kind === 'stage') {
@@ -212,18 +226,23 @@ export function StudyPlan({ certification }: { certification: Certification }) {
           startDate: dates.startDate ?? null,
           endDate: dates.endDate ?? null,
         };
-        if (target.stage) await studyPlanApi.updateStage(target.stage.id, input);
-        else await studyPlanApi.createStage(certification.id, input);
+        const { stage } = target.stage
+          ? await studyPlanApi.updateStage(target.stage.id, input)
+          : await studyPlanApi.createStage(certification.id, input);
+        change = withStage(stage);
       } else {
         const input = { title: text, dueDate: dates.dueDate ?? null };
-        if (target.task) await studyPlanApi.updateTask(target.task.id, input);
-        else await studyPlanApi.createTask(target.stage.id, input);
+        const { task } = target.task
+          ? await studyPlanApi.updateTask(target.task.id, input)
+          : await studyPlanApi.createTask(target.stage.id, input);
+        change = target.task ? withTask(task) : withNewTask(task);
       }
     } finally {
       setSaving(false);
     }
     setEditing((current) => ({ ...current, open: false }));
-    reload();
+    // What was saved shows even if reloading the plan then fails.
+    reload(change);
     toast.success('저장했습니다');
   };
 
@@ -247,8 +266,8 @@ export function StudyPlan({ certification }: { certification: Certification }) {
   };
 
   const setCompleted = async (task: StudyTask, completed: boolean) => {
-    if (checking.includes(task.id)) return;
-    setChecking((current) => [...current, task.id]);
+    if (checking[task.id] !== undefined) return;
+    setChecking((current) => ({ ...current, [task.id]: completed }));
     try {
       const saved = await studyPlanApi.setCompleted(task.id, completed);
       reload(withTask(saved.task));
@@ -256,11 +275,11 @@ export function StudyPlan({ certification }: { certification: Certification }) {
       toast.error(errorText(error, '할 일을 저장하지 못했습니다'));
       reload();
     } finally {
-      setChecking((current) => current.filter((id) => id !== task.id));
+      setChecking(({ [task.id]: _done, ...rest }) => rest);
     }
   };
 
-  const stages = data?.stages ?? [];
+  const stages = withChoices(data?.stages ?? [], checking);
   const allTasks = stages.flatMap((stage) => stage.tasks);
   const { target } = editing;
   const addStage = (
@@ -284,7 +303,7 @@ export function StudyPlan({ certification }: { certification: Certification }) {
           notice={{ kind: 'error', text: errorText(loaded.error, '계획을 불러오지 못했습니다') }}
         />
       ) : null}
-      {loaded.state === 'ok' && stages.length === 0 ? (
+      {data && stages.length === 0 ? (
         <EmptyState
           icon={<ListChecks />}
           title="아직 공부 계획이 없습니다"
@@ -311,7 +330,9 @@ export function StudyPlan({ certification }: { certification: Certification }) {
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 flex-col gap-1">
-                  <h3 className="text-body font-semibold break-keep">{stage.title}</h3>
+                  <h3 className="text-body font-semibold wrap-anywhere break-keep">
+                    {stage.title}
+                  </h3>
                   {periodText(stage) ? (
                     <p className="text-caption text-muted-foreground">{periodText(stage)}</p>
                   ) : null}
@@ -327,7 +348,11 @@ export function StudyPlan({ certification }: { certification: Certification }) {
                   </Button>
                   <ConfirmDialog
                     title="단계를 지울까요?"
-                    description={`'${stage.title}' 단계와 할 일 ${stage.tasks.length}개를 지웁니다. 되돌릴 수 없습니다.`}
+                    description={
+                      <span className="wrap-anywhere break-keep">
+                        {`'${stage.title}' 단계와 할 일 ${stage.tasks.length}개를 지웁니다. 되돌릴 수 없습니다.`}
+                      </span>
+                    }
                     onConfirm={() =>
                       remove(
                         () => studyPlanApi.removeStage(stage.id),
@@ -355,7 +380,7 @@ export function StudyPlan({ certification }: { certification: Certification }) {
                     <TaskRow
                       key={task.id}
                       task={task}
-                      busy={checking.includes(task.id)}
+                      busy={checking[task.id] !== undefined}
                       onCheck={(completed) => void setCompleted(task, completed)}
                       onEdit={(event) => open(event, { kind: 'task', stage, task })}
                       onRemove={() =>
@@ -390,7 +415,7 @@ export function StudyPlan({ certification }: { certification: Certification }) {
         <DialogContent onCloseAutoFocus={focus.restore}>
           <DialogHeader>
             <DialogTitle>{dialogTitle(target)}</DialogTitle>
-            <DialogDescription className="break-keep">
+            <DialogDescription className="wrap-anywhere break-keep">
               {target.kind === 'task' ? target.stage.title : certification.name}
             </DialogDescription>
           </DialogHeader>
@@ -447,7 +472,7 @@ function TaskRow({
       <div className="flex min-w-0 items-start gap-3">
         <Checkbox
           id={id}
-          className="mt-1"
+          className={cn('mt-1', busy && 'opacity-60')}
           checked={done}
           aria-busy={busy || undefined}
           onCheckedChange={(next) => onCheck(next === true)}
@@ -456,7 +481,7 @@ function TaskRow({
           <Label
             htmlFor={id}
             className={cn(
-              'text-body font-normal break-keep',
+              'text-body font-normal wrap-anywhere break-keep',
               done && 'text-muted-foreground line-through',
             )}
           >
@@ -481,7 +506,11 @@ function TaskRow({
         </Button>
         <ConfirmDialog
           title="할 일을 지울까요?"
-          description={`'${task.title}'을 지웁니다. 되돌릴 수 없습니다.`}
+          description={
+            <span className="wrap-anywhere break-keep">
+              {`'${task.title}'을 지웁니다. 되돌릴 수 없습니다.`}
+            </span>
+          }
           onConfirm={onRemove}
           trigger={
             <Button

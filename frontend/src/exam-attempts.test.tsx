@@ -360,7 +360,12 @@ test('the list stays on screen with the reason when reloading it fails', async (
   change('시험일', '2026-05-05');
   fireEvent.click(screen.getByRole('button', { name: '저장' }));
   expect(await screen.findByText('다시 읽지 못했습니다')).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: '2026-03-15 기록 수정' })).toBeInTheDocument();
+  // The saved record shows anyway, newest first.
+  expect(
+    screen
+      .getAllByRole('button', { name: /기록 수정$/ })
+      .map((button) => button.getAttribute('aria-label')),
+  ).toEqual(['2026-05-05 기록 수정', '2026-03-15 기록 수정']);
 });
 
 test('a failed status change keeps the question open and says why', async () => {
@@ -421,4 +426,13 @@ test('a deleted attempt leaves the list even if reloading fails, and focus goes 
   await waitFor(() =>
     expect(screen.getByRole('heading', { level: 2, name: '응시·취득 기록' })).toHaveFocus(),
   );
+});
+
+test('deleting the only attempt still offers adding one when reloading fails', async () => {
+  await openDetail({ attempts: [attempt({ id: 1, score: 800 })], reloadFails: true });
+  fireEvent.click(await screen.findByRole('button', { name: '2026-03-15 기록 삭제' }));
+  const dialog = await screen.findByRole('dialog', { name: '기록을 지울까요?' });
+  fireEvent.click(within(dialog).getByRole('button', { name: '삭제' }));
+  expect(await screen.findByText('다시 읽지 못했습니다')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '기록 추가' })).toBeInTheDocument();
 });

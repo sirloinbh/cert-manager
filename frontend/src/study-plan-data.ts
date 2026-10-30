@@ -39,6 +39,18 @@ export function progress(tasks: StudyTask[]) {
   return { done, total: tasks.length, percent: Math.round((done / tasks.length) * 100) };
 }
 
+/** The plan as the user just chose it: checks still being saved count at once, so progress moves on the click. */
+export function withChoices(stages: StudyStage[], choices: Record<number, boolean>) {
+  return stages.map((stage) => ({
+    ...stage,
+    tasks: stage.tasks.map((task) => {
+      const choice = choices[task.id];
+      if (choice === undefined) return task;
+      return { ...task, completedAt: choice ? (task.completedAt ?? 'saving') : null };
+    }),
+  }));
+}
+
 export const isOverdue = (task: Pick<StudyTask, 'completedAt' | 'daysUntilDue'>) =>
   task.completedAt === null && task.daysUntilDue !== null && task.daysUntilDue < 0;
 

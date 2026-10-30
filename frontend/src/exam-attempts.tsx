@@ -307,15 +307,23 @@ export function ExamAttempts({
   };
 
   const save = async (attempt: ExamAttempt | null, input: ExamAttemptInput) => {
+    let saved: ExamAttempt;
     setSaving(true);
     try {
-      if (attempt) await examAttemptApi.update(certification.id, attempt.id, input);
-      else await examAttemptApi.create(certification.id, input);
+      ({ attempt: saved } = attempt
+        ? await examAttemptApi.update(certification.id, attempt.id, input)
+        : await examAttemptApi.create(certification.id, input));
     } finally {
       setSaving(false);
     }
     setEditing({ open: false, attempt });
-    reload();
+    // What was saved shows even if reloading the list then fails.
+    reload((list) => ({
+      ...list,
+      attempts: [saved, ...list.attempts.filter((item) => item.id !== saved.id)].sort(
+        (a, b) => b.examDate.localeCompare(a.examDate) || b.id - a.id,
+      ),
+    }));
     toast.success('응시 기록을 저장했습니다');
     const newlyPassed = input.outcome === 'passed' && attempt?.outcome !== 'passed';
     if (newlyPassed && certification.status !== 'passed') setAskPassed(true);
@@ -362,7 +370,7 @@ export function ExamAttempts({
           notice={{ kind: 'error', text: errorText(loaded.error, '기록을 불러오지 못했습니다') }}
         />
       ) : null}
-      {loaded.state === 'ok' && attempts.length === 0 ? (
+      {data && attempts.length === 0 ? (
         <EmptyState
           icon={<ClipboardList />}
           title="아직 응시 기록이 없습니다"
