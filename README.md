@@ -40,4 +40,4 @@ Vite http://localhost:5206, API http://localhost:3106/api/health, 호스트 DB �
 
 - [AI 지침](AGENTS.md) · [Claude 지침](CLAUDE.md) · [DB](database/README.md)
 - [변경 기록](docs/changes/README.md) · [일일 기록](docs/daily/README.md) · [다음 작업](docs/next-steps/README.md)
-- [영어 공부 자료 출처 조사](docs/research/english-content-sources.md)
+- [서비스 범위와 데이터 구조](docs/design/scope-and-data-model.md) · [영어 공부 자료 출처 조사](docs/research/english-content-sources.md)
