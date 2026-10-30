@@ -1,11 +1,11 @@
-# 영어 공부 PostgreSQL
+# 자격증 관리 PostgreSQL
 
 PostgreSQL 17. 마이그레이션 원본은 `migrations/NNN_<설명>.sql` 한 곳뿐이다. 빈 Docker 볼륨에서는 최초 실행 시 모든 파일이 이름순으로 자동 적용되고, CI도 모든 파일을 순서대로 적용한다.
 
 기존 DB에는 새 마이그레이션을 컨테이너에 마운트된 파일로 직접 적용한다.
 
 ```powershell
-docker compose exec -T db psql -U english -d english -v ON_ERROR_STOP=1 -f /docker-entrypoint-initdb.d/NNN_<설명>.sql
+docker compose exec -T db psql -U cert -d cert -v ON_ERROR_STOP=1 -f /docker-entrypoint-initdb.d/NNN_<설명>.sql
 ```
 
 `Get-Content … | docker compose exec … psql`처럼 PowerShell 파이프로 넘기지 않는다. Windows PowerShell 5.1은 외부 프로그램으로 ASCII를 보내 한글이 `?`로 깨진다.

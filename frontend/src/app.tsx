@@ -100,7 +100,7 @@ export function App() {
   const health = useHealth();
   return (
     <BrowserRouter>
-      <AppShell appName="영어 공부" nav={nav}>
+      <AppShell appName="자격증 관리" nav={nav}>
         <Routes>
           <Route
             path={pages.overview}

@@ -14,7 +14,7 @@ test('health reports the service and the injected service date when the DB answe
     async (call) => {
       const { status, data } = await call('/api/health');
       assert.equal(status, 200);
-      assert.deepEqual(data, { ok: true, service: 'english-study', today: '2026-10-19' });
+      assert.deepEqual(data, { ok: true, service: 'cert-manager', today: '2026-10-19' });
     },
     { today: () => '2026-10-19' },
   );

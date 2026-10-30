@@ -11,4 +11,4 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
-      - run: docker build -t english-study-backend .
+      - run: docker build -t cert-manager-backend .

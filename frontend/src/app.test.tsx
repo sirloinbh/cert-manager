@@ -24,6 +24,13 @@ test('shows the server date from /api/health on the overview', async () => {
   expect(await screen.findByText('서버 연결됨 · 2026-10-26')).toBeInTheDocument();
 });
 
+test('shows the service name in the header link home', async () => {
+  health({ today: '2026-10-26' });
+  render(<App />);
+  expect(screen.getByRole('link', { name: '자격증 관리' })).toHaveAttribute('href', '/');
+  expect(await screen.findByText('서버 연결됨 · 2026-10-26')).toBeInTheDocument();
+});
+
 test('reports a server error as an alert', async () => {
   health({ error: '데이터베이스에 연결할 수 없습니다' }, 503);
   render(<App />);
