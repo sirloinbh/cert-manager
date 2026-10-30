@@ -22,6 +22,7 @@
 ## 검증
 
 문서만 바뀌어 앱 테스트는 추가하지 않았다.
+
 - 포맷: 이 폴더에 설치된 Prettier(`node node_modules/prettier/bin/prettier.cjs --write`)로 바꾼 Markdown 5개를 맞췄다.
 - 링크 검사: 바뀐 문서 5개의 상대 링크 18개가 모두 있는 파일을 가리킨다.
 - `npm run check` (Node 24.21.0 / npm 11.19.0): 통과. 포맷·lint·타입 통과. 백엔드 테스트 5개 중 4개 통과·1개 건너뜀(`TEST_DATABASE_URL` 미설정, 성공으로 세지 않음), 프런트엔드 52개 통과, 스킬 4개 통과, 빌드 성공.
