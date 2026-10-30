@@ -83,3 +83,8 @@
 - 삭제 뒤 포커스가 `body`로 빠짐 → 절 제목으로 옮겼다.
 
 보완 뒤 브라우저에서 다시 확인했다. 채우기 뒤 포커스는 만료일 칸, 삭제 뒤에는 절 제목이고, 대화상자가 닫힌 뒤 화면이 잠기지 않으며 콘솔 오류·경고가 없다. 삭제 뒤 다시 읽기 실패는 테스트로만 확인했다.
+
+## CodeQL 알림 — 2026-10-30
+
+- CodeQL이 새 API 경로 5개에 `js/missing-rate-limiting` 5건(#8~#12)을 냈다. SQL 쪽 경고는 없었다. CodeQL은 필수 검사가 아니다(필수: `ci / verify`, `ci / docker-build`).
+- 요청 횟수 제한은 `frontend/nginx.conf`의 `limit_req`가 맡는다(중앙 결정 project-standards#291). 사용자 확인을 받아 #8~#12와 main에 열려 있던 같은 종류의 #7(`backend/src/app.ts`)을 "고치지 않음"으로 닫았다.
