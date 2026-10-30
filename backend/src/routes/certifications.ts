@@ -3,29 +3,13 @@ import type { Pool } from 'pg';
 import { z } from 'zod';
 
 import { HttpError, parseId } from '../standard/http.js';
+import { body, calendarDate, shortText, toId } from '../validation.js';
 
 // Certification goals (#30). Columns and rules: docs/design/scope-and-data-model.md section 5.
 
 const categories = ['english', 'dev', 'life'] as const;
 const statuses = ['planned', 'studying', 'registered', 'taken', 'passed', 'failed'] as const;
 const validityKinds = ['months', 'none', 'unknown'] as const;
-
-// A real calendar day as YYYY-MM-DD: 2026-02-30 is rejected, not rolled over to March.
-// Year 0 passes the Date round trip but PostgreSQL rejects it, so the range starts at 1900.
-const calendarDate = z
-  .string({ message: '목표 시험일은 YYYY-MM-DD 형식이어야 합니다' })
-  .regex(/^\d{4}-\d{2}-\d{2}$/, '목표 시험일은 YYYY-MM-DD 형식이어야 합니다')
-  .refine((value) => {
-    const date = new Date(`${value}T00:00:00Z`);
-    return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
-  }, '목표 시험일이 실제 날짜가 아닙니다')
-  .refine((value) => value >= '1900-01-01', '목표 시험일은 1900-01-01 이후여야 합니다');
-
-const shortText = (label: string) =>
-  z
-    .string({ message: `${label}은 문자열이어야 합니다` })
-    .trim()
-    .max(200, `${label}은 200자 이하로 입력해 주세요`);
 
 // PUT replaces the whole goal, so POST and PUT share one input; omitted optional fields take their defaults.
 const certificationInput = z
@@ -51,7 +35,7 @@ const certificationInput = z
         .max(100000, '목표 점수는 100000 이하여야 합니다')
         .nullable()
         .default(null),
-      targetExamDate: calendarDate.nullable().default(null),
+      targetExamDate: calendarDate('목표 시험일').nullable().default(null),
       validityKind: z
         .enum(validityKinds, {
           message: '유효기간 종류는 개월 수, 만료 없음, 모름 중 하나여야 합니다',
@@ -107,17 +91,9 @@ const columns = `id::text AS id, name, category, issuer, status, goal_text AS "g
   target_exam_date - $1::date AS "daysUntilExam",
   validity_kind AS "validityKind", validity_months AS "validityMonths", memo`;
 
-// pg returns bigint as a string; ids stay within 15 digits, so they are exact as numbers.
-function toCertification(row: CertificationRow) {
-  const id = Number(row.id);
-  if (!Number.isSafeInteger(id)) throw new Error(`certification id out of range: ${row.id}`);
-  return { ...row, id };
-}
+const toCertification = (row: CertificationRow) => ({ ...row, id: toId(row.id) });
 
 const notFoundMessage = '자격증 목표를 찾을 수 없습니다';
-
-// Express leaves req.body undefined without a JSON body; parse {} so field messages stay Korean.
-const body = (value: unknown) => value ?? {};
 
 export function registerCertificationRoutes(app: Express, pool: Pool, today: () => string) {
   // Grouped by category in menu order, then the nearest target exam date first; no date goes last.
@@ -158,8 +134,13 @@ export function registerCertificationRoutes(app: Express, pool: Pool, today: () 
   app.put('/api/certifications/:id', async (req, res) => {
     const id = parseId(req.params.id, '자격증 목표');
     const input = certificationInput.parse(body(req.body));
+    // One statement, so a goal that stops expiring and its attempts' expiry dates change together.
     const { rows } = await pool.query<CertificationRow>(
-      `UPDATE certifications SET name = $2, category = $3, issuer = $4, status = $5, goal_text = $6,
+      `WITH cleared AS (
+         UPDATE exam_attempts SET expires_on = NULL, updated_at = now()
+         WHERE certification_id = $12 AND $9::text = 'none' AND expires_on IS NOT NULL
+       )
+       UPDATE certifications SET name = $2, category = $3, issuer = $4, status = $5, goal_text = $6,
          target_score = $7, target_exam_date = $8, validity_kind = $9, validity_months = $10,
          memo = $11, updated_at = now()
        WHERE id = $12
@@ -170,7 +151,7 @@ export function registerCertificationRoutes(app: Express, pool: Pool, today: () 
     res.json({ certification: toCertification(rows[0]) });
   });
 
-  // Exam attempts and study plans (#32, #33) will cascade with the goal.
+  // Exam attempts (#32) go with the goal; study plans (#33) will too.
   app.delete('/api/certifications/:id', async (req, res) => {
     const id = parseId(req.params.id, '자격증 목표');
     const { rowCount } = await pool.query('DELETE FROM certifications WHERE id = $1', [id]);

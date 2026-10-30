@@ -2,10 +2,10 @@ import { Award, BookOpenText, LayoutDashboard, Music, Settings2 } from 'lucide-r
 import { type ReactNode, useEffect, useState } from 'react';
 import { BrowserRouter, generatePath, Navigate, Route, Routes } from 'react-router';
 
+import type { CertificationPaths } from './certification-data';
 import {
   CertificationDetail,
   CertificationList,
-  type CertificationPaths,
   EditCertification,
   NewCertification,
   UpcomingExams,
@@ -13,6 +13,7 @@ import {
 import { AppShell, type NavItem } from './components/layout/app-shell';
 import { EmptyState } from './components/ui/empty-state';
 import { Toaster } from './components/ui/sonner';
+import { ExpiringCertifications } from './exam-attempts';
 import { type Health, healthText } from './health';
 
 // Every page URL lives here (central docs/directory-rules.md, docs/design/scope-and-data-model.md section 3).
@@ -112,6 +113,7 @@ export function App() {
               >
                 <div className="grid gap-4 lg:grid-cols-2">
                   <UpcomingExams paths={certificationPaths} />
+                  <ExpiringCertifications paths={certificationPaths} />
                 </div>
               </Page>
             }

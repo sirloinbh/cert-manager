@@ -6,6 +6,14 @@ export const categories = ['english', 'dev', 'life'] as const;
 export const statuses = ['planned', 'studying', 'registered', 'taken', 'passed', 'failed'] as const;
 export const validityKinds = ['months', 'none', 'unknown'] as const;
 
+/** Page addresses for the goal screens; the routes themselves live in app.tsx `pages`. */
+export type CertificationPaths = {
+  list: string;
+  create: string;
+  detail: (id: number) => string;
+  edit: (id: number) => string;
+};
+
 export type Category = (typeof categories)[number];
 export type Status = (typeof statuses)[number];
 export type ValidityKind = (typeof validityKinds)[number];

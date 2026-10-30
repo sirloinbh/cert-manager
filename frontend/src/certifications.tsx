@@ -1,5 +1,5 @@
 import { ArrowLeft, Award, Pencil, Plus, Trash2 } from 'lucide-react';
-import { type FormEvent, type ReactNode, useEffect, useId, useState } from 'react';
+import { type FormEvent, type ReactNode, useId, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 
 import {
@@ -8,6 +8,7 @@ import {
   type Certification,
   certificationApi,
   type CertificationInput,
+  type CertificationPaths,
   examCountdown,
   groupByCategory,
   statuses,
@@ -28,38 +29,15 @@ import { Notice } from './components/ui/notice';
 import { SkeletonList } from './components/ui/skeleton';
 import { toast } from './components/ui/sonner';
 import { Spinner } from './components/ui/spinner';
+import { ExamAttempts } from './exam-attempts';
+import { controlClass, toNumber } from './form-fields';
 import { RequestError } from './lib/api';
 import { errorText, useNotice } from './lib/use-notice';
 import { cn } from './lib/utils';
+import { useLoad } from './use-load';
 
 // Screens for certification goals (#30). API calls and display rules are in certification-data.ts;
 // page addresses come from app.tsx `pages`.
-
-export type CertificationPaths = {
-  list: string;
-  create: string;
-  detail: (id: number) => string;
-  edit: (id: number) => string;
-};
-
-type Loaded<T> =
-  { state: 'loading' } | { state: 'ok'; data: T } | { state: 'error'; error: unknown };
-
-// Loads once per key. The result remembers its key, so a new key shows loading without resetting state in the effect.
-function useLoad<T>(key: string, load: (key: string) => Promise<T>): Loaded<T> {
-  const [result, setResult] = useState<{ key: string; value: Loaded<T> }>();
-  useEffect(() => {
-    let active = true;
-    load(key).then(
-      (data) => active && setResult({ key, value: { state: 'ok', data } }),
-      (error: unknown) => active && setResult({ key, value: { state: 'error', error } }),
-    );
-    return () => {
-      active = false;
-    };
-  }, [key, load]);
-  return result?.key === key ? result.value : { state: 'loading' };
-}
 
 const loadList = () => certificationApi.list();
 const loadOne = (id: string) => certificationApi.get(Number(id));
@@ -304,6 +282,8 @@ export function CertificationDetail({ paths }: { paths: CertificationPaths }) {
   const { id = '' } = useParams();
   const loaded = useLoad(id, loadOne);
   const navigate = useNavigate();
+  // The goal as last saved from this page, so the status changes without reloading the attempts below.
+  const [changed, setChanged] = useState<Certification>();
 
   if (loaded.state !== 'ok') {
     return (
@@ -319,7 +299,21 @@ export function CertificationDetail({ paths }: { paths: CertificationPaths }) {
     );
   }
 
-  const item = loaded.data.certification;
+  const item = changed?.id === loaded.data.certification.id ? changed : loaded.data.certification;
+  const markPassed = async () => {
+    try {
+      const { certification } = await certificationApi.update(item.id, {
+        ...toInput(toForm(item)),
+        status: 'passed',
+      });
+      setChanged(certification);
+      toast.success('목표 상태를 합격으로 바꿨습니다');
+    } catch (error) {
+      // The open dialog covers the page, so the reason goes in a toast above it.
+      toast.error(errorText(error, '목표 상태를 바꾸지 못했습니다'));
+      throw error;
+    }
+  };
   const remove = async () => {
     try {
       await certificationApi.remove(item.id);
@@ -394,6 +388,7 @@ export function CertificationDetail({ paths }: { paths: CertificationPaths }) {
           value={item.memo || <span className="text-muted-foreground">없음</span>}
         />
       </dl>
+      <ExamAttempts key={item.id} certification={item} onMarkPassed={markPassed} />
     </section>
   );
 }
@@ -439,14 +434,6 @@ function toForm(item: Certification): FormState {
   };
 }
 
-// Empty number fields are "not decided" (null). Text that is not a number goes as it is so the server explains.
-function toNumber(value: string) {
-  const text = value.trim();
-  if (text === '') return null;
-  const number = Number(text);
-  return Number.isNaN(number) ? text : number;
-}
-
 function toInput(form: FormState): CertificationInput {
   return {
     ...form,
@@ -455,9 +442,6 @@ function toInput(form: FormState): CertificationInput {
     validityMonths: form.validityKind === 'months' ? toNumber(form.validityMonths) : null,
   };
 }
-
-const controlClass =
-  'flex w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none pointer-coarse:min-h-11 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-body-sm dark:bg-input/30';
 
 function FormFields({
   initial,
