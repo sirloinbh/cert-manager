@@ -6,14 +6,14 @@
 #   notify.sh ping <check> ok|fail [message]   one signal; the message is the ping body
 #   notify.sh health                           check /api/health and ping the health check
 # Checks and their server .env keys (the ping URL holds a secret UUID; it is never printed):
-#   health  HEALTHCHECK_URL_HEALTH    every 5 minutes, english-health.timer
+#   health  HEALTHCHECK_URL_HEALTH    every 5 minutes, cert-health.timer
 #   deploy  HEALTHCHECK_URL_DEPLOY    every autodeploy run (2 minutes)
 #   backup  HEALTHCHECK_URL_BACKUP    the nightly dump
 #   restore HEALTHCHECK_URL_RESTORE   the weekly restore check
 #   report  HEALTHCHECK_URL_REPORT    the daily server report
 # A check without a URL in .env is skipped. A failed ping never fails the caller.
 set -uo pipefail
-cd /opt/english-study
+cd /opt/cert-manager
 
 env_value() { sed -n "s/^$1=//p" .env 2>/dev/null | tail -n 1 | tr -d "\"'\r"; }
 

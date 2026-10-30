@@ -8,7 +8,7 @@
 # standard output only, for the caller to capture.
 # Exit 3: no key pair in either file. Any other failure exits non-zero without printing the value.
 set -euo pipefail
-cd /opt/english-study
+cd /opt/cert-manager
 name=${1:?usage: ssm-get.sh <parameter name>}
 if [[ ! "$name" =~ ^/[A-Za-z0-9/_.-]+$ ]]; then
   echo "invalid parameter name: $name" >&2

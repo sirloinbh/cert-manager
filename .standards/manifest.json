@@ -1,7 +1,7 @@
 {
-  "centralSha": "f5bcc28609146d357c3af225bedc3f77868c27aa",
+  "centralSha": "83b6d0638fadef6ec0b4a874dc6daa385e0f41d7",
   "profile": "app",
-  "project": "english-study",
+  "project": "cert-manager",
   "files": {
     ".claude/hooks/block-package-installs.mjs": {
       "mode": "full",
@@ -25,7 +25,7 @@
     },
     ".claude/skills/std-foundation/SKILL.md": {
       "mode": "full",
-      "sha256": "b4197caa7358763a69d19e60d1b2e9aa2ba11d079ce4294e9bcb4b0896b5271f",
+      "sha256": "1f0e531b2a980cb5bdd7d2903c07ce4a7ccecb871171ac91fd70436d6879f50f",
       "source": "templates/app/skills/std-foundation/SKILL.md"
     },
     ".claude/skills/std-git-writing/SKILL.md": {
@@ -35,12 +35,12 @@
     },
     ".claude/skills/std-implementation/SKILL.md": {
       "mode": "full",
-      "sha256": "ec703aa400ebcd49f2ecdd6a84bded52809ae3c294369f9b83ef908c333475a2",
+      "sha256": "cc90de600034bfcda55b79309e5773dfe04891909131c27e838f805c01ae9c85",
       "source": "templates/common/skills/std-implementation/SKILL.md"
     },
     ".claude/skills/std-testing/SKILL.md": {
       "mode": "full",
-      "sha256": "059197ade3292add327bac2a04c987af79a91af7759cd4073d0f7b8906ed8fbb",
+      "sha256": "572ea36c270a7bc19c935c52a2936ab0665bfcc2612a90bdc9efec20bf9f3c97",
       "source": "templates/app/skills/std-testing/SKILL.md"
     },
     ".codex/hooks.json": {
@@ -80,7 +80,7 @@
     },
     ".github/workflows/ci.yml": {
       "mode": "full",
-      "sha256": "d1feb6e247ee2e6e1caa76b9a05a8e864ebbb57e005f8b50d4b648d9e7cfeb5e",
+      "sha256": "79a5d431ef058f1528b9369bfe3c441252af2b3b1a611dd735a16222ec453018",
       "source": "templates/app/.github/workflows/ci.yml.tmpl"
     },
     ".gitignore": {
@@ -165,7 +165,7 @@
     },
     "AGENTS.md": {
       "mode": "full",
-      "sha256": "9a20776154b133b84e72fde54fa38c8366754c03c06bb095f408c24c5c10f8f7",
+      "sha256": "2a2fe38a646fa1d45c862182b345dad9ecf95c8d882ef1289935d94e910d8288",
       "source": "templates/app/AGENTS.md.tmpl"
     },
     "backend/.npmrc": {
@@ -213,92 +213,92 @@
     },
     "deploy/autodeploy.service": {
       "mode": "full",
-      "sha256": "8644b1ad9d19747bccf03d7ac9ffffaf30d344b89849ec6b7a57fb496ceceb9d",
+      "sha256": "c4a8a92d415d26193621ab5ac7cb6ed258f918008159d428ee61c9e5e675007a",
       "source": "templates/app/deploy/autodeploy.service.tmpl"
     },
     "deploy/autodeploy.sh": {
       "mode": "full",
-      "sha256": "9b001b027a5cf6070045fc4c6488646b67c59a791ea12b1d718e44d0a36f4a4a",
+      "sha256": "5b26cbb1b1a69e6fa9e0e74699e0f8b05ef590e5b58300a60f2c48f2a0fbba24",
       "source": "templates/app/deploy/autodeploy.sh.tmpl"
     },
     "deploy/autodeploy.timer": {
       "mode": "full",
-      "sha256": "e1586c72f9e07f0237fc4904de07411b1f70e8c639ff6ac7dda8f34f244cc3ae",
+      "sha256": "80ee3ab91d79ef02c13fbb52160f736b224b3a0897c2735849851b61b1730296",
       "source": "templates/app/deploy/autodeploy.timer.tmpl"
     },
     "deploy/backup.service": {
       "mode": "full",
-      "sha256": "baa674cb6fbaa1eedd352cf8e02dade7181ec6be5a635cf14c3fdffe1ec6b14c",
+      "sha256": "4fce4c9e08ba30a7ea286af30bb041a44afff96b995a1fe83a8f34f2a3a8593c",
       "source": "templates/app/deploy/backup.service.tmpl"
     },
     "deploy/backup.sh": {
       "mode": "full",
-      "sha256": "7b8eeade7a1d1a6a910846bf1a2030e3dcd081495d38581f4fdea9bc2954557f",
+      "sha256": "3759f12d148bcd0762b316eedb386efb3d842bd15c3bb160ac69623fbd5ef757",
       "source": "templates/app/deploy/backup.sh.tmpl"
     },
     "deploy/backup.timer": {
       "mode": "full",
-      "sha256": "45d17bc8492899c03d5baf3416104c26c05628e49f64959e3e121f1897379c54",
+      "sha256": "cd336db730bb7a0384587529c8d7017e050117a6d4eaef58e80dcc91fad1ee28",
       "source": "templates/app/deploy/backup.timer.tmpl"
     },
     "deploy/health.service": {
       "mode": "full",
-      "sha256": "4a99a10cb258820c779775dfa8785c9bb50d3e970427fbfe0d6b55d3ff4088bd",
+      "sha256": "cd1d6a926cbf5b4ff65a62a90b8404e033334b96813ca195a15a6f4dd7d35153",
       "source": "templates/app/deploy/health.service.tmpl"
     },
     "deploy/health.timer": {
       "mode": "full",
-      "sha256": "14802418258e5266dc99eaab06ae3a9c629f4aa61dee2d3aae773d26311b6a95",
+      "sha256": "9b8a5add95efbe3dc6a7ec053758c80e752ca112b121dd45b67e4253f3589044",
       "source": "templates/app/deploy/health.timer.tmpl"
     },
     "deploy/install-autodeploy.sh": {
       "mode": "full",
-      "sha256": "1b24629566746b33aa500dd6395c5aa2b4cf3f29a390d83d93f5e390ec62a2d6",
+      "sha256": "ef31554b4a9199c4b6fe635b274848b17b70f7e7c5cedae5758d73e603e752b2",
       "source": "templates/app/deploy/install-autodeploy.sh.tmpl"
     },
     "deploy/install-backup.sh": {
       "mode": "full",
-      "sha256": "96444f385af1b32a1a2e87ab286382cba786698439e5b7bb5f5f5bafd81d71fc",
+      "sha256": "0c8ba0ea000f6ee1869b59aeebde153ade49c9cd5e937ed7b7784ebf274c32b3",
       "source": "templates/app/deploy/install-backup.sh.tmpl"
     },
     "deploy/notify.sh": {
       "mode": "full",
-      "sha256": "e5ff16616379ab5ec970ba613c15ef882ef64be9f9ebf832cd565dfc3e2a8c12",
+      "sha256": "db3888460ac8b34a612cefb0bf69ec9ee52ed9a6ec5acddcdb740a59146e711d",
       "source": "templates/app/deploy/notify.sh.tmpl"
     },
     "deploy/remote-deploy.sh": {
       "mode": "full",
-      "sha256": "596740808f0cf328a68618a69111f8f6367f24fa41769943f5abd3024d156d14",
+      "sha256": "04d64f5addeef353b9b863d7ab8309c310cb4c55ec06037cd3106424c2570c08",
       "source": "templates/app/deploy/remote-deploy.sh.tmpl"
     },
     "deploy/report.service": {
       "mode": "full",
-      "sha256": "bed068bc6e999c37bed6e082558f425bf2d3de63e5463d120f3e9baa9c2e6aea",
+      "sha256": "a7b7065a043143b37f414c7c71b738e40225233aea71d34bcb6c704747d2dbfa",
       "source": "templates/app/deploy/report.service.tmpl"
     },
     "deploy/report.sh": {
       "mode": "full",
-      "sha256": "d50bb764ed13dc8e4cbbc370597df2afae29672d55b20d4d988ede4b078245da",
+      "sha256": "a962a70de1d1037f8343a430fe30c47f87e3d3acdd69df81064a0fa1ad91659a",
       "source": "templates/app/deploy/report.sh.tmpl"
     },
     "deploy/report.timer": {
       "mode": "full",
-      "sha256": "1dad9a47889630239fa3da5f882deb12a1fbca7673517edd86dc16b8cc16187c",
+      "sha256": "b3e311c6cb14729b3d778d5bd03396e0c26c08b65b551daaf848cf720fc5a7d1",
       "source": "templates/app/deploy/report.timer.tmpl"
     },
     "deploy/restore-check.service": {
       "mode": "full",
-      "sha256": "554d274fff3e199253e197df61346a04c80296a844b358ab21273c33507662b9",
+      "sha256": "5db29b65b471b3a01932f2c0a84e94c0068e0a226f23712c4374c98ee24cadd4",
       "source": "templates/app/deploy/restore-check.service.tmpl"
     },
     "deploy/restore-check.timer": {
       "mode": "full",
-      "sha256": "f236c631c6f6c180cbfa0b2bc7e162b4d134adf9d5d790d7606ef22c6f06be8f",
+      "sha256": "a8a41a3452e28afdd3955141a3b2a6d1d23c96d9d042abbc0ffe3b5674834ffd",
       "source": "templates/app/deploy/restore-check.timer.tmpl"
     },
     "deploy/ssm-get.sh": {
       "mode": "full",
-      "sha256": "891a284904cc36ed48ae8cb4b0986dcd7a3a0cd2329c7137bfa92a2e960ae5c4",
+      "sha256": "8085c43d87ea78c76e8497941556d8eda0c8d3d0647ef4dd8d058666c4226d2b",
       "source": "templates/app/deploy/ssm-get.sh.tmpl"
     },
     "eslint.config.mjs": {
@@ -356,12 +356,12 @@
     },
     "frontend/public/manifest.webmanifest": {
       "mode": "full",
-      "sha256": "f29d838994f9220097fad250bdc295406a0688579d823a79bf48dd217757c203",
+      "sha256": "802e4679074af4ffe98194e67d4af1bc63d4350a9ce10d73522d938be57c48c0",
       "source": "templates/app/frontend/public/manifest.webmanifest.tmpl"
     },
     "frontend/public/offline.html": {
       "mode": "full",
-      "sha256": "debcfa23f47cb85fadf31f415a9285aa27ed2b59978dd5b2a5b9b0a1c1c738ba",
+      "sha256": "853395d8ba8060ba0d94116c352f23d29bf8f7d3e793041cd5130c7d6cac174c",
       "source": "templates/app/frontend/public/offline.html"
     },
     "frontend/public/sw.js": {
@@ -637,7 +637,7 @@
     },
     "scripts/backup.ps1": {
       "mode": "full",
-      "sha256": "2f765a30cc5e0f0142c59c8f961a58654f49863c8ddf38e0a0d323457792c3b9",
+      "sha256": "1033ed22ce700f2cb482077abd10bb1d8b8c98425600b1b316fbde65d7ee1f58",
       "source": "templates/app/scripts/backup.ps1"
     },
     "scripts/claude-skills.mjs": {
@@ -652,7 +652,7 @@
     },
     "scripts/push-repositories.ps1": {
       "mode": "full",
-      "sha256": "e5d70abdaac3fa678a6eb333fe0b9b7d1a187ac682aa018947b752fba69d1702",
+      "sha256": "4989a017b2a54be0b53c7fd70ee613b730f1f67e76c4f15fddd4884b1df896bd",
       "source": "templates/app/scripts/push-repositories.ps1"
     },
     "skills/std-backlog/SKILL.md": {
@@ -667,7 +667,7 @@
     },
     "skills/std-foundation/SKILL.md": {
       "mode": "full",
-      "sha256": "b4197caa7358763a69d19e60d1b2e9aa2ba11d079ce4294e9bcb4b0896b5271f",
+      "sha256": "1f0e531b2a980cb5bdd7d2903c07ce4a7ccecb871171ac91fd70436d6879f50f",
       "source": "templates/app/skills/std-foundation/SKILL.md"
     },
     "skills/std-git-writing/SKILL.md": {
@@ -677,12 +677,12 @@
     },
     "skills/std-implementation/SKILL.md": {
       "mode": "full",
-      "sha256": "ec703aa400ebcd49f2ecdd6a84bded52809ae3c294369f9b83ef908c333475a2",
+      "sha256": "cc90de600034bfcda55b79309e5773dfe04891909131c27e838f805c01ae9c85",
       "source": "templates/common/skills/std-implementation/SKILL.md"
     },
     "skills/std-testing/SKILL.md": {
       "mode": "full",
-      "sha256": "059197ade3292add327bac2a04c987af79a91af7759cd4073d0f7b8906ed8fbb",
+      "sha256": "572ea36c270a7bc19c935c52a2936ab0665bfcc2612a90bdc9efec20bf9f3c97",
       "source": "templates/app/skills/std-testing/SKILL.md"
     }
   },
@@ -702,8 +702,8 @@
       "db": 15406
     },
     "db": {
-      "name": "english",
-      "testName": "english_test"
+      "name": "cert",
+      "testName": "cert_test"
     }
   }
 }

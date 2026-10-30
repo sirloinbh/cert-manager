@@ -5,7 +5,7 @@ description: Write or update behavior-focused tests with implementations and fix
 
 <!-- 중앙 관리 파일. 수정은 sirloinbh/project-standards의 templates/app/skills/std-testing/에서 -->
 
-# 영어 공부 테스트 작성과 실행
+# 자격증 관리 테스트 작성과 실행
 
 프로젝트의 `AGENTS.md`, `AGENTS.project.md`와 [std-implementation](../std-implementation/SKILL.md) 절차를 함께 따른다. 이 스킬은 테스트 작성·실행 기준이며, 이슈·브랜치·docs·PR 절차와 병합 정책을 바꾸지 않는다. 프로젝트에 설치된 테스트 도구와 위치는 `AGENTS.project.md`에 있다.
 
@@ -17,7 +17,7 @@ description: Write or update behavior-focused tests with implementations and fix
 - 내부 구현을 그대로 반복하는 테스트보다 사용자에게 보이는 결과와 도메인 규칙을 검증한다. 정상 경로와, 변경에 관련된 입력 오류·경계·실패 경로를 고른다.
 - 업무 로직은 단위, API·DB 저장·트랜잭션은 통합, 화면 입력·저장 흐름은 컴포넌트 또는 브라우저 테스트를 고른다. 모든 변경에 모든 종류를 추가하지 않는다.
 - 현재 설치된 테스트 도구와 명령을 확인한다. 아직 도입하지 않은 도구(Vitest, Playwright 등)를 쓴 것처럼 보고하지 않는다.
-- 테스트 데이터는 운영·사용자 데이터와 분리한다. 테스트 DB는 `english_test`처럼 전용 DB를 쓴다. 시간·날짜·무작위 값에 의존하는 검사는 실행 환경이 바뀌어도 같은 의미를 검증하도록 쓴다.
+- 테스트 데이터는 운영·사용자 데이터와 분리한다. 테스트 DB는 `cert_test`처럼 전용 DB를 쓴다. 시간·날짜·무작위 값에 의존하는 검사는 실행 환경이 바뀌어도 같은 의미를 검증하도록 쓴다.
 
 ## 커밋 전
 
