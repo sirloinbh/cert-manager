@@ -78,10 +78,12 @@ export const reachedGoal = (score: number | null, targetScore: number | null) =>
 /**
  * The exam date plus some months, clamped to the month's last day like PostgreSQL's date + interval
  * (2024-02-29 + 24 months = 2026-02-28). The last valid day is that same date, not the day before.
+ * Empty when the result is past what the API accepts; a date input can hold a year beyond 9999 while typing.
  */
 export function addMonths(date: string, months: number) {
   const [year = 0, month = 1, day = 1] = date.split('-').map(Number);
   const target = new Date(Date.UTC(year, month - 1 + months, 1));
+  if (Number.isNaN(target.getTime()) || target.getUTCFullYear() > 9999) return '';
   const lastDay = new Date(
     Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0),
   ).getUTCDate();

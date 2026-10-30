@@ -93,3 +93,11 @@ test('the dashboard keeps expired and expiring goals, the earliest date first', 
   ];
   expect(expiringSoon(list).map((item) => item.id)).toEqual([2, 1, 6]);
 });
+
+test.each([
+  ['9999-12-31', 1],
+  ['20266-03-15', 24],
+  ['275760-01-01', 24],
+])('%s plus %i months has no date the API accepts', (date, months) => {
+  expect(addMonths(date, months)).toBe('');
+});

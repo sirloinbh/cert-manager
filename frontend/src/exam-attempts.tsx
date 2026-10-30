@@ -1,5 +1,5 @@
 import { ClipboardList, Pencil, Plus, Trash2 } from 'lucide-react';
-import { type FormEvent, useId, useState } from 'react';
+import { type FormEvent, type MouseEvent, useId, useRef, useState } from 'react';
 import { Link } from 'react-router';
 
 import type { Certification, CertificationPaths } from './certification-data';
@@ -87,6 +87,9 @@ function resultText(attempt: ExamAttempt) {
   return [score, attempt.grade ?? ''].filter(Boolean).join(' · ');
 }
 
+// The API takes four-digit years only; the browser stops a later date before it is sent.
+const lastDate = '9999-12-31';
+
 type FormState = {
   examDate: string;
   outcome: Outcome;
@@ -156,6 +159,7 @@ function AttemptForm({
             id={`${id}-date`}
             type="date"
             required
+            max={lastDate}
             value={form.examDate}
             onChange={(e) => set('examDate')(e.target.value)}
           />
@@ -215,6 +219,7 @@ function AttemptForm({
             type="date"
             className="sm:max-w-60"
             min={form.examDate || undefined}
+            max={lastDate}
             value={expiresOn}
             onChange={(e) => {
               setExpiryEdited(true);
@@ -225,8 +230,19 @@ function AttemptForm({
           <p id={`${id}-expires-hint`} className="text-caption break-keep text-muted-foreground">
             {months === null
               ? '유효기간을 정하지 않은 목표입니다. 만료일을 모르면 비워 둡니다.'
-              : `시험일에서 ${months}개월 뒤로 채웁니다. 고칠 수 있고, 비우면 "만료일 모름"으로 저장합니다.`}
+              : '비우면 "만료일 모름"으로 저장합니다.'}
           </p>
+          {prefilled !== '' && expiresOn !== prefilled ? (
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
+              className="h-auto w-fit justify-start p-0 text-left break-keep whitespace-normal"
+              onClick={() => setExpiryEdited(false)}
+            >
+              시험일에서 {months}개월 뒤({prefilled})로 채우기
+            </Button>
+          ) : null}
         </div>
       ) : null}
       <div className="flex flex-col gap-2">
@@ -273,12 +289,28 @@ export function ExamAttempts({
     open: false,
     attempt: null,
   });
+  const [saving, setSaving] = useState(false);
   const [askPassed, setAskPassed] = useState(false);
   const titleId = useId();
+  // The dialog has no trigger of its own, so it is told where focus goes back to.
+  const opener = useRef<HTMLElement>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const openForm = (event: MouseEvent<HTMLElement>, attempt: ExamAttempt | null) => {
+    opener.current = event.currentTarget;
+    setEditing({ open: true, attempt });
+  };
+  // The last list stays on screen while a change reloads it, and when that reload fails.
+  const [shown, setShown] = useState<{ attempts: ExamAttempt[] }>();
+  if (loaded.state === 'ok' && loaded.data !== shown) setShown(loaded.data);
 
   const save = async (attempt: ExamAttempt | null, input: ExamAttemptInput) => {
-    if (attempt) await examAttemptApi.update(certification.id, attempt.id, input);
-    else await examAttemptApi.create(certification.id, input);
+    setSaving(true);
+    try {
+      if (attempt) await examAttemptApi.update(certification.id, attempt.id, input);
+      else await examAttemptApi.create(certification.id, input);
+    } finally {
+      setSaving(false);
+    }
     setEditing({ open: false, attempt });
     setVersion((current) => current + 1);
     toast.success('응시 기록을 저장했습니다');
@@ -301,21 +333,23 @@ export function ExamAttempts({
   };
 
   const addButton = (
-    <Button variant="outline" onClick={() => setEditing({ open: true, attempt: null })}>
+    <Button variant="outline" onClick={(event) => openForm(event, null)}>
       <Plus aria-hidden />
       기록 추가
     </Button>
   );
-  const attempts = loaded.state === 'ok' ? loaded.data.attempts : [];
+  const attempts = (loaded.state === 'ok' ? loaded.data : shown)?.attempts ?? [];
   const current = currentAttempt(attempts);
 
   return (
     <section aria-labelledby={titleId} className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id={titleId}>응시·취득 기록</h2>
+        <h2 id={titleId} ref={heading} tabIndex={-1} className="outline-none">
+          응시·취득 기록
+        </h2>
         {attempts.length > 0 ? addButton : null}
       </div>
-      {loaded.state === 'loading' ? <SkeletonList rows={2} /> : null}
+      {loaded.state === 'loading' && !shown ? <SkeletonList rows={2} /> : null}
       {loaded.state === 'error' ? (
         <Notice
           notice={{ kind: 'error', text: errorText(loaded.error, '기록을 불러오지 못했습니다') }}
@@ -353,7 +387,7 @@ export function ExamAttempts({
                       variant="ghost"
                       size="icon"
                       aria-label={`${attempt.examDate} 기록 수정`}
-                      onClick={() => setEditing({ open: true, attempt })}
+                      onClick={(event) => openForm(event, attempt)}
                     >
                       <Pencil aria-hidden />
                     </Button>
@@ -400,9 +434,16 @@ export function ExamAttempts({
       ) : null}
       <Dialog
         open={editing.open}
-        onOpenChange={(open) => setEditing((current) => ({ ...current, open }))}
+        // Closing during a save would lose its error and invite a duplicate.
+        onOpenChange={(open) => !saving && setEditing((current) => ({ ...current, open }))}
       >
-        <DialogContent>
+        <DialogContent
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            // A saved first record replaces the button that opened the form.
+            (opener.current?.isConnected ? opener.current : heading.current)?.focus();
+          }}
+        >
           <DialogHeader>
             <DialogTitle>{editing.attempt ? '응시 기록 수정' : '응시 기록 추가'}</DialogTitle>
             <DialogDescription className="break-keep">{certification.name}</DialogDescription>

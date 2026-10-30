@@ -43,11 +43,17 @@ function fakeApi(
     attempts?: ExamAttempt[];
     latest?: LatestAttempt[];
     createFails?: string;
+    /** Answers the create request only once this settles. */
+    createHold?: Promise<unknown>;
+    goalUpdateFails?: string;
+    /** Answers the attempt list once, then fails. */
+    reloadFails?: boolean;
   } = {},
 ) {
   let goal = options.goal ?? toeic;
   let attempts = options.attempts ?? [];
   let nextId = 100;
+  let listed = 0;
   const sent: Sent[] = [];
   const reply = (status: number, body?: object) =>
     Promise.resolve(new Response(body === undefined ? null : JSON.stringify(body), { status }));
@@ -64,16 +70,25 @@ function fakeApi(
         return reply(200, { today, attempts: options.latest ?? [] });
       if (path === '/api/certifications') return reply(200, { today, certifications: [goal] });
       if (path === '/api/certifications/1') {
+        if (method === 'PUT' && options.goalUpdateFails)
+          return reply(500, { error: options.goalUpdateFails });
         if (method === 'PUT') goal = { ...goal, ...(body as Partial<Certification>) };
         return reply(200, { today, certification: goal });
       }
-      if (path === '/api/certifications/1/attempts' && method === 'GET')
+      if (path === '/api/certifications/1/attempts' && method === 'GET') {
+        listed += 1;
+        if (options.reloadFails && listed > 1) return reply(500, { error: '다시 읽지 못했습니다' });
         return reply(200, { today, attempts });
+      }
       if (path === '/api/certifications/1/attempts' && method === 'POST') {
-        if (options.createFails) return reply(400, { error: options.createFails });
-        const created = attempt({ ...(body as Partial<ExamAttempt>), id: nextId++ });
-        attempts = [created, ...attempts];
-        return reply(201, { attempt: created });
+        const created = async () => {
+          await options.createHold;
+          if (options.createFails) return reply(400, { error: options.createFails });
+          const saved = attempt({ ...(body as Partial<ExamAttempt>), id: nextId++ });
+          attempts = [saved, ...attempts];
+          return reply(201, { attempt: saved });
+        };
+        return created();
       }
       const id = Number(/\/attempts\/(\d+)$/.exec(path)?.[1]);
       if (method === 'PUT') {
@@ -293,4 +308,94 @@ test('the dashboard card says so when nothing is close to expiry', async () => {
   window.history.pushState({}, '', '/');
   render(<App />);
   expect(await screen.findByText(/만료가 가까운 자격증이 없습니다/)).toBeInTheDocument();
+});
+
+test('a save in progress keeps the dialog open, so its error is not lost', async () => {
+  let release = () => {};
+  const createHold = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await openDetail({ createHold, createFails: '서버가 거절했습니다' });
+  fireEvent.click(await screen.findByRole('button', { name: '기록 추가' }));
+  change('시험일', '2026-03-15');
+  fireEvent.click(screen.getByRole('button', { name: '저장' }));
+  const dialog = screen.getByRole('dialog', { name: '응시 기록 추가' });
+  fireEvent.keyDown(dialog, { key: 'Escape' });
+  fireEvent.click(within(dialog).getByRole('button', { name: '닫기' }));
+  expect(screen.getByRole('dialog', { name: '응시 기록 추가' })).toBeInTheDocument();
+
+  release();
+  expect(await screen.findByRole('alert')).toHaveTextContent('서버가 거절했습니다');
+  // Once the save has finished, the dialog closes normally again.
+  fireEvent.keyDown(screen.getByRole('dialog', { name: '응시 기록 추가' }), { key: 'Escape' });
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+});
+
+test('closing the form returns focus to the button that opened it', async () => {
+  await openDetail({ attempts: [attempt({ id: 1, score: 800 })] });
+  const edit = await screen.findByRole('button', { name: '2026-03-15 기록 수정' });
+  edit.focus();
+  fireEvent.click(edit);
+  fireEvent.click(await screen.findByRole('button', { name: '취소' }));
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  await waitFor(() => expect(edit).toHaveFocus());
+});
+
+test('focus moves to the heading when the opening button is gone after the first record', async () => {
+  await openDetail();
+  fireEvent.click(await screen.findByRole('button', { name: '기록 추가' }));
+  change('시험일', '2026-03-15');
+  fireEvent.click(screen.getByRole('button', { name: '저장' }));
+  await screen.findByText('2026-03-15');
+  await waitFor(() =>
+    expect(screen.getByRole('heading', { level: 2, name: '응시·취득 기록' })).toHaveFocus(),
+  );
+});
+
+test('the list stays on screen with the reason when reloading it fails', async () => {
+  await openDetail({ attempts: [attempt({ id: 1, score: 800 })], reloadFails: true });
+  fireEvent.click(await screen.findByRole('button', { name: '기록 추가' }));
+  change('시험일', '2026-05-05');
+  fireEvent.click(screen.getByRole('button', { name: '저장' }));
+  expect(await screen.findByText('다시 읽지 못했습니다')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '2026-03-15 기록 수정' })).toBeInTheDocument();
+});
+
+test('a failed status change keeps the question open and says why', async () => {
+  await openDetail({ goalUpdateFails: '목표를 저장하지 못했습니다' });
+  fireEvent.click(await screen.findByRole('button', { name: '기록 추가' }));
+  change('시험일', '2026-03-15');
+  change('결과', 'passed');
+  fireEvent.click(screen.getByRole('button', { name: '저장' }));
+  const dialog = await screen.findByRole('dialog', { name: '목표 상태를 합격으로 바꿀까요?' });
+  fireEvent.click(within(dialog).getByRole('button', { name: '바꾸기' }));
+  expect(await screen.findByText('목표를 저장하지 못했습니다')).toBeInTheDocument();
+  expect(
+    screen.getByRole('dialog', { name: '목표 상태를 합격으로 바꿀까요?' }),
+  ).toBeInTheDocument();
+});
+
+test('a saved pass with no date stays empty until the offered date is chosen', async () => {
+  const api = await openDetail({ attempts: [attempt({ id: 1, outcome: 'passed' })] });
+  fireEvent.click(await screen.findByRole('button', { name: '2026-03-15 기록 수정' }));
+  expect(screen.getByLabelText('만료일')).toHaveValue('');
+  fireEvent.click(screen.getByRole('button', { name: /2028-03-15.*채우기/ }));
+  expect(screen.getByLabelText('만료일')).toHaveValue('2028-03-15');
+  expect(screen.queryByRole('button', { name: /채우기/ })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: '저장' }));
+  await waitFor(() => expect(sentBody(api, 'PUT')?.expiresOn).toBe('2028-03-15'));
+});
+
+test('a goal with no known validity saves what was typed, or nothing', async () => {
+  const api = await openDetail({
+    goal: { ...toeic, validityKind: 'unknown', validityMonths: null },
+  });
+  fireEvent.click(await screen.findByRole('button', { name: '기록 추가' }));
+  change('시험일', '2026-03-15');
+  change('결과', 'scored');
+  expect(screen.getByLabelText('만료일')).toHaveValue('');
+  expect(screen.queryByRole('button', { name: /채우기/ })).not.toBeInTheDocument();
+  change('만료일', '2027-01-01');
+  fireEvent.click(screen.getByRole('button', { name: '저장' }));
+  await waitFor(() => expect(sentBody(api, 'POST')?.expiresOn).toBe('2027-01-01'));
 });
