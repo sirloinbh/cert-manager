@@ -52,6 +52,9 @@ function fakeApi(initial: Certification[] = [], options: { deleteFails?: boolean
         init.body === undefined ? undefined : (JSON.parse(init.body) as Record<string, unknown>);
       sent.push({ method, path, body });
       if (path === '/api/health') return reply(200, { ok: true, today });
+      // The attempt screens have their own tests in exam-attempts.test.tsx.
+      if (path === '/api/exam-attempts/latest' || path.endsWith('/attempts'))
+        return reply(200, { today, attempts: [] });
       if (path === '/api/certifications' && method === 'GET') {
         const list = [...store].sort(
           (a, b) =>
