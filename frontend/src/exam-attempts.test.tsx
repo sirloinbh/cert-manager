@@ -381,6 +381,7 @@ test('a saved pass with no date stays empty until the offered date is chosen', a
   expect(screen.getByLabelText('만료일')).toHaveValue('');
   fireEvent.click(screen.getByRole('button', { name: /2028-03-15.*채우기/ }));
   expect(screen.getByLabelText('만료일')).toHaveValue('2028-03-15');
+  expect(screen.getByLabelText('만료일')).toHaveFocus();
   expect(screen.queryByRole('button', { name: /채우기/ })).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: '저장' }));
   await waitFor(() => expect(sentBody(api, 'PUT')?.expiresOn).toBe('2028-03-15'));
@@ -398,4 +399,24 @@ test('a goal with no known validity saves what was typed, or nothing', async () 
   change('만료일', '2027-01-01');
   fireEvent.click(screen.getByRole('button', { name: '저장' }));
   await waitFor(() => expect(sentBody(api, 'POST')?.expiresOn).toBe('2027-01-01'));
+});
+
+test('a deleted attempt leaves the list even if reloading fails, and focus goes to the heading', async () => {
+  await openDetail({
+    attempts: [
+      attempt({ id: 2, examDate: '2026-05-05', score: 850 }),
+      attempt({ id: 1, examDate: '2026-03-15', score: 800 }),
+    ],
+    reloadFails: true,
+  });
+  fireEvent.click(await screen.findByRole('button', { name: '2026-05-05 기록 삭제' }));
+  const dialog = await screen.findByRole('dialog', { name: '기록을 지울까요?' });
+  fireEvent.click(within(dialog).getByRole('button', { name: '삭제' }));
+  expect(await screen.findByText('다시 읽지 못했습니다')).toBeInTheDocument();
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  expect(screen.queryByRole('button', { name: '2026-05-05 기록 수정' })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '2026-03-15 기록 수정' })).toBeInTheDocument();
+  await waitFor(() =>
+    expect(screen.getByRole('heading', { level: 2, name: '응시·취득 기록' })).toHaveFocus(),
+  );
 });

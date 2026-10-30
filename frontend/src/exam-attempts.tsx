@@ -1,5 +1,5 @@
 import { ClipboardList, Pencil, Plus, Trash2 } from 'lucide-react';
-import { type FormEvent, type MouseEvent, useId, useRef, useState } from 'react';
+import { type FormEvent, type MouseEvent, useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router';
 
 import type { Certification, CertificationPaths } from './certification-data';
@@ -119,6 +119,7 @@ function AttemptForm({
   // A saved result keeps what the user decided, even an empty date ("not known"). Until then the date follows the exam.
   const [expiryEdited, setExpiryEdited] = useState(attempt !== null && hasExpiry(attempt.outcome));
   const [pending, setPending] = useState(false);
+  const expiryInput = useRef<HTMLInputElement>(null);
   const notice = useNotice();
   const id = useId();
   const set =
@@ -216,6 +217,7 @@ function AttemptForm({
           <Label htmlFor={`${id}-expires`}>만료일</Label>
           <Input
             id={`${id}-expires`}
+            ref={expiryInput}
             type="date"
             className="sm:max-w-60"
             min={form.examDate || undefined}
@@ -238,7 +240,11 @@ function AttemptForm({
               variant="link"
               size="sm"
               className="h-auto w-fit justify-start p-0 text-left break-keep whitespace-normal"
-              onClick={() => setExpiryEdited(false)}
+              onClick={() => {
+                setExpiryEdited(false);
+                // The button disappears once the date matches, so focus moves to what it filled.
+                expiryInput.current?.focus();
+              }}
             >
               시험일에서 {months}개월 뒤({prefilled})로 채우기
             </Button>
@@ -302,6 +308,11 @@ export function ExamAttempts({
   // The last list stays on screen while a change reloads it, and when that reload fails.
   const [shown, setShown] = useState<{ attempts: ExamAttempt[] }>();
   if (loaded.state === 'ok' && loaded.data !== shown) setShown(loaded.data);
+  // A deleted row takes its button with it, so focus goes to the section heading afterwards.
+  const [deletions, setDeletions] = useState(0);
+  useEffect(() => {
+    if (deletions > 0) heading.current?.focus();
+  }, [deletions]);
 
   const save = async (attempt: ExamAttempt | null, input: ExamAttemptInput) => {
     setSaving(true);
@@ -329,6 +340,11 @@ export function ExamAttempts({
       }
     }
     toast.success('응시 기록을 지웠습니다');
+    // Gone from the screen right away, even if reloading the list then fails.
+    setShown(
+      (list) => list && { attempts: list.attempts.filter((item) => item.id !== attempt.id) },
+    );
+    setDeletions((current) => current + 1);
     setVersion((current) => current + 1);
   };
 
