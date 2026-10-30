@@ -17,6 +17,16 @@
 
 범위 밖: 로그인·여러 사용자, 알림(푸시·메일), 시험 접수 대행, 외부 공개. 사용자는 본인 한 명이다.
 
+#28 할 일에 후보로 적었던 것 중 처음 범위에서 정한 것:
+
+| 후보                   | 처리                                                                                                          |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------- |
+| 시험 회차·접수 기간    | 따로 저장하지 않는다. 목표 시험일(`target_exam_date`)만 두고, 접수 기간은 메모에 적는다. 필요해지면 새 이슈로 |
+| 공부 기록(공부한 시간) | 따로 저장하지 않는다. 공부 계획의 할 일 완료(`completed_at`)로 대신한다                                       |
+| 점수·합격 결과         | 응시·취득 기록(`exam_attempts`)에 둔다                                                                        |
+| 만료·갱신일            | 응시·취득 기록의 만료일(`expires_on`)에 둔다. 운전면허 갱신 기한도 같은 칸을 쓴다                             |
+| 일정 화면              | 따로 만들지 않는다. 대시보드의 가까운 시험 카드와 오늘 할 일 카드로 대신한다                                  |
+
 ## 2. 사용자 결정 (2026-10-30)
 
 | 항목      | 결정                                                                                                                      |
@@ -50,8 +60,10 @@
 - 기록 시점: 모든 주 테이블에 `created_at`, `updated_at` (`timestamptz NOT NULL DEFAULT now()`). `updated_at`은 API가 고칠 때 바꾼다.
 - 날짜: 사용자가 고르는 날(시험일, 마감일)은 `date`, API 값은 `YYYY-MM-DD`. "오늘"은 서버의 `serviceDate()`(`Asia/Seoul`)로 계산한다.
 - 일이 일어난 시점(할 일 완료, 가사 받은 때, 외운 때)은 `timestamptz`.
-- NULL: 모르는 값·아직 없는 값은 `NULL`, 실제로 없는 값(빈 메모)은 빈 문자열 `''`. 열마다 아래 표에 뜻을 적었다.
+- NULL: 모르는 값·아직 채우지 않은 값은 `NULL`, 확인했는데 실제로 없는 값은 빈 문자열 `''`. 메모처럼 "없음"과 "모름"을 나눌 필요가 없는 열만 `NOT NULL DEFAULT ''`로 둔다. 열마다 아래 표에 뜻을 적었다.
 - 글자 수: 이름·제목은 `CHECK (length(btrim(col)) BETWEEN 1 AND 200)`. 메모는 제한 없음(`text NOT NULL DEFAULT ''`).
+- 기간 단위: 중앙 규칙은 기간을 분 단위 `integer`로 정한다. 이 앱에는 분이 맞지 않는 기간이 둘 있어 예외로 둔다(중앙 이슈 [project-standards#353](https://github.com/sirloinbh/project-standards/issues/353)). 곡 길이 `duration_seconds`(초, LRCLIB·MusicBrainz 값이 초·밀리초)와 유효기간 `validity_months`(달력 개월, 자격증 안내가 "2년", "3년"). 둘 다 `CHECK (… > 0)`.
+- 순서 열(`position`): 1부터 시작하고 `CHECK (position > 0)`. 같은 부모 안의 `UNIQUE (…, position)`은 `DEFERRABLE INITIALLY DEFERRED` 제약으로 만든다. PostgreSQL은 지연하지 않은 UNIQUE를 행마다 바로 검사해서, 두 행의 순서를 맞바꾸는 UPDATE가 트랜잭션 안에서도 실패하기 때문이다. 지연 제약은 인덱스가 아니라 `ALTER TABLE … ADD CONSTRAINT … UNIQUE … DEFERRABLE`로만 만들 수 있다.
 - 정해진 값 목록은 `text` + `CHECK (col IN (...))`. 값은 영문 소문자, 화면 문구는 프런트엔드에서 한국어로 바꾼다.
 - 삭제: 부모에 딸린 행(응시 기록, 계획, 가사 줄)은 `ON DELETE CASCADE`. 공유되는 자료(어원 요소)는 `ON DELETE RESTRICT`.
 - 마이그레이션 번호는 착수할 때 정한다. 아래 순서는 예상이다.
@@ -84,12 +96,25 @@
 | `exam_date`        | `date NOT NULL`                   | 시험일                                                                                                    |
 | `outcome`          | `text NOT NULL DEFAULT 'waiting'` | `waiting`(결과 전) · `passed`(합격) · `failed`(불합격) · `scored`(점수·등급만 있는 시험). 사용자가 넣는다 |
 | `score`            | `integer NULL`                    | 점수. 점수가 없는 시험이거나 결과 전이면 `NULL`. `CHECK (score >= 0)`                                     |
-| `grade`            | `text NOT NULL DEFAULT ''`        | 등급(예: "Level 7", "IH"). 없으면 `''`                                                                    |
-| `expires_on`       | `date NULL`                       | 만료일. 만료가 없거나 아직 결과 전이면 `NULL`                                                             |
+| `grade`            | `text NULL`                       | 등급(예: "Level 7", "IH"). 등급이 없는 시험이면 `''`, 결과 전이면 `NULL`                                  |
+| `expires_on`       | `date NULL`                       | 마지막 유효일(그날까지 유효). `NULL`의 뜻은 목표의 `validity_kind`와 `outcome`으로 나눈다(아래 표시 규칙) |
 | `memo`             | `text NOT NULL DEFAULT ''`        | 메모                                                                                                      |
 
-- 만료일 기본값: 결과를 `passed`나 `scored`로 넣을 때, 목표의 `validity_kind`가 `months`면 `exam_date + validity_months`로 채운다. 사용자가 고칠 수 있다. 토익·토익 스피킹(2년)과 AWS(3년)는 시험일부터 센다. 구현 전에 공식 안내로 다시 확인한다.
-- 만료 상태(저장하지 않고 계산): 오늘 > `expires_on`이면 "만료", 남은 날이 90일 이하면 "만료 임박", 그 밖은 "유효". `expires_on`이 `NULL`이면 표시하지 않는다.
+- 만료일 기본값: 결과를 `passed`나 `scored`로 넣을 때, 목표의 `validity_kind`가 `months`면 `exam_date`에 `validity_months`개월을 더해 채운다. 사용자가 고칠 수 있다.
+  - 개월 더하기는 PostgreSQL `date + interval`과 같은 말일 보정을 쓴다. 예: `2024-02-29` + 24개월 = `2026-02-28`. JavaScript `setUTCMonth`는 `2026-03-01`로 넘치므로 그대로 쓰지 않는다.
+  - 토익·토익 스피킹(2년)과 AWS(3년)는 시험일부터 센다. 마지막 유효일이 "더한 날"인지 "더한 날의 전날"인지는 #32에서 공식 안내로 확인해 정한다.
+  - 운전면허는 `validity_kind = 'months'`로 두고 갱신 주기를 넣는다. `expires_on`은 갱신 기한이다.
+- 만료 상태(저장하지 않고 계산, 위에서부터 먼저 맞는 것):
+
+| 조건                                                                | 표시          |
+| ------------------------------------------------------------------- | ------------- |
+| `outcome`이 `waiting`이나 `failed`                                  | 표시 안 함    |
+| 목표의 `validity_kind`가 `none`                                     | "만료 없음"   |
+| `expires_on`이 `NULL` (`validity_kind`가 `unknown`이거나 값을 지움) | "만료일 모름" |
+| 오늘 > `expires_on`                                                 | "만료"        |
+| `expires_on` − 오늘 ≤ 90일                                          | "만료 임박"   |
+| 그 밖                                                               | "유효"        |
+
 - 목표 달성(저장하지 않고 계산): `score >= target_score`이면 "목표 달성". `target_score`가 `NULL`이면 표시하지 않는다.
 - 결과를 `passed`로 저장하면 화면이 "목표 상태를 합격으로 바꿀까요?"를 묻는다. 같은 요청에서 바꾸지 않고, 사용자가 고르면 목표 수정 API를 따로 부른다.
 
@@ -97,26 +122,26 @@
 
 `study_stages`
 
-| 열                       | 형                 | 뜻·규칙                                                                  |
-| ------------------------ | ------------------ | ------------------------------------------------------------------------ |
-| `certification_id`       | `bigint NOT NULL`  | `certifications(id) ON DELETE CASCADE`                                   |
-| `title`                  | `text NOT NULL`    | 단계 이름(예: "1주차", "기출 풀이"). 1~200자                             |
-| `position`               | `integer NOT NULL` | 화면 순서. 같은 자격증 안에서 `UNIQUE (certification_id, position)`      |
-| `start_date`, `end_date` | `date NULL`        | 단계 기간. 정하지 않았으면 `NULL`. 둘 다 있으면 `start_date <= end_date` |
+| 열                       | 형                 | 뜻·규칙                                                                       |
+| ------------------------ | ------------------ | ----------------------------------------------------------------------------- |
+| `certification_id`       | `bigint NOT NULL`  | `certifications(id) ON DELETE CASCADE`                                        |
+| `title`                  | `text NOT NULL`    | 단계 이름(예: "1주차", "기출 풀이"). 1~200자                                  |
+| `position`               | `integer NOT NULL` | 화면 순서. 같은 자격증 안에서 지연 UNIQUE `(certification_id, position)`(4절) |
+| `start_date`, `end_date` | `date NULL`        | 단계 기간. 정하지 않았으면 `NULL`. 둘 다 있으면 `start_date <= end_date`      |
 
 `study_tasks`
 
-| 열             | 형                 | 뜻·규칙                              |
-| -------------- | ------------------ | ------------------------------------ |
-| `stage_id`     | `bigint NOT NULL`  | `study_stages(id) ON DELETE CASCADE` |
-| `title`        | `text NOT NULL`    | 할 일. 1~200자                       |
-| `position`     | `integer NOT NULL` | `UNIQUE (stage_id, position)`        |
-| `due_date`     | `date NULL`        | 마감일. 없으면 `NULL`                |
-| `completed_at` | `timestamptz NULL` | 완료한 시점. 아직이면 `NULL`         |
+| 열             | 형                 | 뜻·규칙                                 |
+| -------------- | ------------------ | --------------------------------------- |
+| `stage_id`     | `bigint NOT NULL`  | `study_stages(id) ON DELETE CASCADE`    |
+| `title`        | `text NOT NULL`    | 할 일. 1~200자                          |
+| `position`     | `integer NOT NULL` | 지연 UNIQUE `(stage_id, position)`(4절) |
+| `due_date`     | `date NULL`        | 마감일. 없으면 `NULL`                   |
+| `completed_at` | `timestamptz NULL` | 완료한 시점. 아직이면 `NULL`            |
 
 - 진행률(계산): 완료한 할 일 수 ÷ 전체 할 일 수. 할 일이 없으면 표시하지 않는다.
 - 오늘 할 일(계산): `completed_at IS NULL`이고 `due_date <= 오늘`인 할 일. 지난 것은 "지남"으로 표시한다.
-- 순서 바꾸기는 여러 행을 고치므로 한 트랜잭션으로 처리한다.
+- 순서 바꾸기는 여러 행을 고치므로 한 트랜잭션으로 처리한다. UNIQUE를 지연 제약으로 만들어 커밋할 때 한 번만 검사한다(4절).
 
 ## 6. 영어 공부 영역
 
@@ -124,27 +149,42 @@
 
 가사 원문과 번역은 로컬 DB에만 저장한다([자료 출처](../research/english-content-sources.md) 1절).
 
-| 테이블         | 열                                                                                                                                                                                                     | 뜻·규칙                                                                                                           |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
-| `artists`      | `name text NOT NULL`, `musicbrainz_id uuid NULL UNIQUE`                                                                                                                                                | 아티스트. 처음에는 테일러 스위프트 한 명                                                                          |
-| `albums`       | `artist_id`(`RESTRICT`), `title`, `kind`, `release_date date NULL`, `musicbrainz_id uuid NULL UNIQUE`                                                                                                  | `kind`: `studio`(정규) · `taylors_version`. 발매일을 모르면 `NULL`                                                |
-| `songs`        | `artist_id`(`RESTRICT`), `title`, `duration_seconds integer NULL`, `musicbrainz_id uuid NULL UNIQUE`, `lyrics_source text NULL`, `lyrics_fetched_at timestamptz NULL`, `note text NOT NULL DEFAULT ''` | `lyrics_source`: `lrclib` · `manual`. 가사가 아직 없으면 `NULL`. `note`에 재녹음 때 바뀐 가사 등을 적는다         |
-| `album_tracks` | `album_id`(`CASCADE`), `song_id`(`CASCADE`), `track_number integer NOT NULL`                                                                                                                           | 기본 키 `(album_id, track_number)`, `UNIQUE (album_id, song_id)`. 같은 곡이 여러 앨범에 실린다                    |
-| `lyric_lines`  | `song_id`(`CASCADE`), `line_number integer NOT NULL`, `original text NOT NULL`, `translation text NULL`                                                                                                | 기본 키 `(song_id, line_number)`. 빈 줄(절 구분)은 `original = ''`. 아직 번역하지 않았으면 `translation`이 `NULL` |
+| 테이블         | 열                                                                                                                                                                                                                                    | 뜻·규칙                                                                                                                                                                        |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `artists`      | `name text NOT NULL`, `musicbrainz_id uuid NULL UNIQUE`                                                                                                                                                                               | 아티스트. 처음에는 테일러 스위프트 한 명                                                                                                                                       |
+| `albums`       | `artist_id`(`RESTRICT`), `title`, `kind`, `release_date date NULL`, `musicbrainz_id uuid NULL UNIQUE`                                                                                                                                 | `kind`: `studio`(정규) · `taylors_version`. 발매일을 모르면 `NULL`                                                                                                             |
+| `songs`        | `artist_id`(`RESTRICT`), `title`, `duration_seconds integer NULL`, `musicbrainz_id uuid NULL UNIQUE`, `lyrics_source text NULL`, `lyrics_source_url text NULL`, `lyrics_fetched_at timestamptz NULL`, `note text NOT NULL DEFAULT ''` | `lyrics_source`: `lrclib` · `manual`. 가사가 아직 없으면 `NULL`. `lyrics_source_url`은 가사를 받은 LRCLIB 주소(직접 넣었으면 `NULL`). `note`에 재녹음 때 바뀐 가사 등을 적는다 |
+| `album_tracks` | `album_id`(`CASCADE`), `song_id`(`CASCADE`), `track_number integer NOT NULL`                                                                                                                                                          | 기본 키 `(album_id, track_number)`, `UNIQUE (album_id, song_id)`. 같은 곡이 여러 앨범에 실린다                                                                                 |
+| `lyric_lines`  | `song_id`(`CASCADE`), `line_number integer NOT NULL`, `original text NOT NULL`, `translation text NULL`                                                                                                                               | 기본 키 `(song_id, line_number)`. 빈 줄(절 구분)은 `original = ''`. 아직 번역하지 않았으면 `translation`이 `NULL`                                                              |
 
-- "번역 있음"(계산): 곡의 모든 줄 중 `original <> ''`인 줄의 `translation`이 `NULL`이 아니다.
+- 가사 상태(계산), 위에서부터 먼저 맞는 것:
+  - "가사 없음": `original <> ''`인 줄이 하나도 없다(`lyrics_source`가 `NULL`인 곡 포함).
+  - "번역 전": `original <> ''`인 줄 중 `translation`이 `NULL`인 줄이 있다.
+  - "번역 있음": 그 밖. 곡 목록과 번역 진행 상황은 이 값으로 보여 준다.
 - 번역 들여오기는 한 곡의 모든 줄을 한 트랜잭션으로 고친다. 줄 수가 다르면 아무것도 저장하지 않는다.
 
 ### 단어와 어원 (#36, 예상 `006`)
 
-| 테이블           | 열                                                                                                                                                                                                                                                                                                | 뜻·규칙                                                                                                                                                  |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `words`          | `lemma text NOT NULL UNIQUE`, `frequency_rank integer NOT NULL UNIQUE`, `part_of_speech text NOT NULL DEFAULT ''`, `meaning_ko text NULL`, `example_en text NULL`, `example_ko text NULL`, `etymology_source text NULL`, `etymology_url text NULL`, `ai_generated boolean NOT NULL DEFAULT false` | `frequency_rank`는 NGSL 1.2 순위(1부터). 뜻·예문·어원을 아직 채우지 않았으면 `NULL`. `etymology_source`는 Wiktionary 어원 원문이고, 자료가 없으면 `NULL` |
-| `morphemes`      | `form text NOT NULL`, `kind text NOT NULL`, `meaning_ko text NOT NULL`, `origin text NOT NULL DEFAULT ''`                                                                                                                                                                                         | 어원 요소. `kind`: `prefix` · `root` · `suffix`. `UNIQUE (form, kind, meaning_ko)`. `origin` 예: "라틴어"                                                |
-| `word_morphemes` | `word_id`(`CASCADE`), `morpheme_id`(`RESTRICT`), `position integer NOT NULL`                                                                                                                                                                                                                      | 기본 키 `(word_id, position)`. 단어 안에서 요소의 순서                                                                                                   |
+| 테이블           | 열                                                                                                                                                                                                                                                                                                                                                               | 뜻·규칙                                                                                                                                                                                                                                                                           |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `words`          | `lemma text NOT NULL UNIQUE`, `frequency_rank integer NOT NULL UNIQUE`, `part_of_speech text NULL`, `meaning_ko text NULL`, `example_en text NULL`, `example_ko text NULL`, `ai_generated boolean NOT NULL DEFAULT false`, `list_source_id`(`RESTRICT`), `etymology_source text NULL`, `etymology_url text NULL`, `etymology_source_id`(`RESTRICT`, `NULL` 허용) | `frequency_rank`는 NGSL 1.2 순위(1부터). 품사·뜻·예문을 아직 채우지 않았으면 `NULL`. `etymology_source`는 Wiktionary 어원 원문이다. 아직 찾아보지 않았으면 `NULL`, 찾아봤는데 자료가 없으면 `''`                                                                                  |
+| `morphemes`      | `key text NOT NULL UNIQUE`, `form text NOT NULL`, `kind text NOT NULL`, `meaning_ko text NOT NULL`, `origin text NULL`                                                                                                                                                                                                                                           | 어원 요소. `kind`: `prefix` · `root` · `suffix`. `key`는 같은 요소를 찾는 고정 이름 `<kind>:<form>`(예: `root:port`). 철자가 같고 뜻이 다른 요소만 `:<영문 뜻>`을 붙인다(예: `root:port:carry`). `form`은 소문자이고 하이픈을 붙이지 않는다. `origin` 예: "라틴어", 모르면 `NULL` |
+| `word_morphemes` | `word_id`(`CASCADE`), `morpheme_id`(`RESTRICT`), `position integer NOT NULL`                                                                                                                                                                                                                                                                                     | 기본 키 `(word_id, position)`. 단어 안에서 요소의 순서                                                                                                                                                                                                                            |
 
 - 같은 어근의 단어: `word_morphemes`에서 같은 `morpheme_id`를 가진 다른 단어.
-- 출처 표기: 단어장 화면 아래에 NGSL(CC BY-SA 4.0)과 Wiktionary(CC BY-SA)를 적는다.
+- 어원 들여오기는 요소를 `key`로 찾아 이미 있으면 그 행을 쓴다. 내보내기 파일에 지금 있는 요소 목록(`key`, `meaning_ko`)을 함께 넣어, Claude Code 세션이 같은 요소에 새 이름을 만들지 않게 한다. 뜻 문장이 조금 달라도 `key`가 같으면 같은 요소다.
+- 출처 표기: 단어장 화면 아래에 `import_sources`에 기록된 이름과 라이선스(NGSL은 CC BY-SA 4.0, Wiktionary는 받을 때 확인한 버전)를 적는다.
+
+### `import_sources` — 외부 자료를 받은 기록 (#35·#36 중 먼저 하는 이슈에서)
+
+[자료 출처](../research/english-content-sources.md) 6절의 "출처 URL과 받은 날짜를 함께 저장"을 위한 테이블이다. 자료를 한 번 받을 때마다 한 행을 남긴다.
+
+| 열           | 형                     | 뜻·규칙                                                                                        |
+| ------------ | ---------------------- | ---------------------------------------------------------------------------------------------- |
+| `kind`       | `text NOT NULL`        | `musicbrainz` · `lrclib` · `ngsl` · `wiktionary`                                               |
+| `url`        | `text NOT NULL`        | 받은 주소(파일이나 API 기본 주소)                                                              |
+| `license`    | `text NULL`            | 받을 때 확인한 라이선스 표기(예: `CC BY-SA 4.0`). 표기가 없으면 `''`, 확인하지 않았으면 `NULL` |
+| `fetched_at` | `timestamptz NOT NULL` | 받은 시점                                                                                      |
 
 ### 오늘의 단어 (#37, 예상 `007`)
 
@@ -166,4 +206,5 @@ artists 1─* songs
 
 words 1─* word_morphemes *─1 morphemes
 words 1─* daily_words
+import_sources 1─* words (단어 목록, 어원)
 ```
