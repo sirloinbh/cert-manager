@@ -39,3 +39,9 @@
 - 브라우저(Playwright, Vite 5206 + 백엔드 3106 + 임시 DB): 모바일 390×844, PC 1440×900에서 탭 제목·상단 제목·하단 문구가 "자격증 관리", `/api/health`의 `service`가 `cert-manager`, 가로 넘침 없음
 - 스킬 frontmatter: `quick_validate.py`는 Python `yaml` 모듈이 없어 실행하지 못했다. 같은 규칙(폴더 이름과 `name` 일치, 소문자·숫자·하이픈, 설명 1024자 이하·꺾쇠 없음)을 셸로 확인해 3개 모두 통과
 - `git grep -n -i "english" -- . ':!docs/changes' ':!docs/daily'`: 남은 결과는 자격증 분류 값 `english`(코드·테스트·마이그레이션·설계 문서), `docs/research/english-content-sources.md` 링크, 중앙 관리 스킬 `std-communication`의 "English material"뿐이다.
+
+## 자동 코드 리뷰 — 2026-10-30
+
+- 1차(읽기 전용 리뷰 에이전트): 막는 결함 없음. 지적 1건은 `frontend/public/offline.html`의 "자격증 관리은(는)" 조사 표기였다. 중앙 관리 파일이고 이 PR에서 바꾸지 않은 파일이라 반영하지 않았다. 이 리뷰는 셸 없이 작업 트리만 읽어 diff 전체를 보지 못했다.
+- 2차(diff를 직접 본 리뷰 에이전트): 결함 없음. 중앙 관리 파일 미변경, compose 볼륨 선언·마운트 일치, `psql -U cert -d cert`와 `.env.example` 일치, `.claude/skills` 복제본이 원본과 같음, lockfile은 이름·링크만 바뀜, 다음 작업 표는 #27 행 삭제와 번호만 바뀜을 확인했다.
+- 반영한 보완 커밋: 없음. 리뷰는 2회로 마쳤다.
