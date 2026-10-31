@@ -90,6 +90,7 @@ function fakeApi(
         init.body === undefined ? undefined : (JSON.parse(init.body) as Record<string, unknown>);
       sent.push({ method, path, body });
       if (path === '/api/health') return reply(200, { ok: true, today });
+      if (path === '/api/user-actions') return reply(200, { today, actions: [] });
       if (path === '/api/grade-scales')
         return Promise.resolve(options.scalesHold).then(() =>
           options.scalesFail

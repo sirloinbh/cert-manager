@@ -81,6 +81,7 @@ function fakeApi(
       sent.push({ method, path, body });
       if (path === '/api/health') return reply(200, { ok: true, today });
       if (path === '/api/grade-scales') return reply(200, { scales: [] });
+      if (path === '/api/user-actions') return reply(200, { today, actions: [] });
       if (path === '/api/exam-attempts/latest') return reply(200, { today, attempts: [] });
       if (path === '/api/study-tasks/today')
         return reply(200, { today, tasks: options.todayTasks ?? [] });
