@@ -93,10 +93,30 @@ test(
       assert.ok(!mine(gone.data).some((action) => action.id === target?.id));
     });
 
+    // A capitalized scheme is a valid address for both the API and the table.
+    await on('2027-03-08', async (call) => {
+      const { status, data } = await call('/api/user-actions', {
+        method: 'POST',
+        body: {
+          title: '#60 대문자 링크',
+          remindFrom: '2027-03-08',
+          linkUrl: 'HTTPS://www.q-net.or.kr/',
+        },
+      });
+      assert.equal(status, 201, JSON.stringify(data));
+      created.push((data.action as Action).id);
+    });
+
     // The table rejects what the API rejects.
     await assert.rejects(
       pool.query(
         "INSERT INTO user_actions (title, remind_from, link_url) VALUES ('#60 제약', '2027-03-01', 'javascript:alert(1)')",
+      ),
+      { code: '23514' },
+    );
+    await assert.rejects(
+      pool.query(
+        "INSERT INTO user_actions (title, remind_from, link_url) VALUES ('#60 제약', '2027-03-01', 'https://')",
       ),
       { code: '23514' },
     );

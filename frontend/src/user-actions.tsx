@@ -52,17 +52,23 @@ function ActionItem({
         <Button
           variant="outline"
           size="sm"
-          disabled={pending}
+          // Not disabled: a disabled button would drop keyboard focus while the request runs.
+          aria-disabled={pending || undefined}
           aria-busy={pending || undefined}
           aria-label={`'${action.title}' 완료`}
-          onClick={onComplete}
+          onClick={pending ? undefined : onComplete}
         >
           <Check aria-hidden />
           완료
         </Button>
         {action.linkUrl ? (
           <Button asChild variant="link" size="sm">
-            <a href={action.linkUrl} target="_blank" rel="noreferrer">
+            <a
+              href={action.linkUrl}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={`'${action.title}' 바로가기 (새 탭)`}
+            >
               바로가기
               <ExternalLink aria-hidden />
             </a>
@@ -80,6 +86,17 @@ export function UserActionAlerts() {
   const [pendingId, setPendingId] = useState<number>();
   const title = useRef<HTMLHeadingElement>(null);
   const actions = data?.actions ?? [];
+  // Nothing to show because the list failed, which must not look like "nothing to do".
+  const failed = loaded.state === 'error' && !data;
+
+  // The bell stays mounted across pages, so a tab left open would keep yesterday's alerts and counts.
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState === 'visible') reload();
+    };
+    document.addEventListener('visibilitychange', refresh);
+    return () => document.removeEventListener('visibilitychange', refresh);
+  }, [reload]);
 
   // Once per visit, so that alerts are seen without opening the panel.
   const announced = useRef(false);
@@ -89,6 +106,8 @@ export function UserActionAlerts() {
     announced.current = true;
     toast(`직접 할 일이 ${firstCount}건 있습니다`, {
       description: '상단의 종 아이콘에서 볼 수 있습니다.',
+      // At the top it would cover the bell it points to.
+      position: 'bottom-center',
     });
   }, [firstCount]);
 
@@ -106,6 +125,8 @@ export function UserActionAlerts() {
       title.current?.focus();
     } catch (error) {
       toast.error(errorText(error, '완료로 표시하지 못했습니다'));
+      // It may already be gone; the list then says what is true.
+      reload();
     } finally {
       setPendingId(undefined);
     }
@@ -113,26 +134,38 @@ export function UserActionAlerts() {
 
   const count = actions.length;
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
+    <Sheet
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (next) reload();
+      }}
+    >
       <SheetTrigger asChild>
         <Button
           variant="ghost"
           size="icon"
           className="relative"
-          aria-label={count > 0 ? `직접 할 일 알림 ${count}건` : '직접 할 일 알림'}
+          aria-label={
+            failed
+              ? '직접 할 일 알림을 불러오지 못했습니다'
+              : count > 0
+                ? `직접 할 일 알림 ${count}건`
+                : '직접 할 일 알림'
+          }
         >
           <Bell aria-hidden />
-          {count > 0 ? (
+          {failed || count > 0 ? (
             <span
               aria-hidden
               className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[0.625rem] leading-none font-semibold text-white"
             >
-              {alertCount(count)}
+              {failed ? '!' : alertCount(count)}
             </span>
           ) : null}
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
+      <SheetContent side="right" className="w-full sm:max-w-md">
         <SheetHeader className="border-b">
           <SheetTitle ref={title} tabIndex={-1} className="outline-none">
             직접 할 일
@@ -141,7 +174,8 @@ export function UserActionAlerts() {
             앱이 대신할 수 없어 직접 해야 하는 일입니다. 마친 일은 완료로 표시하세요.
           </SheetDescription>
         </SheetHeader>
-        <div className="flex flex-col gap-3 px-4 pb-4">
+        {/* The list scrolls, not the panel, so the close button stays in reach. */}
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-4">
           {loaded.state === 'loading' && !data ? <SkeletonList rows={2} /> : null}
           {loaded.state === 'error' ? (
             <Notice
@@ -150,6 +184,11 @@ export function UserActionAlerts() {
                 text: errorText(loaded.error, '알림을 불러오지 못했습니다'),
               }}
             />
+          ) : null}
+          {loaded.state === 'error' ? (
+            <Button variant="outline" size="sm" className="w-fit" onClick={() => reload()}>
+              다시 불러오기
+            </Button>
           ) : null}
           {data && count === 0 ? (
             <p className="text-body-sm break-keep text-muted-foreground">
@@ -162,7 +201,7 @@ export function UserActionAlerts() {
                 <ActionItem
                   key={action.id}
                   action={action}
-                  pending={pendingId === action.id}
+                  pending={pendingId !== undefined}
                   onComplete={() => void complete(action)}
                 />
               ))}

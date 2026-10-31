@@ -73,6 +73,7 @@ test('invalid actions are a Korean 400 and never reach the database', async () =
     [{ ...valid, dueDate: '2027-03-07' }, '마감일은 알림 시작일 이후여야 합니다'],
     [{ ...valid, linkUrl: 'javascript:alert(1)' }, '링크는 http 또는 https 주소여야 합니다'],
     [{ ...valid, linkUrl: 'www.q-net.or.kr' }, '링크는 http 또는 https 주소여야 합니다'],
+    [{ ...valid, linkUrl: 'https://' }, '링크는 http 또는 https 주소여야 합니다'],
     [[1], '요청 본문은 JSON 객체여야 합니다'],
   ];
   await withApi(pool, async (call) => {

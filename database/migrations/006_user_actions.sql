@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS user_actions (
   title text NOT NULL CHECK (length(btrim(title)) BETWEEN 1 AND 200),
   note text NOT NULL DEFAULT '',
   -- Empty text: this action has no page to open.
-  link_url text NOT NULL DEFAULT '' CHECK (link_url = '' OR link_url ~ '^https?://'),
+  link_url text NOT NULL DEFAULT '' CHECK (link_url = '' OR link_url ~* '^https?://\S+$'),
   -- The alert appears from this day on.
   remind_from date NOT NULL,
   -- NULL: no deadline, or the date is not announced yet.
