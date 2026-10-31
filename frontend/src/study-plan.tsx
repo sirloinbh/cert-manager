@@ -573,9 +573,8 @@ export function TodayTasks({ paths }: { paths: CertificationPaths }) {
                   </span>
                 </div>
                 {task.daysUntilDue === null ? null : (
-                  // Not cn(): tailwind-merge takes text-body-sm for a color and drops it (project-standards#357).
                   <strong
-                    className={`shrink-0 text-body-sm font-semibold ${isOverdue(task) ? 'text-destructive' : ''}`}
+                    className={cn('shrink-0 text-body-sm font-semibold', isOverdue(task) && 'text-destructive')}
                   >
                     {deadlineCountdown(task.daysUntilDue)}
                   </strong>
