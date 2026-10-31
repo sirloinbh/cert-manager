@@ -44,6 +44,8 @@ import {
   reachedGoal,
 } from './exam-attempt-data';
 import { controlClass, toNumber } from './form-fields';
+import { type GradeScale, gradesForScore, reachedGrade } from './grade-scale-data';
+import { GradeLadder } from './grade-scales';
 import { RequestError } from './lib/api';
 import { errorText, useNotice } from './lib/use-notice';
 import { cn } from './lib/utils';
@@ -105,10 +107,12 @@ type FormState = {
 
 function AttemptForm({
   certification,
+  gradeScale,
   attempt,
   onSubmit,
 }: {
   certification: Certification;
+  gradeScale: GradeScale | undefined;
   attempt: ExamAttempt | null;
   onSubmit: (input: ExamAttemptInput) => Promise<unknown>;
 }) {
@@ -122,6 +126,8 @@ function AttemptForm({
   });
   // A saved result keeps what the user decided, even an empty date ("not known"). Until then the date follows the exam.
   const [expiryEdited, setExpiryEdited] = useState(attempt !== null && hasExpiry(attempt.outcome));
+  // Likewise a saved result keeps its grade. Until then the grade follows the score when one level fits.
+  const [gradeEdited, setGradeEdited] = useState(attempt !== null && attempt.outcome !== 'waiting');
   const [pending, setPending] = useState(false);
   const expiryInput = useRef<HTMLInputElement>(null);
   const notice = useNotice();
@@ -137,6 +143,10 @@ function AttemptForm({
   const expiresOn = expiryEdited ? form.expiresOn : prefilled;
   const showResult = form.outcome !== 'waiting';
   const showExpiry = hasExpiry(form.outcome) && validityKind !== 'none';
+  const score = toNumber(form.score);
+  const fitting = gradeScale && typeof score === 'number' ? gradesForScore(gradeScale, score) : [];
+  const suggested = fitting.length === 1 ? (fitting[0]?.value ?? '') : '';
+  const grade = gradeScale && !gradeEdited ? suggested : form.grade;
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -146,7 +156,7 @@ function AttemptForm({
       examDate: form.examDate,
       outcome: form.outcome,
       score: showResult ? toNumber(form.score) : null,
-      grade: showResult ? form.grade : null,
+      grade: showResult ? grade : null,
       expiresOn: showExpiry && expiresOn !== '' ? expiresOn : null,
       memo: form.memo,
     }).catch((error: unknown) => {
@@ -206,13 +216,49 @@ function AttemptForm({
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor={`${id}-grade`}>등급</Label>
-            <Input
-              id={`${id}-grade`}
-              maxLength={200}
-              value={form.grade}
-              onChange={(e) => set('grade')(e.target.value)}
-              placeholder="예: Level 7, IH"
-            />
+            {gradeScale ? (
+              <>
+                <select
+                  id={`${id}-grade`}
+                  className={cn(controlClass, 'h-9')}
+                  value={grade}
+                  onChange={(e) => {
+                    setGradeEdited(true);
+                    set('grade')(e.target.value);
+                  }}
+                  aria-describedby={`${id}-grade-hint`}
+                >
+                  <option value="">없음</option>
+                  {[...gradeScale.levels].reverse().map((level) => (
+                    <option key={level.value} value={level.value}>
+                      {level.value}
+                    </option>
+                  ))}
+                  {/* An older format such as "Level 7" stays selectable until the user changes it. */}
+                  {grade && !gradeScale.levels.some((level) => level.value === grade) ? (
+                    <option value={grade}>{grade}</option>
+                  ) : null}
+                </select>
+                <p
+                  id={`${id}-grade-hint`}
+                  className="text-caption break-keep text-muted-foreground"
+                >
+                  {fitting.length > 1
+                    ? `${score}점은 ${fitting.map((level) => level.value).join(', ')} 중 하나입니다. 성적표의 등급을 고르세요.`
+                    : suggested
+                      ? `${score}점의 기준 등급은 ${suggested}입니다.`
+                      : '목록에서 고릅니다.'}
+                </p>
+              </>
+            ) : (
+              <Input
+                id={`${id}-grade`}
+                maxLength={200}
+                value={form.grade}
+                onChange={(e) => set('grade')(e.target.value)}
+                placeholder="예: Level 7, IH"
+              />
+            )}
           </div>
         </div>
       ) : null}
@@ -286,9 +332,11 @@ const loadAttempts = (id: string) => examAttemptApi.list(Number(id));
 /** The section on a goal's detail page. Marking the goal passed is left to the page that owns the goal. */
 export function ExamAttempts({
   certification,
+  gradeScale,
   onMarkPassed,
 }: {
   certification: Certification;
+  gradeScale: GradeScale | undefined;
   onMarkPassed: () => Promise<unknown>;
 }) {
   const { loaded, data, reload } = useReloading(String(certification.id), loadAttempts);
@@ -364,6 +412,13 @@ export function ExamAttempts({
         </h2>
         {attempts.length > 0 ? addButton : null}
       </div>
+      {gradeScale ? (
+        <GradeLadder
+          scale={gradeScale}
+          target={certification.targetGrade}
+          latest={current?.grade ?? null}
+        />
+      ) : null}
       {loaded.state === 'loading' && !data ? <SkeletonList rows={2} /> : null}
       {loaded.state === 'error' ? (
         <Notice
@@ -426,7 +481,8 @@ export function ExamAttempts({
                 {result ? (
                   <p className="flex flex-wrap items-center gap-2 text-body">
                     {result}
-                    {reachedGoal(attempt.score, certification.targetScore) ? (
+                    {reachedGoal(attempt.score, certification.targetScore) ||
+                    reachedGrade(gradeScale, attempt.grade, certification.targetGrade) ? (
                       <Badge variant="success">목표 달성</Badge>
                     ) : null}
                   </p>
@@ -459,6 +515,7 @@ export function ExamAttempts({
           </DialogHeader>
           <AttemptForm
             certification={certification}
+            gradeScale={gradeScale}
             attempt={editing.attempt}
             onSubmit={(input) => save(editing.attempt, input)}
           />

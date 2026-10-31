@@ -32,6 +32,9 @@ export type Certification = {
   validityKind: ValidityKind;
   validityMonths: number | null;
   memo: string;
+  /** 'none' or a key from the server's list of grade scales. */
+  gradeScale: string;
+  targetGrade: string | null;
 };
 
 export type CertificationInput = Omit<

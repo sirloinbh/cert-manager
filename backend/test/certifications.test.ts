@@ -32,6 +32,8 @@ const row = {
   validityKind: 'months',
   validityMonths: 24,
   memo: '',
+  gradeScale: 'none',
+  targetGrade: null,
 };
 
 const today = () => '2026-10-30';
@@ -76,6 +78,8 @@ test('a new goal fills omitted optional fields with their defaults and answers 2
     'unknown',
     null,
     '',
+    'none',
+    null,
   ]);
 });
 
@@ -162,6 +166,8 @@ test('update replaces every field of the goal and delete answers 204', async () 
           validityKind: 'months',
           validityMonths: 24,
           memo: '접수 11월 초',
+          gradeScale: 'toeic',
+          targetGrade: 'B2',
         },
       });
       assert.equal(put.status, 200);
@@ -182,6 +188,8 @@ test('update replaces every field of the goal and delete answers 204', async () 
     'months',
     24,
     '접수 11월 초',
+    'toeic',
+    'B2',
     7,
   ]);
   assert.deepEqual(queries[1]?.values, [7]);

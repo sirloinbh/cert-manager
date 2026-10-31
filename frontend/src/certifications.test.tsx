@@ -23,6 +23,8 @@ const goal = (
   validityKind: 'unknown' as const,
   validityMonths: null,
   memo: '',
+  gradeScale: 'none',
+  targetGrade: null,
   ...fields,
   daysUntilExam: days(fields.targetExamDate ?? null),
 });
@@ -57,6 +59,7 @@ function fakeApi(initial: Certification[] = [], options: { deleteFails?: boolean
         return reply(200, { today, attempts: [] });
       if (path === '/api/study-tasks/today') return reply(200, { today, tasks: [] });
       if (path.endsWith('/plan')) return reply(200, { today, stages: [] });
+      if (path === '/api/grade-scales') return reply(200, { scales: [] });
       if (path === '/api/certifications' && method === 'GET') {
         const list = [...store].sort(
           (a, b) =>
@@ -184,6 +187,8 @@ test('a new goal is saved with typed values, opens its detail and appears in the
     validityKind: 'months',
     validityMonths: 36,
     memo: '',
+    gradeScale: 'none',
+    targetGrade: null,
   });
   expect(screen.getByText('36개월')).toBeInTheDocument();
   expect(screen.getByText('122일 남음')).toBeInTheDocument();

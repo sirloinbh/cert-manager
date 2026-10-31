@@ -20,6 +20,8 @@ const toeic: Certification = {
   validityKind: 'unknown',
   validityMonths: null,
   memo: '',
+  gradeScale: 'none',
+  targetGrade: null,
 };
 
 const task = (fields: Partial<StudyTask> & Pick<StudyTask, 'id' | 'title'>): StudyTask => ({
@@ -78,6 +80,7 @@ function fakeApi(
         init.body === undefined ? undefined : (JSON.parse(init.body) as Record<string, unknown>);
       sent.push({ method, path, body });
       if (path === '/api/health') return reply(200, { ok: true, today });
+      if (path === '/api/grade-scales') return reply(200, { scales: [] });
       if (path === '/api/exam-attempts/latest') return reply(200, { today, attempts: [] });
       if (path === '/api/study-tasks/today')
         return reply(200, { today, tasks: options.todayTasks ?? [] });
