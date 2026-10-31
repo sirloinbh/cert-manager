@@ -155,6 +155,8 @@ test('lyrics arrive, go out to a file and come back translated', { skip: !url },
     ['{ 깨진 파일', 'JSON으로 읽을 수 없습니다'],
     [{ songId: fetched }, '파일 형식이 내보낸 형식과 다릅니다'],
     [{ ...file, songId: fetched + 1 }, '파일 이름과 곡 ID가 다릅니다'],
+    [{ ...file, songId: 1.5 }, '파일 형식이 내보낸 형식과 다릅니다'],
+    [translation('Clouds go', 'Birds\u0000fly'), '번역에 쓸 수 없는 문자가 있습니다'],
     [{ ...file, lines: file.lines.slice(0, 1) }, '번역 줄 수(1줄)가 원문 줄 수(2줄)와 다릅니다'],
     [translation('Clouds go', '  '), '번역이 비어 있는 줄이 1개 있습니다'],
     [translation('Clouds go', 'Birds\nfly'), '번역 한 칸에는 한 줄만 쓸 수 있습니다'],
@@ -169,16 +171,32 @@ test('lyrics arrive, go out to a file and come back translated', { skip: !url },
     await untouched();
   }
 
-  const saved = await importing(translation(' Clouds go ', 'Birds fly'));
-  assert.deepEqual(saved, { saved: [fileName], rejected: [] });
+  // A file nobody filled in yet is not a problem, and it stays for later.
+  const waiting = await importing(file);
+  assert.deepEqual(waiting, { saved: [], skipped: [fileName], rejected: [] });
+  assert.ok((await readdir(dir)).includes(fileName));
+
+  // Saved, even from a tool that starts the file with a byte order mark, and moved out of the way.
+  const saved = await importing(`\uFEFF${JSON.stringify(translation(' Clouds go ', 'Birds fly'))}`);
+  assert.deepEqual(saved, { saved: [fileName], skipped: [], rejected: [] });
+  assert.ok(!(await readdir(dir)).includes(fileName));
+  assert.deepEqual(await readdir(join(dir, 'imported')), [fileName]);
   assert.deepEqual(
     (await lines(fetched)).map((line) => line.translation),
     ['Clouds go', null, 'Birds fly'],
   );
 
+  // Importing again cannot bring back an old translation over an edit made on the screen.
+  await pool.query(
+    'UPDATE lyric_lines SET translation = $2 WHERE song_id = $1 AND line_number = 1',
+    [fetched, '화면에서 고친 번역'],
+  );
+  assert.deepEqual(await importTranslations(pool, dir), { saved: [], skipped: [], rejected: [] });
+  assert.equal((await lines(fetched))[0]?.translation, '화면에서 고친 번역');
+
   // A song that is gone is named, not fatal.
   await pool.query('DELETE FROM songs WHERE id = $1', [fetched]);
-  const gone = await importTranslations(pool, dir);
+  const gone = await importing(translation('Clouds go', 'Birds fly'));
   assert.deepEqual(gone.rejected, [{ file: fileName, reason: '곡을 찾을 수 없습니다' }]);
 });
 

@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -16,28 +16,28 @@ export const translationsDir = fileURLToPath(
 );
 
 const fileSchema = z.object({
-  songId: z.number(),
+  songId: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
   title: z.string(),
-  // Far more lines than any song has.
+  // Far more lines, and far longer ones, than any song has.
   lines: z
     .array(
       z.object({
-        lineNumber: z.number(),
-        original: z.string(),
-        translation: z.string().nullable(),
+        lineNumber: z.number().int().positive(),
+        original: z.string().max(5000),
+        translation: z.string().max(5000).nullable(),
       }),
     )
     .max(5000),
 });
 type TranslationFile = z.infer<typeof fileSchema>;
 
-type TextLine = { lineNumber: number; original: string };
+type TextLine = { lineNumber: number; original: string; translation: string | null };
 
 // A file that cannot be saved. Anything else, like a lost database connection, stops the script.
 class RejectedFile extends Error {}
 
-/** Why this file cannot be saved, or null when every line lines up. Saving is all or nothing. */
-function translationProblem(file: TranslationFile, originals: TextLine[]) {
+/** Why these lines are not the song's lines, or null when they are. */
+function lineProblem(file: TranslationFile, originals: TextLine[]) {
   if (file.lines.length !== originals.length) {
     return `번역 줄 수(${file.lines.length}줄)가 원문 줄 수(${originals.length}줄)와 다릅니다`;
   }
@@ -46,17 +46,30 @@ function translationProblem(file: TranslationFile, originals: TextLine[]) {
       line.lineNumber !== originals[index]?.lineNumber ||
       line.original !== originals[index]?.original,
   );
-  if (moved) return '원문이 DB와 다릅니다. 파일을 지우고 다시 내보내 주세요';
+  return moved ? '원문이 DB와 다릅니다. 파일을 지우고 다시 내보내 주세요' : null;
+}
+
+// Nothing was written in this file yet, so there is nothing to save or complain about.
+const untouched = (file: TranslationFile, originals: TextLine[]) =>
+  file.lines.every(
+    (line, index) => (line.translation ?? '').trim() === (originals[index]?.translation ?? ''),
+  );
+
+/** Why these translations cannot be saved, or null. Saving is all or nothing. */
+function translationProblem(file: TranslationFile) {
   const empty = file.lines.filter((line) => !line.translation?.trim()).length;
   if (empty > 0) return `번역이 비어 있는 줄이 ${empty}개 있습니다`;
   if (file.lines.some((line) => /[\r\n]/.test(line.translation ?? ''))) {
     return '번역 한 칸에는 한 줄만 쓸 수 있습니다';
   }
+  if (file.lines.some((line) => line.translation?.includes('\u0000'))) {
+    return '번역에 쓸 수 없는 문자가 있습니다';
+  }
   return null;
 }
 
 async function textLines(pool: Pick<Pool, 'query'>, id: number) {
-  const { rows } = await pool.query<TextLine & { translation: string | null }>(
+  const { rows } = await pool.query<TextLine>(
     `SELECT line_number AS "lineNumber", original, translation FROM lyric_lines
      WHERE song_id = $1 AND original <> '' ORDER BY line_number`,
     [id],
@@ -98,7 +111,8 @@ export async function exportTranslations(pool: Pool, dir: string) {
 function parseFile(name: string, text: string) {
   let value: unknown;
   try {
-    value = JSON.parse(text);
+    // Some Windows tools start a UTF-8 file with a byte order mark.
+    value = JSON.parse(text.replace(/^\uFEFF/, ''));
   } catch {
     throw new RejectedFile('JSON으로 읽을 수 없습니다');
   }
@@ -110,16 +124,31 @@ function parseFile(name: string, text: string) {
   return parsed.data;
 }
 
-/** Saves each file whose lines all match. Other files are left unsaved and named with the reason. */
+/**
+ * Saves each file whose lines all match, then moves it to imported/ so a later run cannot undo
+ * edits made on the screen. Files not filled in yet are skipped; bad ones stay and are named with the reason.
+ */
 export async function importTranslations(pool: Pool, dir: string) {
-  const result = { saved: [] as string[], rejected: [] as { file: string; reason: string }[] };
+  const result = {
+    saved: [] as string[],
+    skipped: [] as string[],
+    rejected: [] as { file: string; reason: string }[],
+  };
+  const doneDir = join(dir, 'imported');
+  await mkdir(doneDir, { recursive: true });
   const names = (await readdir(dir)).filter((name) => name.endsWith('.json')).sort();
   for (const name of names) {
     try {
       const file = parseFile(name, await readFile(join(dir, name), 'utf8'));
+      let skip = false;
       await inTransaction(pool, async (client) => {
         await lockSong(client, file.songId);
-        const problem = translationProblem(file, await textLines(client, file.songId));
+        const originals = await textLines(client, file.songId);
+        const mismatch = lineProblem(file, originals);
+        if (mismatch) throw new RejectedFile(mismatch);
+        skip = untouched(file, originals);
+        if (skip) return;
+        const problem = translationProblem(file);
         if (problem) throw new RejectedFile(problem);
         await setTranslations(
           client,
@@ -130,7 +159,12 @@ export async function importTranslations(pool: Pool, dir: string) {
           })),
         );
       });
-      result.saved.push(name);
+      if (skip) {
+        result.skipped.push(name);
+      } else {
+        await rename(join(dir, name), join(doneDir, name));
+        result.saved.push(name);
+      }
     } catch (error) {
       // lockSong's HttpError is a song that no longer exists.
       if (!(error instanceof RejectedFile || error instanceof HttpError)) throw error;

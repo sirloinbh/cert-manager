@@ -9,7 +9,9 @@ function targetName(url: string) {
   } catch {
     throw new Error('DATABASE_URL is not a valid URL');
   }
-  if (target.hash) throw new Error('DATABASE_URL is not a valid URL');
+  if (target.hash || target.pathname.includes('@')) {
+    throw new Error('DATABASE_URL is not a valid URL');
+  }
   return `${target.hostname}${target.pathname}`;
 }
 

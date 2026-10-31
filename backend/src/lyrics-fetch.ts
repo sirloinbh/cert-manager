@@ -11,9 +11,14 @@ export const lrclibUrl = 'https://lrclib.net';
 const userAgent = 'cert-manager/0.1 (https://github.com/sirloinbh/cert-manager)';
 // LRCLIB allows about 90 requests a minute with a User-Agent, so about one every 667ms.
 const requestGap = 700;
-const maxAttempts = 5;
+const maxAttempts = 3;
+const requestTimeout = 30_000;
 // When a 429 does not say how long to wait.
 const defaultRetrySeconds = 60;
+// Asked to wait longer than this, the script stops and can be run again later.
+const longestWaitSeconds = 300;
+// This many songs failing in a row means the service or the network is down.
+const mostFailuresInARow = 5;
 // A track of the same song can differ by a few seconds between releases.
 const durationTolerance = 3;
 
@@ -39,20 +44,28 @@ type LyricsQuery = {
   durationSeconds: number | null;
 };
 
-/** One request. Null for a 404. Waits and tries again on a 429, as long as LRCLIB asks. */
+// An answer whose text is safe to print. Parse errors can quote the response, so they are not printed.
+class LrclibError extends Error {}
+// LRCLIB wants us to stop. Asking about the next song would only make that worse.
+class RateLimited extends LrclibError {}
+
+/** One request. Null for a 404. Waits and tries again on a 429, as long as LRCLIB asks for a sensible wait. */
 async function getJson(url: string, source: LyricsSource): Promise<unknown> {
   for (let attempt = 1; ; attempt += 1) {
     const response = await fetch(url, {
       headers: { 'User-Agent': userAgent, Accept: 'application/json' },
+      signal: AbortSignal.timeout(requestTimeout),
     });
     await source.sleep(requestGap);
     if (response.status === 404) return null;
     if (response.ok) return response.json();
-    if (response.status !== 429 || attempt === maxAttempts) {
-      throw new Error(`LRCLIB ${response.status}`);
-    }
+    if (response.status !== 429) throw new LrclibError(`LRCLIB ${response.status}`);
     const asked = Number(response.headers.get('retry-after'));
-    await source.sleep((asked > 0 ? asked : defaultRetrySeconds) * 1000);
+    const seconds = asked > 0 ? asked : defaultRetrySeconds;
+    if (attempt === maxAttempts || seconds > longestWaitSeconds) {
+      throw new RateLimited(`LRCLIB 429, 대기 ${seconds}초 요청`);
+    }
+    await source.sleep(seconds * 1000);
   }
 }
 
@@ -60,8 +73,17 @@ async function getJson(url: string, source: LyricsSource): Promise<unknown> {
 function recordLines({ plainLyrics, syncedLyrics }: LrclibRecord) {
   const text = plainLyrics?.trim()
     ? plainLyrics
-    : (syncedLyrics ?? '').replace(/^\[[\d:.]+\] ?/gm, '');
+    : (syncedLyrics ?? '').replace(/^(?:\[[\d:.]+\] ?)+/gm, '');
   return toLines(text);
+}
+
+// The artist alone or with guests, not a longer name like a karaoke act.
+function sameArtist(found: string, artist: string) {
+  const name = found.toLocaleLowerCase();
+  const wanted = artist.toLocaleLowerCase();
+  if (!name.startsWith(wanted)) return false;
+  const rest = name.slice(wanted.length);
+  return rest === '' || /^\s*(?:,|&|feat\b|ft\b|with\b)/.test(rest);
 }
 
 const sameTitle = (a: string, b: string) => {
@@ -77,7 +99,7 @@ function matches(found: LrclibRecord, query: LyricsQuery) {
   return (
     closeEnough &&
     sameTitle(found.trackName, query.title) &&
-    found.artistName.toLocaleLowerCase().startsWith(query.artist.toLocaleLowerCase()) &&
+    sameArtist(found.artistName, query.artist) &&
     recordLines(found).some((line) => line !== '')
   );
 }
@@ -91,7 +113,7 @@ export async function requestLyrics(query: LyricsQuery, source: LyricsSource) {
 
   const exact = await getJson(`${source.baseUrl}/api/get?${params.toString()}`, source);
   const direct = exact === null ? null : record.parse(exact);
-  let found = direct && recordLines(direct).some((line) => line !== '') ? direct : undefined;
+  let found = direct && matches(direct, query) ? direct : undefined;
   if (!found) {
     const list = await getJson(`${source.baseUrl}/api/search?${search}`, source);
     found = z
@@ -149,26 +171,44 @@ async function saveLyrics(pool: Pool, id: number, lines: string[], sourceUrl: st
   return saved;
 }
 
-/** Tries every song without lyrics. One song failing does not stop the others. */
+/**
+ * Tries every song without lyrics. One song failing does not stop the others, but a rate limit or
+ * several failures in a row do. A database error stops everything, since fetched lyrics would be lost.
+ */
 export async function fetchMissingLyrics(
   pool: Pool,
   source: LyricsSource,
   log: (message: string) => void = () => {},
 ) {
-  const result = { saved: [] as string[], missing: [] as string[], failed: [] as string[] };
+  const result = {
+    saved: [] as string[],
+    missing: [] as string[],
+    failed: [] as string[],
+    stopped: null as string | null,
+  };
+  let failuresInARow = 0;
   for (const song of await songsWithoutLyrics(pool)) {
+    let found: Awaited<ReturnType<typeof requestLyrics>>;
     try {
-      const found = await requestLyrics(song, source);
-      if (!found) {
-        result.missing.push(song.title);
-        log(`없음: ${song.title}`);
-      } else if (await saveLyrics(pool, Number(song.id), found.lines, found.sourceUrl)) {
-        result.saved.push(song.title);
-        log(`저장: ${song.title}`);
-      }
+      found = await requestLyrics(song, source);
     } catch (error) {
+      const reason = error instanceof LrclibError ? error.message : '연결 실패 또는 잘못된 응답';
       result.failed.push(song.title);
-      log(`실패: ${song.title} (${error instanceof Error ? error.message : '알 수 없는 오류'})`);
+      log(`실패: ${song.title} (${reason})`);
+      failuresInARow += 1;
+      if (error instanceof RateLimited || failuresInARow === mostFailuresInARow) {
+        result.stopped = reason;
+        break;
+      }
+      continue;
+    }
+    failuresInARow = 0;
+    if (!found) {
+      result.missing.push(song.title);
+      log(`없음: ${song.title}`);
+    } else if (await saveLyrics(pool, Number(song.id), found.lines, found.sourceUrl)) {
+      result.saved.push(song.title);
+      log(`저장: ${song.title}`);
     }
   }
   if (result.saved.length > 0) {
