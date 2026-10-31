@@ -15,6 +15,8 @@ import { EmptyState } from './components/ui/empty-state';
 import { Toaster } from './components/ui/sonner';
 import { ExpiringCertifications } from './exam-attempts';
 import { type Health, healthText } from './health';
+import type { SongPaths } from './song-data';
+import { SongDetail, SongList } from './songs';
 import { TodayTasks } from './study-plan';
 import { UserActionAlerts } from './user-actions';
 
@@ -26,6 +28,7 @@ const pages = {
   certification: '/certifications/:id',
   editCertification: '/certifications/:id/edit',
   songs: '/songs',
+  song: '/songs/:id',
   words: '/words',
   settings: '/settings',
 } as const;
@@ -35,6 +38,11 @@ const certificationPaths: CertificationPaths = {
   create: pages.newCertification,
   detail: (id) => generatePath(pages.certification, { id: String(id) }),
   edit: (id) => generatePath(pages.editCertification, { id: String(id) }),
+};
+
+const songPaths: SongPaths = {
+  list: pages.songs,
+  detail: (id) => generatePath(pages.song, { id: String(id) }),
 };
 
 // Main menu (LNB) items, in display order.
@@ -137,16 +145,8 @@ export function App() {
             path={pages.editCertification}
             element={<EditCertification paths={certificationPaths} />}
           />
-          <Route
-            path={pages.songs}
-            element={
-              <Page
-                title="팝송 가사"
-                description="팝송 가사 원문과 번역을 줄 단위로 봅니다."
-                health={health}
-              />
-            }
-          />
+          <Route path={pages.songs} element={<SongList paths={songPaths} />} />
+          <Route path={pages.song} element={<SongDetail paths={songPaths} />} />
           <Route
             path={pages.words}
             element={
