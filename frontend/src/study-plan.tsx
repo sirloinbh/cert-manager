@@ -574,7 +574,10 @@ export function TodayTasks({ paths }: { paths: CertificationPaths }) {
                 </div>
                 {task.daysUntilDue === null ? null : (
                   <strong
-                    className={cn('shrink-0 text-body-sm font-semibold', isOverdue(task) && 'text-destructive')}
+                    className={cn(
+                      'shrink-0 text-body-sm font-semibold',
+                      isOverdue(task) && 'text-destructive',
+                    )}
                   >
                     {deadlineCountdown(task.daysUntilDue)}
                   </strong>
