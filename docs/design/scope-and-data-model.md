@@ -88,7 +88,7 @@
 | `validity_months`  | `integer NULL`                    | `validity_kind = 'months'`일 때만 값이 있다. `CHECK ((validity_kind = 'months') = (validity_months IS NOT NULL))`, `CHECK (validity_months > 0)` |
 | `memo`             | `text NOT NULL DEFAULT ''`        | 메모                                                                                                                                             |
 | `grade_scale`      | `text NOT NULL DEFAULT 'none'`    | 등급 체계(#51): `none`(쓰지 않음) · `toeic` · `toeic_speaking` · `information_processing` · `aws` · `driver_license`. 사용자가 고른다            |
-| `target_grade`     | `text NULL`                       | 목표 등급(#51). 체계에 있는 값만 받는다. 정하지 않았거나 체계가 없으면 `NULL`                                                                    |
+| `target_grade`     | `text NULL`                       | 다음에 노리는 등급(#51, #34). 체계에 있는 값만 받는다. 정하지 않았거나 체계가 없으면 `NULL`                                                      |
 
 - 등급표와 출처는 [자격증별 등급 체계](../research/certification-grades.md), 값의 원본은 `backend/src/grade-scales.ts`이다. 응시 기록의 `grade`는 개편 전 형식도 남길 수 있도록 자유 텍스트를 유지한다.
 - 정렬: 목록은 `category`로 묶고, `target_exam_date`가 가까운 순, `NULL`은 뒤로.
