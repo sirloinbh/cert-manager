@@ -16,6 +16,7 @@ import { Toaster } from './components/ui/sonner';
 import { ExpiringCertifications } from './exam-attempts';
 import { type Health, healthText } from './health';
 import { TodayTasks } from './study-plan';
+import { UserActionAlerts } from './user-actions';
 
 // Every page URL lives here (central docs/directory-rules.md, docs/design/scope-and-data-model.md section 3).
 const pages = {
@@ -102,7 +103,7 @@ export function App() {
   const health = useHealth();
   return (
     <BrowserRouter>
-      <AppShell appName="자격증 관리" nav={nav}>
+      <AppShell appName="자격증 관리" nav={nav} actions={<UserActionAlerts />}>
         <Routes>
           <Route
             path={pages.overview}

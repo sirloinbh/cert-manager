@@ -60,6 +60,7 @@ function fakeApi(initial: Certification[] = [], options: { deleteFails?: boolean
       if (path === '/api/study-tasks/today') return reply(200, { today, tasks: [] });
       if (path.endsWith('/plan')) return reply(200, { today, stages: [] });
       if (path === '/api/grade-scales') return reply(200, { scales: [] });
+      if (path === '/api/user-actions') return reply(200, { today, actions: [] });
       if (path === '/api/certifications' && method === 'GET') {
         const list = [...store].sort(
           (a, b) =>

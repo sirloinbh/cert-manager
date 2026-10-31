@@ -6,6 +6,7 @@ import { apiRateLimit, type RateLimitOptions } from './rate-limit.js';
 import { registerCertificationRoutes } from './routes/certifications.js';
 import { registerExamAttemptRoutes } from './routes/exam-attempts.js';
 import { registerStudyPlanRoutes } from './routes/study-plans.js';
+import { registerUserActionRoutes } from './routes/user-actions.js';
 import { errorHandler, notFound, serviceDate } from './standard/http.js';
 
 // DATE columns stay YYYY-MM-DD strings so the service time zone never shifts them.
@@ -28,6 +29,7 @@ export function createApp(
   registerCertificationRoutes(app, pool, today);
   registerExamAttemptRoutes(app, pool, today);
   registerStudyPlanRoutes(app, pool, today);
+  registerUserActionRoutes(app, pool, today);
   app.use('/api', notFound);
   app.use(errorHandler);
   return app;
