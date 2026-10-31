@@ -65,3 +65,9 @@
 - 대시보드의 지난 할 일 글자가 오늘 할 일보다 큼. 중앙 `cn()`의 tailwind-merge가 `text-body-sm`을 색상으로 보고 지운다 → 호출부에서 `cn()`을 쓰지 않게 했다. 근본 수정은 [project-standards#357](https://github.com/sirloinbh/project-standards/issues/357)로 분리했다.
 - 할 일 제목이 줄바꿈되면 줄 간격이 1이고 체크 상자 위치가 어긋남 → 줄 간격을 지정했다.
 - 저장 중 클릭이 무시되는 것을 보조 기술이 알 수 없음 → `aria-disabled`를 넣었다.
+
+## main 병합 — 2026-10-31
+
+- CodeQL js/missing-rate-limiting 경고 9건은 사용자 결정으로 닫지 않고 [#49](49-api-rate-limit.md)의 `express-rate-limit`로 고쳤다. #49 병합 뒤 이 브랜치에 `origin/main`을 병합했다. 충돌은 `docs/next-steps/README.md` 표 한 곳이고, #33이 끝난 쪽의 표를 택했다.
+- `TEST_DATABASE_URL=… npm run check`: 통과(exit 0). 백엔드 33개 통과(건너뜀 0), 프런트엔드 139개 통과, 스킬 4개 통과, 빌드 성공. `npm run knip`: 결과 없음.
+- 이 PC의 PostgreSQL 17에서 `004`를 `cert`, `cert_test`에 두 번씩 적용했고 오류가 없었다.
