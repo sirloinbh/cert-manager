@@ -58,6 +58,7 @@ PR #48이 CodeQL `js/missing-rate-limiting` 경고 9건으로 실패해 병합�
 | 변경 기록에 CodeQL 결과가 없음                                                               | 아래 검증에 적었다                                                                            |
 | 중앙 `nginx.conf` 주석이 맞지 않게 됨                                                        | [project-standards#358](https://github.com/sirloinbh/project-standards/issues/358)로 분리했다 |
 | 기본 한도 값과 헤더 위조를 지키는 테스트가 없음                                              | 테스트 2개로 바꾸거나 더했다                                                                  |
+
 2차(diff를 다시 본 리뷰 에이전트): 높음·중간·낮음 0건. 1차 지적 7건이 실제로 고쳐졌음을 확인했고, 리뷰는 2회로 마쳤다.
 
 ## 검증
