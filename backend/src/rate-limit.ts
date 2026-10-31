@@ -14,8 +14,8 @@ export function apiRateLimit({ limit = 1200, windowMs = 60_000 }: RateLimitOptio
     standardHeaders: 'draft-8',
     legacyHeaders: false,
     message: { error: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요' } satisfies ApiError,
-    // nginx passes a client's X-Forwarded-For through, but the API does not trust proxies:
-    // every request counts against the address it came from, so the check would only log noise.
-    validate: { xForwardedForHeader: false },
+    // nginx passes a client's forwarding headers through, but the API does not trust proxies:
+    // every request counts against the address it came from, so these checks would only log noise.
+    validate: { xForwardedForHeader: false, forwardedHeader: false },
   });
 }

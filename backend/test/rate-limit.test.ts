@@ -56,18 +56,35 @@ test('a new window allows requests again', async () => {
     async (call) => {
       assert.equal((await call('/api/health')).status, 200);
       assert.equal((await call('/api/health')).status, 429);
-      await new Promise((resolve) => setTimeout(resolve, 120));
+      await new Promise((resolve) => setTimeout(resolve, 1100));
       assert.equal((await call('/api/health')).status, 200);
     },
-    { rateLimit: { limit: 1, windowMs: 100 } },
+    // Long enough that a slow machine still makes the second request inside the window.
+    { rateLimit: { limit: 1, windowMs: 1000 } },
   );
 });
 
-test('normal use stays well under the default limit', async () => {
+test('the default limit is 1200 requests a minute', async () => {
   const { pool } = countingPool();
   await withApi(pool, async (call) => {
-    for (let index = 0; index < 50; index += 1) {
-      assert.equal((await call('/api/health')).status, 200);
-    }
+    const { headers } = await call('/api/health');
+    assert.match(headers.get('ratelimit-policy') ?? '', /q=1200; w=60/);
   });
+});
+
+test('a forged forwarding header does not get around the limit', async () => {
+  const { pool, state } = countingPool();
+  await withApi(
+    pool,
+    async (call) => {
+      const from = (address: string) =>
+        call('/api/health', {
+          headers: { 'x-forwarded-for': address, forwarded: `for=${address}` },
+        });
+      assert.equal((await from('203.0.113.1')).status, 200);
+      assert.equal((await from('203.0.113.2')).status, 429);
+    },
+    { rateLimit: { limit: 1 } },
+  );
+  assert.equal(state.queries, 1);
 });

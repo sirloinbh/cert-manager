@@ -4,8 +4,8 @@ import { createApp } from '../src/app.js';
 
 type Call = (
   path: string,
-  init?: { method?: string; body?: unknown },
-) => Promise<{ status: number; data: Record<string, unknown> }>;
+  init?: { method?: string; body?: unknown; headers?: Record<string, string> },
+) => Promise<{ status: number; data: Record<string, unknown>; headers: Headers }>;
 
 export async function withApi(
   pool: Pool,
@@ -23,7 +23,10 @@ export async function withApi(
     await run(async (path, init = {}) => {
       const response = await fetch(`http://127.0.0.1:${address.port}${path}`, {
         method: init.method ?? 'GET',
-        headers: init.body === undefined ? undefined : { 'content-type': 'application/json' },
+        headers: {
+          ...(init.body === undefined ? {} : { 'content-type': 'application/json' }),
+          ...init.headers,
+        },
         body: init.body === undefined ? undefined : JSON.stringify(init.body),
       });
       // 204 No Content has no body.
@@ -31,6 +34,7 @@ export async function withApi(
       return {
         status: response.status,
         data: (text ? JSON.parse(text) : {}) as Record<string, unknown>,
+        headers: response.headers,
       };
     });
   } finally {
