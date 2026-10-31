@@ -9,6 +9,9 @@
     "build": "tsc",
     "test": "tsx --test test/*.test.ts",
     "songs:import": "tsx --env-file-if-exists=../.env src/import-song-list.ts",
+    "lyrics:import": "tsx --env-file-if-exists=../.env src/import-lyrics.ts",
+    "translations:export": "tsx --env-file-if-exists=../.env src/export-translations.ts",
+    "translations:import": "tsx --env-file-if-exists=../.env src/import-translations.ts",
     "typecheck": "tsc -p tsconfig.check.json"
   },
   "dependencies": {

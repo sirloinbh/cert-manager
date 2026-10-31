@@ -1,5 +1,6 @@
 import { Pool } from 'pg';
 
+import { scriptDatabaseUrl } from './script-database.js';
 import {
   albumTracks,
   countDifferences,
@@ -56,23 +57,8 @@ type ReleaseGroup = { 'first-release-date'?: string };
 const fullDate = (value: string | undefined) =>
   value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
 
-// Says where the list goes before the minute of downloading. A password with an unescaped "/" or "#"
-// breaks URL parsing and can end up in the error or the host, so a bad value stops here without being shown.
-function targetName(url: string) {
-  let target: URL;
-  try {
-    target = new URL(url);
-  } catch {
-    throw new Error('DATABASE_URL is not a valid URL');
-  }
-  if (target.hash) throw new Error('DATABASE_URL is not a valid URL');
-  return `${target.hostname}${target.pathname}`;
-}
-
 async function main() {
-  const url = process.env.DATABASE_URL;
-  if (!url) throw new Error('DATABASE_URL is not set');
-  console.log(`Target database: ${targetName(url)}`);
+  const url = scriptDatabaseUrl();
 
   const albums: SongListInput['albums'] = [];
   for (const album of listAlbums) {

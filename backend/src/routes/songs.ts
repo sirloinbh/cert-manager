@@ -1,7 +1,8 @@
 import type { Express } from 'express';
-import type { Pool, PoolClient } from 'pg';
+import type { Pool } from 'pg';
 import { z } from 'zod';
 
+import { inTransaction, lockSong, setTranslations, toLines } from '../lyrics-store.js';
 import { HttpError, parseId } from '../standard/http.js';
 import { body, toId } from '../validation.js';
 
@@ -31,14 +32,6 @@ const translationInput = z.object(
   objectMessage,
 );
 
-/** Lines without surrounding blank lines. Windows line ends and trailing spaces do not count as content. */
-export function toLines(text: string) {
-  const lines = text.split(/\r\n|\r|\n/).map((line) => line.trimEnd());
-  while (lines.length > 0 && lines[0] === '') lines.shift();
-  while (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
-  return lines;
-}
-
 type PreviousLine = { original: string; translation: string | null };
 
 /** Each new line takes the translation of an old line with the same text, each one used once. */
@@ -53,26 +46,6 @@ export function carryTranslations(previous: PreviousLine[], lines: string[]) {
 }
 
 const notFoundMessage = '곡을 찾을 수 없습니다';
-
-async function inTransaction(pool: Pool, work: (client: PoolClient) => Promise<void>) {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    await work(client);
-    await client.query('COMMIT');
-  } catch (error) {
-    await client.query('ROLLBACK');
-    throw error;
-  } finally {
-    client.release();
-  }
-}
-
-// Both writes take this lock first, so one finishes before the other reads the lines.
-async function lockSong(client: PoolClient, id: number) {
-  const song = await client.query('SELECT 1 FROM songs WHERE id = $1 FOR UPDATE', [id]);
-  if (!song.rowCount) throw new HttpError(404, notFoundMessage);
-}
 
 // Listed before the first line with text; "no lyrics" also covers a song with only blank lines.
 const statusColumn = `CASE
@@ -248,13 +221,14 @@ export function registerSongRoutes(app: Express, pool: Pool) {
           `번역 줄 수(${translated.length}줄)가 원문 줄 수(${originals.length}줄)와 다릅니다. 빈 줄은 세지 않습니다`,
         );
       }
-      await client.query(
-        `UPDATE lyric_lines l SET translation = v.t
-         FROM unnest($2::int[], $3::text[]) AS v(n, t)
-         WHERE l.song_id = $1 AND l.line_number = v.n`,
-        [id, originals.map((line) => line.lineNumber), translated],
+      await setTranslations(
+        client,
+        id,
+        originals.map((line, index) => ({
+          lineNumber: line.lineNumber,
+          translation: translated[index] ?? '',
+        })),
       );
-      await client.query('UPDATE songs SET updated_at = now() WHERE id = $1', [id]);
     });
     res.json({ song: await readSong(pool, id) });
   });

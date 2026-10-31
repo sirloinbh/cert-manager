@@ -28,6 +28,8 @@ Vite http://localhost:5206, API http://localhost:3106/api/health, 호스트 DB �
 
 이미 쓰던 DB에는 `database/migrations`의 새 파일을 직접 적용합니다(빈 볼륨에서만 자동 적용). 곡 목록은 `npm run songs:import -w backend`로 받습니다. `DATABASE_URL`의 DB에 앨범·곡 이름, 발매일, 길이만 저장하고 가사는 받지 않으며, 시작할 때 대상 DB를 출력합니다.
 
+가사는 `npm run lyrics:import -w backend`로 LRCLIB에서 받아 그 DB에만 넣습니다. 번역은 `npm run translations:export -w backend`로 `.local/translations/`에 파일을 만들어 채운 뒤 `npm run translations:import -w backend`로 넣습니다. 가사와 번역은 커밋하지 않습니다.
+
 ## 검증
 
 - `npm run check`: 포맷, lint, 타입, 테스트, 스킬 동기화 검사, 빌드.
