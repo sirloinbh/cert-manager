@@ -49,14 +49,17 @@ export const statusLabels: Record<LyricsStatus, string> = {
   translated: '번역 있음',
 };
 
+// Song titles use a curly apostrophe, which a keyboard does not type.
+const forSearch = (text: string) => text.replace(/[‘’]/g, "'").toLocaleLowerCase();
+
 /** Albums with the tracks whose title holds the search words, ignoring case and spacing around them. */
 export function searchAlbums(albums: SongAlbum[], search: string) {
-  const words = search.trim().toLocaleLowerCase();
+  const words = forSearch(search.trim());
   if (!words) return albums;
   return albums
     .map((album) => ({
       ...album,
-      tracks: album.tracks.filter((track) => track.title.toLocaleLowerCase().includes(words)),
+      tracks: album.tracks.filter((track) => forSearch(track.title).includes(words)),
     }))
     .filter((album) => album.tracks.length > 0);
 }

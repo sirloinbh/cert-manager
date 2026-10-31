@@ -3,6 +3,7 @@ import { test } from 'node:test';
 
 import {
   albumTracks,
+  countDifferences,
   listAlbums,
   type MbRelease,
   pickBaseRelease,
@@ -141,6 +142,31 @@ test('lyric videos and repeated titles are not extra vault songs', () => {
     ],
   };
   assert.equal(pickVaultRelease([withVideos, fuller])?.id, 'fuller');
+});
+
+test('one recording under two titles is one song', () => {
+  const edition: MbRelease = {
+    id: 'r',
+    media: [{ tracks: [track('Song', 'same'), track('Song (Alternate Title)', 'same')] }],
+  };
+  assert.deepEqual(
+    albumTracks(studio, edition).map((item) => item.title),
+    ['Song'],
+  );
+});
+
+test('song counts that differ from the checked ones are named', () => {
+  const album = { ...studio, songs: 2 };
+  const tracks = albumTracks(studio, release('r', 3));
+  assert.deepEqual(countDifferences([{ album, tracks }]), ['A: expected 2, got 3']);
+  assert.deepEqual(countDifferences([{ album, tracks: tracks.slice(0, 2) }]), []);
+});
+
+test('the checked song counts add up', () => {
+  assert.equal(
+    listAlbums.reduce((sum, album) => sum + album.songs, 0),
+    198,
+  );
 });
 
 test('version labels leave the title, in either quote mark and bracket', () => {

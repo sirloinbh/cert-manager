@@ -1,6 +1,6 @@
 import { ArrowLeft, ClipboardPaste, Music, Search } from 'lucide-react';
-import { type FormEvent, useId, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { type FormEvent, type MouseEvent, useId, useMemo, useState } from 'react';
+import { Link, useLocation, useParams, useSearchParams } from 'react-router';
 
 import { Badge } from './components/ui/badge';
 import { Button } from './components/ui/button';
@@ -37,6 +37,7 @@ import {
   translationProgress,
 } from './song-data';
 import { useLoad } from './use-load';
+import { useSectionFocus } from './use-section-focus';
 
 // Screens for songs and lyrics (#35): the album list with search and the line-by-line lyrics page.
 
@@ -54,7 +55,9 @@ const loadSongs = () => songApi.list();
 
 export function SongList({ paths }: { paths: SongPaths }) {
   const loaded = useLoad('all', loadSongs);
-  const [search, setSearch] = useState('');
+  // In the URL, so coming back from a song finds the same search.
+  const [params, setParams] = useSearchParams();
+  const search = params.get('q') ?? '';
   const searchId = useId();
   const albums = useMemo(() => (loaded.state === 'ok' ? loaded.data.albums : []), [loaded]);
   const shown = useMemo(() => searchAlbums(albums, search), [albums, search]);
@@ -99,7 +102,9 @@ export function SongList({ paths }: { paths: SongPaths }) {
               type="search"
               className="pl-9"
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) =>
+                setParams(event.target.value ? { q: event.target.value } : {}, { replace: true })
+              }
               placeholder="곡 제목"
             />
           </div>
@@ -129,6 +134,7 @@ export function SongList({ paths }: { paths: SongPaths }) {
               <li key={`${album.id}-${track.trackNumber}`}>
                 <Link
                   to={paths.detail(track.songId)}
+                  state={{ listSearch: params.toString() }}
                   className="flex min-h-11 items-center gap-3 rounded-xl px-4 py-2 outline-none hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 >
                   <span className="w-6 shrink-0 text-right text-caption text-muted-foreground">
@@ -155,15 +161,20 @@ type PasteKind = 'lyrics' | 'translation';
 function PasteForm({
   kind,
   song,
+  pending,
+  setPending,
+  onEdit,
   onSaved,
 }: {
   kind: PasteKind;
   song: Song;
+  pending: boolean;
+  setPending: (pending: boolean) => void;
+  onEdit: () => void;
   onSaved: (song: Song) => void;
 }) {
   const key = kind === 'lyrics' ? 'original' : 'translation';
   const [text, setText] = useState(() => linesAsText(song.lines, key));
-  const [pending, setPending] = useState(false);
   const notice = useNotice();
   const id = useId();
   const originals = song.lines.filter((line) => line.original !== '').length;
@@ -203,7 +214,10 @@ function PasteForm({
           required
           className={cn(controlClass, 'max-h-[50dvh] min-h-48 py-2')}
           value={text}
-          onChange={(event) => setText(event.target.value)}
+          onChange={(event) => {
+            setText(event.target.value);
+            onEdit();
+          }}
           aria-describedby={`${id}-hint`}
         />
         <p id={`${id}-hint`} className="text-caption break-keep text-muted-foreground">
@@ -237,11 +251,17 @@ export function SongDetail({ paths }: { paths: SongPaths }) {
     open: false,
     kind: 'lyrics',
   });
+  // While saving nothing closes the form. Once edited, only its buttons do, so typed text is not lost by accident.
+  const [saving, setSaving] = useState(false);
+  const [edited, setEdited] = useState(false);
+  const focus = useSectionFocus();
   const titleId = useId();
+  const { state } = useLocation() as { state: { listSearch?: string } | null };
+  const listSearch = state?.listSearch;
 
   const back = (
     <Link
-      to={paths.list}
+      to={listSearch ? `${paths.list}?${listSearch}` : paths.list}
       className="inline-flex min-h-9 w-fit items-center gap-1 rounded-md text-body-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 pointer-coarse:min-h-11"
     >
       <ArrowLeft className="size-4" aria-hidden />곡 목록
@@ -272,7 +292,14 @@ export function SongDetail({ paths }: { paths: SongPaths }) {
 
   const song = saved?.id === loaded.data.song.id ? saved : loaded.data.song;
   const hasLyrics = song.status !== 'none';
-  const openPaste = (kind: PasteKind) => setPaste({ open: true, kind });
+  const openPaste = (event: MouseEvent<HTMLElement>, kind: PasteKind) => {
+    focus.remember(event);
+    setEdited(false);
+    setPaste({ open: true, kind });
+  };
+  const holdOpen = (event: Event) => {
+    if (saving || edited) event.preventDefault();
+  };
   const duration = durationText(song.durationSeconds);
 
   return (
@@ -297,12 +324,12 @@ export function SongDetail({ paths }: { paths: SongPaths }) {
         ) : null}
       </header>
       <div className="flex flex-wrap gap-2">
-        <Button variant="outline" onClick={() => openPaste('lyrics')}>
+        <Button variant="outline" onClick={(event) => openPaste(event, 'lyrics')}>
           <ClipboardPaste aria-hidden />
           가사 붙여 넣기
         </Button>
         {hasLyrics ? (
-          <Button variant="outline" onClick={() => openPaste('translation')}>
+          <Button variant="outline" onClick={(event) => openPaste(event, 'translation')}>
             <ClipboardPaste aria-hidden />
             번역 붙여 넣기
           </Button>
@@ -352,9 +379,15 @@ export function SongDetail({ paths }: { paths: SongPaths }) {
       )}
       <Dialog
         open={paste.open}
-        onOpenChange={(open) => setPaste((current) => ({ ...current, open }))}
+        onOpenChange={(open) => {
+          if (!saving) setPaste((current) => ({ ...current, open }));
+        }}
       >
-        <DialogContent>
+        <DialogContent
+          onCloseAutoFocus={focus.restore}
+          onEscapeKeyDown={holdOpen}
+          onInteractOutside={holdOpen}
+        >
           <DialogHeader>
             <DialogTitle>
               {paste.kind === 'lyrics' ? '가사 붙여 넣기' : '번역 붙여 넣기'}
@@ -368,7 +401,11 @@ export function SongDetail({ paths }: { paths: SongPaths }) {
               key={paste.kind}
               kind={paste.kind}
               song={song}
+              pending={saving}
+              setPending={setSaving}
+              onEdit={() => setEdited(true)}
               onSaved={(next) => {
+                setSaving(false);
                 setSaved(next);
                 setPaste((current) => ({ ...current, open: false }));
               }}

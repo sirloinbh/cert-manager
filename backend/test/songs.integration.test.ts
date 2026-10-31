@@ -130,6 +130,28 @@ test(
         ['The wind blows', null, null, 'I drink coffee'],
       );
 
+      // A line added above the others leaves the translations of the rest in place.
+      const inserted = await call(`${path}/lyrics`, {
+        method: 'PUT',
+        body: { original: '새 줄이다\n바람이 분다\n\n문을 연다\n커피를 마신다' },
+      });
+      assert.deepEqual(
+        (inserted.data.song as Song).lines.map((line) => line.translation),
+        [null, 'The wind blows', null, null, 'I drink coffee'],
+      );
+
+      // Saving the same text keeps where the lyrics came from.
+      await pool.query(
+        "UPDATE songs SET lyrics_source = 'lrclib', lyrics_source_url = 'https://example.test/1' WHERE id = $1",
+        [shared],
+      );
+      const again = await call(`${path}/lyrics`, {
+        method: 'PUT',
+        body: { original: '새 줄이다\n바람이 분다\n\n문을 연다\n커피를 마신다\n' },
+      });
+      assert.equal((again.data.song as Song).lyricsSource, 'lrclib');
+      assert.equal((again.data.song as Song).lyricsSourceUrl, 'https://example.test/1');
+
       const relisted = await call('/api/songs');
       const firstAlbum = (relisted.data.albums as Album[]).find((album) => album.id === earlier);
       assert.equal(firstAlbum?.tracks[0]?.status, 'untranslated');

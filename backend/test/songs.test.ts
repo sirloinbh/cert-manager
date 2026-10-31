@@ -3,23 +3,61 @@ import { test } from 'node:test';
 
 import type { Pool } from 'pg';
 
-import { toLines } from '../src/routes/songs.js';
+import { carryTranslations, toLines } from '../src/routes/songs.js';
 import { withApi } from './helpers.js';
 
 type Query = { text: string; values: unknown[] };
 
 function fakePool(answer: (query: Query) => { rows: unknown[]; rowCount?: number }) {
   const queries: Query[] = [];
+  const connections = { taken: 0, released: 0 };
   const query = async (text: string, values: unknown[] = []) => {
     queries.push({ text, values });
     return answer({ text, values });
   };
   const pool = {
     query,
-    connect: async () => ({ query, release: () => {} }),
+    connect: async () => {
+      connections.taken += 1;
+      return {
+        query,
+        release: () => {
+          connections.released += 1;
+        },
+      };
+    },
   } as unknown as Pool;
-  return { pool, queries };
+  return { pool, queries, connections };
 }
+
+test('translations follow their text when lines are added, removed or moved', () => {
+  const previous = [
+    { original: '하나', translation: 'one' },
+    { original: '', translation: null },
+    { original: '둘', translation: 'two' },
+    { original: '셋', translation: null },
+  ];
+  assert.deepEqual(carryTranslations(previous, ['새 줄', '하나', '', '셋', '둘']), [
+    null,
+    'one',
+    null,
+    null,
+    'two',
+  ]);
+  assert.deepEqual(carryTranslations(previous, ['둘']), ['two']);
+});
+
+test('a repeated line uses each old translation once', () => {
+  const previous = [
+    { original: '후렴', translation: 'first' },
+    { original: '후렴', translation: 'second' },
+  ];
+  assert.deepEqual(carryTranslations(previous, ['후렴', '후렴', '후렴']), [
+    'first',
+    'second',
+    null,
+  ]);
+});
 
 test('lines ignore line-end style, trailing spaces and surrounding blank lines', () => {
   assert.deepEqual(toLines('\n\n첫 줄  \r\n\r\n둘째 줄\r셋째 줄\n\n'), [
@@ -103,7 +141,7 @@ test('a translation with the wrong line count says both counts and saves nothing
   const { pool, queries } = fakePool(({ text }) =>
     text.includes('SELECT line_number')
       ? { rows: [{ lineNumber: 1 }, { lineNumber: 3 }] }
-      : { rows: [] },
+      : { rows: [], rowCount: 1 },
   );
   await withApi(pool, async (call) => {
     const { status, data } = await call('/api/songs/3/translation', {
@@ -113,7 +151,23 @@ test('a translation with the wrong line count says both counts and saves nothing
     assert.equal(status, 400);
     assert.equal(data.error, '번역 줄 수(1줄)가 원문 줄 수(2줄)와 다릅니다. 빈 줄은 세지 않습니다');
   });
-  assert.ok(!queries.some((query) => query.text.includes('UPDATE')));
+  assert.ok(!queries.some((query) => query.text.startsWith('UPDATE')));
+  assert.ok(queries.some((query) => query.text === 'ROLLBACK'));
+});
+
+test('a missing song rolls back and gives the connection back', async () => {
+  const { pool, queries, connections } = fakePool(() => ({ rows: [], rowCount: 0 }));
+  await withApi(pool, async (call) => {
+    for (const [kind, body] of [
+      ['lyrics', { original: '새로 지은 문장' }],
+      ['translation', { translation: '새로 지은 번역' }],
+    ] as const) {
+      const { status } = await call(`/api/songs/9/${kind}`, { method: 'PUT', body });
+      assert.equal(status, 404);
+    }
+  });
+  assert.equal(queries.filter((query) => query.text === 'ROLLBACK').length, 2);
+  assert.deepEqual(connections, { taken: 2, released: 2 });
 });
 
 test('a translation needs lyrics first', async () => {
@@ -131,7 +185,7 @@ test('a translation needs lyrics first', async () => {
 });
 
 test('a failure while saving lyrics rolls back', async () => {
-  const { pool, queries } = fakePool(({ text }) => {
+  const { pool, queries, connections } = fakePool(({ text }) => {
     if (text.startsWith('INSERT')) throw new Error('boom');
     return { rows: [], rowCount: 1 };
   });
@@ -150,4 +204,5 @@ test('a failure while saving lyrics rolls back', async () => {
   }
   assert.ok(queries.some((query) => query.text === 'ROLLBACK'));
   assert.ok(!queries.some((query) => query.text === 'COMMIT'));
+  assert.deepEqual(connections, { taken: 1, released: 1 });
 });

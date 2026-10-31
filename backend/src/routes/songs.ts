@@ -1,5 +1,5 @@
 import type { Express } from 'express';
-import type { Pool } from 'pg';
+import type { Pool, PoolClient } from 'pg';
 import { z } from 'zod';
 
 import { HttpError, parseId } from '../standard/http.js';
@@ -39,7 +39,40 @@ export function toLines(text: string) {
   return lines;
 }
 
+type PreviousLine = { original: string; translation: string | null };
+
+/** Each new line takes the translation of an old line with the same text, each one used once. */
+export function carryTranslations(previous: PreviousLine[], lines: string[]) {
+  const kept = new Map<string, string[]>();
+  for (const { original, translation } of previous) {
+    if (original !== '' && translation !== null) {
+      kept.set(original, [...(kept.get(original) ?? []), translation]);
+    }
+  }
+  return lines.map((line) => kept.get(line)?.shift() ?? null);
+}
+
 const notFoundMessage = '곡을 찾을 수 없습니다';
+
+async function inTransaction(pool: Pool, work: (client: PoolClient) => Promise<void>) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await work(client);
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+// Both writes take this lock first, so one finishes before the other reads the lines.
+async function lockSong(client: PoolClient, id: number) {
+  const song = await client.query('SELECT 1 FROM songs WHERE id = $1 FOR UPDATE', [id]);
+  if (!song.rowCount) throw new HttpError(404, notFoundMessage);
+}
 
 // Listed before the first line with text; "no lyrics" also covers a song with only blank lines.
 const statusColumn = `CASE
@@ -157,24 +190,27 @@ export function registerSongRoutes(app: Express, pool: Pool) {
     res.json({ song: await readSong(pool, id) });
   });
 
-  // Replaces the lyrics. A line that did not change keeps its translation.
+  // Replaces the lyrics. A line whose text is still there keeps its translation, wherever it moved.
+  // Saving the same text changes nothing, so a fetched song keeps its source.
   app.put('/api/songs/:id/lyrics', async (req, res) => {
     const id = parseId(req.params.id, '곡');
     const input = lyricsInput.parse(body(req.body));
     const lines = toLines(input.original);
     if (!lines.some((line) => line !== '')) throw new HttpError(400, '가사를 입력해 주세요');
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-      const updated = await client.query(
+    await inTransaction(pool, async (client) => {
+      await lockSong(client, id);
+      const previous = await client.query<PreviousLine>(
+        'SELECT original, translation FROM lyric_lines WHERE song_id = $1 ORDER BY line_number',
+        [id],
+      );
+      const same =
+        previous.rows.length === lines.length &&
+        previous.rows.every((row, index) => row.original === lines[index]);
+      if (same) return;
+      await client.query(
         `UPDATE songs SET lyrics_source = 'manual', lyrics_source_url = '', lyrics_fetched_at = now(),
            updated_at = now()
          WHERE id = $1`,
-        [id],
-      );
-      if (!updated.rowCount) throw new HttpError(404, notFoundMessage);
-      const previous = await client.query<{ original: string; translation: string | null }>(
-        'SELECT original, translation FROM lyric_lines WHERE song_id = $1 ORDER BY line_number',
         [id],
       );
       await client.query('DELETE FROM lyric_lines WHERE song_id = $1', [id]);
@@ -185,51 +221,41 @@ export function registerSongRoutes(app: Express, pool: Pool) {
           id,
           lines.map((_line, index) => index + 1),
           lines,
-          lines.map((line, index) =>
-            previous.rows[index]?.original === line
-              ? (previous.rows[index]?.translation ?? null)
-              : null,
-          ),
+          carryTranslations(previous.rows, lines),
         ],
       );
-      await client.query('COMMIT');
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
-    }
+    });
     res.json({ song: await readSong(pool, id) });
   });
 
   // Translation lines fill the lines with text in order, so blank lines may be left out when pasting.
-  // All of them are saved or none: one statement, and only when the counts match.
+  // All of them are saved or none. The song's lock keeps the lines from changing in between.
   app.put('/api/songs/:id/translation', async (req, res) => {
     const id = parseId(req.params.id, '곡');
     const input = translationInput.parse(body(req.body));
     const translated = toLines(input.translation).filter((line) => line !== '');
-    const { rows: originals } = await pool.query<{ lineNumber: number }>(
-      `SELECT line_number AS "lineNumber" FROM lyric_lines
-       WHERE song_id = $1 AND original <> '' ORDER BY line_number`,
-      [id],
-    );
-    if (originals.length === 0) {
-      const song = await pool.query('SELECT 1 FROM songs WHERE id = $1', [id]);
-      if (!song.rowCount) throw new HttpError(404, notFoundMessage);
-      throw new HttpError(400, '원문 가사를 먼저 넣어 주세요');
-    }
-    if (translated.length !== originals.length) {
-      throw new HttpError(
-        400,
-        `번역 줄 수(${translated.length}줄)가 원문 줄 수(${originals.length}줄)와 다릅니다. 빈 줄은 세지 않습니다`,
+    await inTransaction(pool, async (client) => {
+      await lockSong(client, id);
+      const { rows: originals } = await client.query<{ lineNumber: number }>(
+        `SELECT line_number AS "lineNumber" FROM lyric_lines
+         WHERE song_id = $1 AND original <> '' ORDER BY line_number`,
+        [id],
       );
-    }
-    await pool.query(
-      `UPDATE lyric_lines l SET translation = v.t
-       FROM unnest($2::int[], $3::text[]) AS v(n, t)
-       WHERE l.song_id = $1 AND l.line_number = v.n`,
-      [id, originals.map((line) => line.lineNumber), translated],
-    );
+      if (originals.length === 0) throw new HttpError(400, '원문 가사를 먼저 넣어 주세요');
+      if (translated.length !== originals.length) {
+        throw new HttpError(
+          400,
+          `번역 줄 수(${translated.length}줄)가 원문 줄 수(${originals.length}줄)와 다릅니다. 빈 줄은 세지 않습니다`,
+        );
+      }
+      await client.query(
+        `UPDATE lyric_lines l SET translation = v.t
+         FROM unnest($2::int[], $3::text[]) AS v(n, t)
+         WHERE l.song_id = $1 AND l.line_number = v.n`,
+        [id, originals.map((line) => line.lineNumber), translated],
+      );
+      await client.query('UPDATE songs SET updated_at = now() WHERE id = $1', [id]);
+    });
     res.json({ song: await readSong(pool, id) });
   });
 }

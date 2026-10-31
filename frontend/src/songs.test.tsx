@@ -92,6 +92,8 @@ function fakeApi(
     missing?: boolean;
     saveError?: string;
     saved?: Song;
+    // Saving waits for this.
+    saveGate?: Promise<void>;
   } = {},
 ) {
   const sent: Sent[] = [];
@@ -114,9 +116,11 @@ function fakeApi(
           ? reply(500, { error: '목록 서버 오류' })
           : reply(200, { albums: options.albums ?? albums });
       if (method === 'PUT')
-        return options.saveError
-          ? reply(400, { error: options.saveError })
-          : reply(200, { song: options.saved ?? translated });
+        return (options.saveGate ?? Promise.resolve()).then(() =>
+          options.saveError
+            ? reply(400, { error: options.saveError })
+            : reply(200, { song: options.saved ?? translated }),
+        );
       if (options.missing) return reply(404, { error: '곡을 찾을 수 없습니다' });
       return reply(200, { song: options.song ?? withLyrics });
     }),
@@ -136,6 +140,17 @@ test('search matches titles ignoring case, and drops albums with no match', () =
   expect(searchAlbums(albums, 'morning').flatMap((album) => album.tracks)).toHaveLength(2);
   expect(searchAlbums(albums, '없는 곡')).toEqual([]);
   expect(searchAlbums(albums, '  ')).toBe(albums);
+});
+
+test('a typed apostrophe finds a title with a curly one, and the other way round', () => {
+  const curly: SongAlbum[] = [
+    {
+      ...albums[0],
+      tracks: [{ songId: 1, trackNumber: 1, title: 'Don’t Wait', status: 'none' }],
+    },
+  ];
+  expect(searchAlbums(curly, "don't")).toHaveLength(1);
+  expect(searchAlbums(curly, 'don’t')).toHaveLength(1);
 });
 
 test('progress counts a song on two albums once', () => {
@@ -171,7 +186,17 @@ test('searching narrows the list and says when nothing matches', async () => {
   expect(screen.getByText(/없는 곡.*들어간 곡이 없습니다/)).toBeInTheDocument();
 });
 
-test('an empty list explains itself, and a failed list says why', async () => {
+test('coming back from a song finds the same search', async () => {
+  open('/songs');
+  fireEvent.change(await screen.findByLabelText('곡 검색'), { target: { value: 'quiet' } });
+  expect(window.location.search).toBe('?q=quiet');
+  fireEvent.click(screen.getByRole('link', { name: /Quiet Road/ }));
+  fireEvent.click(await screen.findByRole('link', { name: '곡 목록' }));
+  expect(await screen.findByLabelText('곡 검색')).toHaveValue('quiet');
+  expect(screen.queryByText('Paper Boats')).not.toBeInTheDocument();
+});
+
+test('an empty list explains itself', async () => {
   open('/songs', { albums: [] });
   expect(await screen.findByText('아직 곡 목록이 없습니다')).toBeInTheDocument();
   expect(screen.queryByLabelText('곡 검색')).not.toBeInTheDocument();
@@ -250,6 +275,53 @@ test('a rejected translation stays in the form with the reason', async () => {
   expect(screen.getByRole('dialog', { name: '번역 붙여 넣기' })).toBeInTheDocument();
   expect(screen.getByLabelText('한국어 번역')).toHaveValue('한 줄');
   await settle();
+});
+
+test('closing the form puts focus back on the button that opened it', async () => {
+  open('/songs/12');
+  const opener = await screen.findByRole('button', { name: '번역 붙여 넣기' });
+  fireEvent.click(opener);
+  fireEvent.click(await screen.findByRole('button', { name: '취소' }));
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  await waitFor(() => expect(opener).toHaveFocus());
+});
+
+test('nothing closes the form while it saves', async () => {
+  let finish = () => {};
+  const saveGate = new Promise<void>((resolve) => {
+    finish = resolve;
+  });
+  open('/songs/12', { saveGate });
+  fireEvent.click(await screen.findByRole('button', { name: '번역 붙여 넣기' }));
+  fireEvent.change(await screen.findByLabelText('한국어 번역'), {
+    target: { value: '길은 조용하다\n나는 혼자 걷는다' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: '저장' }));
+  await waitFor(() => expect(screen.getByRole('button', { name: '취소' })).toBeDisabled());
+  fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+  fireEvent.click(screen.getByRole('button', { name: '닫기' }));
+  expect(screen.getByRole('dialog')).toBeInTheDocument();
+  finish();
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  expect(await screen.findByText('길은 조용하다')).toBeInTheDocument();
+});
+
+test('Esc keeps a form with typed text, and closes an untouched one', async () => {
+  open('/songs/12');
+  fireEvent.click(await screen.findByRole('button', { name: '번역 붙여 넣기' }));
+  const field = await screen.findByLabelText('한국어 번역');
+  fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+  fireEvent.click(screen.getByRole('button', { name: '번역 붙여 넣기' }));
+  fireEvent.change(await screen.findByLabelText('한국어 번역'), { target: { value: '쓰던 번역' } });
+  expect(field).not.toBeInTheDocument();
+  fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+  await settle();
+  expect(screen.getByLabelText('한국어 번역')).toHaveValue('쓰던 번역');
+  // The form's own buttons still close it.
+  fireEvent.click(screen.getByRole('button', { name: '취소' }));
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 });
 
 test('a missing song says so', async () => {

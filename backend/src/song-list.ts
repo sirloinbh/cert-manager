@@ -4,49 +4,108 @@ export type ListAlbum = {
   releaseGroupId: string;
   title: string;
   kind: 'studio' | 'taylors_version';
+  // How many songs the album adds. The script stops when MusicBrainz gives another number.
+  songs: number;
 };
 
-// MusicBrainz release groups, checked on 2026-10-31. Taylor's Version albums only add their vault songs.
+// MusicBrainz release groups and song counts, checked on 2026-10-31.
+// Taylor's Version albums only add their vault songs.
 export const listAlbums: ListAlbum[] = [
-  { releaseGroupId: 'ba1d0c2a-bb07-38bc-835c-a880f76f1309', title: 'Taylor Swift', kind: 'studio' },
-  { releaseGroupId: '63eba062-847c-3b73-8b0f-6baf27bba6fa', title: 'Fearless', kind: 'studio' },
-  { releaseGroupId: 'ba1259eb-d41e-41c5-a70c-0e6fa73e6708', title: 'Speak Now', kind: 'studio' },
-  { releaseGroupId: 'a73cecde-0923-40ad-aad1-e8c24ba6c3d2', title: 'Red', kind: 'studio' },
-  { releaseGroupId: '4d9ec1c2-58ec-48a4-aa0a-916718adead0', title: '1989', kind: 'studio' },
-  { releaseGroupId: 'f060c8fd-bec9-426e-800e-8efc040a71e6', title: 'reputation', kind: 'studio' },
-  { releaseGroupId: '30e9785b-7b50-4d29-b3d1-96fb55e3397f', title: 'Lover', kind: 'studio' },
-  { releaseGroupId: 'f1d08326-c23b-4b43-be3b-20b33ab10bf6', title: 'folklore', kind: 'studio' },
-  { releaseGroupId: 'e86d6219-f5a2-4edd-bf2b-3f9eab190ae0', title: 'evermore', kind: 'studio' },
-  { releaseGroupId: '0dcc84fb-c592-46e9-ba92-a52bb44dd553', title: 'Midnights', kind: 'studio' },
+  {
+    releaseGroupId: 'ba1d0c2a-bb07-38bc-835c-a880f76f1309',
+    title: 'Taylor Swift',
+    kind: 'studio',
+    songs: 11,
+  },
+  {
+    releaseGroupId: '63eba062-847c-3b73-8b0f-6baf27bba6fa',
+    title: 'Fearless',
+    kind: 'studio',
+    songs: 13,
+  },
+  {
+    releaseGroupId: 'ba1259eb-d41e-41c5-a70c-0e6fa73e6708',
+    title: 'Speak Now',
+    kind: 'studio',
+    songs: 14,
+  },
+  {
+    releaseGroupId: 'a73cecde-0923-40ad-aad1-e8c24ba6c3d2',
+    title: 'Red',
+    kind: 'studio',
+    songs: 16,
+  },
+  {
+    releaseGroupId: '4d9ec1c2-58ec-48a4-aa0a-916718adead0',
+    title: '1989',
+    kind: 'studio',
+    songs: 13,
+  },
+  {
+    releaseGroupId: 'f060c8fd-bec9-426e-800e-8efc040a71e6',
+    title: 'reputation',
+    kind: 'studio',
+    songs: 15,
+  },
+  {
+    releaseGroupId: '30e9785b-7b50-4d29-b3d1-96fb55e3397f',
+    title: 'Lover',
+    kind: 'studio',
+    songs: 18,
+  },
+  {
+    releaseGroupId: 'f1d08326-c23b-4b43-be3b-20b33ab10bf6',
+    title: 'folklore',
+    kind: 'studio',
+    songs: 16,
+  },
+  {
+    releaseGroupId: 'e86d6219-f5a2-4edd-bf2b-3f9eab190ae0',
+    title: 'evermore',
+    kind: 'studio',
+    songs: 15,
+  },
+  {
+    releaseGroupId: '0dcc84fb-c592-46e9-ba92-a52bb44dd553',
+    title: 'Midnights',
+    kind: 'studio',
+    songs: 13,
+  },
   {
     releaseGroupId: '71c3eed6-466c-4aef-ad12-65a36d19467a',
     title: 'The Tortured Poets Department',
     kind: 'studio',
+    songs: 16,
   },
   {
     releaseGroupId: '9ae7e7e9-ac40-4874-bd43-d77a9bb9b617',
     title: 'The Life of a Showgirl',
     kind: 'studio',
+    songs: 12,
   },
   {
     releaseGroupId: 'd2e4838d-90e1-471c-bda0-fd816dabb2d4',
     title: "Fearless (Taylor's Version)",
     kind: 'taylors_version',
+    songs: 6,
   },
   {
     releaseGroupId: '67727253-f1c0-4243-9270-f9f1401c3b8c',
     title: "Red (Taylor's Version)",
     kind: 'taylors_version',
+    songs: 9,
   },
   {
     releaseGroupId: '0441b1b2-de57-4a9a-b007-1f6e159921d5',
     title: "Speak Now (Taylor's Version)",
     kind: 'taylors_version',
+    songs: 6,
   },
   {
     releaseGroupId: '1c4770b3-b7a3-4d44-a7a9-8e2dbb74b85a',
     title: "1989 (Taylor's Version)",
     kind: 'taylors_version',
+    songs: 5,
   },
 ];
 
@@ -116,16 +175,17 @@ export const songTitle = (title: string) =>
     .replace(/\s*[([]\s*from the vault\s*[)\]]/gi, '')
     .trim();
 
-/** The tracks one album adds to the list, numbered as on that release. A title repeated on it counts once. */
-export function albumTracks(album: ListAlbum, release: MbRelease): ListTrack[] {
+/** The tracks one album adds, numbered as on that release. A repeated title or recording counts once. */
+export function albumTracks(album: Pick<ListAlbum, 'kind'>, release: MbRelease): ListTrack[] {
   const seen = new Set<string>();
   return releaseTracks(release)
     .map((track, index) => ({ track, trackNumber: index + 1 }))
     .filter(({ track }) => album.kind === 'studio' || isVault(track.title))
     .filter(({ track }) => {
-      const title = songTitle(track.title);
-      if (seen.has(title)) return false;
-      seen.add(title);
+      const title = `title:${songTitle(track.title)}`;
+      const recording = `recording:${track.recording.id}`;
+      if (seen.has(title) || seen.has(recording)) return false;
+      seen.add(title).add(recording);
       return true;
     })
     .map(({ track, trackNumber }) => {
@@ -137,4 +197,11 @@ export function albumTracks(album: ListAlbum, release: MbRelease): ListTrack[] {
         recordingId: track.recording.id,
       };
     });
+}
+
+/** One line for each album whose song count is not the checked one. */
+export function countDifferences(loaded: { album: ListAlbum; tracks: ListTrack[] }[]) {
+  return loaded
+    .filter(({ album, tracks }) => album.songs !== tracks.length)
+    .map(({ album, tracks }) => `${album.title}: expected ${album.songs}, got ${tracks.length}`);
 }

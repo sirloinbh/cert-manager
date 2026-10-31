@@ -2,12 +2,13 @@ import { Pool } from 'pg';
 
 import {
   albumTracks,
+  countDifferences,
   listAlbums,
-  type ListTrack,
   type MbRelease,
   pickBaseRelease,
   pickVaultRelease,
 } from './song-list.js';
+import { saveSongList, type SongListInput } from './song-list-save.js';
 
 // Loads the song list from MusicBrainz into the database named by DATABASE_URL (#35). Safe to run again.
 // Only titles, dates and lengths are stored (CC0); this script never touches lyrics.
@@ -56,83 +57,43 @@ const fullDate = (value: string | undefined) =>
   value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
 
 async function main() {
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  const loaded: { album: (typeof listAlbums)[number]; date: string | null; tracks: ListTrack[] }[] =
-    [];
-  try {
-    for (const album of listAlbums) {
-      const group = await get<ReleaseGroup>(`/release-group/${album.releaseGroupId}?fmt=json`);
-      const releases = await allReleases(album.releaseGroupId);
-      const release =
-        album.kind === 'studio' ? pickBaseRelease(releases) : pickVaultRelease(releases);
-      if (!release) throw new Error(`No release found for ${album.title}`);
-      const tracks = albumTracks(album, release);
-      loaded.push({ album, date: fullDate(group['first-release-date']), tracks });
-      console.log(`${album.title}: ${tracks.length} songs`);
-    }
+  const url = process.env.DATABASE_URL;
+  if (!url) throw new Error('DATABASE_URL is not set');
+  // Says where the list goes before the minute of downloading; the password stays out.
+  const target = new URL(url);
+  console.log(`Target database: ${target.hostname}${target.pathname}`);
 
-    // One transaction, so a failed run leaves the list as it was.
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-      const { rows: artists } = await client.query<{ id: string }>(
-        `INSERT INTO artists (name, musicbrainz_id) VALUES ($1, $2)
-         ON CONFLICT (musicbrainz_id) DO UPDATE SET name = EXCLUDED.name, updated_at = now()
-         RETURNING id`,
-        [artist.name, artist.id],
-      );
-      const artistId = artists[0]?.id;
-      for (const { album, date, tracks } of loaded) {
-        const { rows: albums } = await client.query<{ id: string }>(
-          `INSERT INTO albums (artist_id, title, kind, release_date, musicbrainz_id)
-           VALUES ($1, $2, $3, $4, $5)
-           ON CONFLICT (musicbrainz_id) DO UPDATE SET title = EXCLUDED.title, kind = EXCLUDED.kind,
-             release_date = EXCLUDED.release_date, updated_at = now()
-           RETURNING id`,
-          [artistId, album.title, album.kind, date, album.releaseGroupId],
-        );
-        const albumId = albums[0]?.id;
-        // The album's tracks are replaced, so a corrected list leaves nothing behind.
-        await client.query('DELETE FROM album_tracks WHERE album_id = $1', [albumId]);
-        for (const track of tracks) {
-          const { rows: songs } = await client.query<{ id: string }>(
-            `INSERT INTO songs (artist_id, title, duration_seconds, musicbrainz_id)
-             VALUES ($1, $2, $3, $4)
-             ON CONFLICT (musicbrainz_id) DO UPDATE SET title = EXCLUDED.title,
-               duration_seconds = EXCLUDED.duration_seconds, updated_at = now()
-             RETURNING id`,
-            [artistId, track.title, track.durationSeconds, track.recordingId],
-          );
-          await client.query(
-            `INSERT INTO album_tracks (album_id, song_id, track_number) VALUES ($1, $2, $3)
-             ON CONFLICT (album_id, track_number) DO UPDATE SET song_id = EXCLUDED.song_id`,
-            [albumId, songs[0]?.id, track.trackNumber],
-          );
-        }
-      }
-      // Songs no longer on any album go too, unless they already hold lyrics.
-      await client.query(
-        `DELETE FROM songs s
-         WHERE s.artist_id = $1
-           AND NOT EXISTS (SELECT 1 FROM album_tracks t WHERE t.song_id = s.id)
-           AND NOT EXISTS (SELECT 1 FROM lyric_lines l WHERE l.song_id = s.id)`,
-        [artistId],
-      );
-      await client.query(
-        `INSERT INTO import_sources (kind, url, license, fetched_at)
-         VALUES ('musicbrainz', $1, 'CC0', now())`,
-        [api],
-      );
-      await client.query('COMMIT');
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
-    }
-    console.log(
-      `Saved ${loaded.reduce((sum, { tracks }) => sum + tracks.length, 0)} album tracks.`,
+  const albums: SongListInput['albums'] = [];
+  for (const album of listAlbums) {
+    const group = await get<ReleaseGroup>(`/release-group/${album.releaseGroupId}?fmt=json`);
+    const releases = await allReleases(album.releaseGroupId);
+    const release =
+      album.kind === 'studio' ? pickBaseRelease(releases) : pickVaultRelease(releases);
+    if (!release) throw new Error(`No release found for ${album.title}`);
+    const tracks = albumTracks(album, release);
+    albums.push({ album, date: fullDate(group['first-release-date']), tracks });
+    console.log(`${album.title}: ${tracks.length} songs`);
+  }
+
+  // MusicBrainz data changes. Another edition may now be picked, so nothing is saved until someone looks.
+  const differences = countDifferences(albums);
+  if (differences.length > 0) {
+    throw new Error(
+      `Song counts changed, nothing saved. Check them and update listAlbums in song-list.ts:\n${differences.join('\n')}`,
     );
+  }
+
+  const pool = new Pool({ connectionString: url });
+  try {
+    const { keptSongs } = await saveSongList(pool, { artist, albums, sourceUrl: api });
+    console.log(
+      `Saved ${albums.reduce((sum, { tracks }) => sum + tracks.length, 0)} album tracks.`,
+    );
+    if (keptSongs > 0) {
+      console.warn(
+        `${keptSongs} songs hold lyrics but are no longer on any album, so the list hides them.`,
+      );
+    }
   } finally {
     await pool.end();
   }
