@@ -110,7 +110,8 @@ function Page({
 export function App() {
   const health = useHealth();
   return (
-    <BrowserRouter>
+    // The song search box takes its value from the URL, and React says not to update a typed value in a transition.
+    <BrowserRouter useTransitions={false}>
       <AppShell appName="자격증 관리" nav={nav} actions={<UserActionAlerts />}>
         <Routes>
           <Route

@@ -56,12 +56,23 @@ type ReleaseGroup = { 'first-release-date'?: string };
 const fullDate = (value: string | undefined) =>
   value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
 
+// Says where the list goes before the minute of downloading. A password with an unescaped "/" or "#"
+// breaks URL parsing and can end up in the error or the host, so a bad value stops here without being shown.
+function targetName(url: string) {
+  let target: URL;
+  try {
+    target = new URL(url);
+  } catch {
+    throw new Error('DATABASE_URL is not a valid URL');
+  }
+  if (target.hash) throw new Error('DATABASE_URL is not a valid URL');
+  return `${target.hostname}${target.pathname}`;
+}
+
 async function main() {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error('DATABASE_URL is not set');
-  // Says where the list goes before the minute of downloading; the password stays out.
-  const target = new URL(url);
-  console.log(`Target database: ${target.hostname}${target.pathname}`);
+  console.log(`Target database: ${targetName(url)}`);
 
   const albums: SongListInput['albums'] = [];
   for (const album of listAlbums) {
@@ -89,9 +100,9 @@ async function main() {
     console.log(
       `Saved ${albums.reduce((sum, { tracks }) => sum + tracks.length, 0)} album tracks.`,
     );
-    if (keptSongs > 0) {
+    if (keptSongs.length > 0) {
       console.warn(
-        `${keptSongs} songs hold lyrics but are no longer on any album, so the list hides them.`,
+        `These songs hold lyrics but are no longer on any album, so the list hides them:\n${keptSongs.join('\n')}`,
       );
     }
   } finally {

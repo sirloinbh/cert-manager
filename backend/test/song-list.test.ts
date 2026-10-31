@@ -187,6 +187,7 @@ test('a missing or zero length has no duration, and the recording length is the 
         tracks: [
           track('None', 'a', null),
           track('Zero', 'b', 0),
+          track('Too short', 'd', 400),
           { title: 'Fallback', recording: { id: 'c', length: 61_400 } },
         ],
       },
@@ -194,6 +195,6 @@ test('a missing or zero length has no duration, and the recording length is the 
   };
   assert.deepEqual(
     albumTracks(studio, edition).map((item) => item.durationSeconds),
-    [null, null, 61],
+    [null, null, null, 61],
   );
 });

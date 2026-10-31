@@ -298,6 +298,7 @@ test('nothing closes the form while it saves', async () => {
   });
   fireEvent.click(screen.getByRole('button', { name: '저장' }));
   await waitFor(() => expect(screen.getByRole('button', { name: '취소' })).toBeDisabled());
+  expect(screen.getByLabelText('한국어 번역')).toHaveAttribute('readonly');
   fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
   fireEvent.click(screen.getByRole('button', { name: '닫기' }));
   expect(screen.getByRole('dialog')).toBeInTheDocument();
@@ -322,6 +323,19 @@ test('Esc keeps a form with typed text, and closes an untouched one', async () =
   // The form's own buttons still close it.
   fireEvent.click(screen.getByRole('button', { name: '취소' }));
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+});
+
+test('moving to another song does not carry an open form along', async () => {
+  open('/songs/12');
+  fireEvent.click(await screen.findByRole('button', { name: '번역 붙여 넣기' }));
+  await screen.findByLabelText('한국어 번역');
+  act(() => {
+    window.history.pushState({}, '', '/songs/13');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  });
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  expect(await screen.findByRole('button', { name: '번역 붙여 넣기' })).toBeInTheDocument();
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 });
 
 test('a missing song says so', async () => {

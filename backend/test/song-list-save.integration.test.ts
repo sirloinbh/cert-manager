@@ -79,7 +79,7 @@ test('running the song list again replaces tracks and keeps lyrics', { skip: !ur
     pool,
     input([track(1, 1), track(2, 2), track(3, 3)], [track(5, 1)]),
   );
-  assert.deepEqual(first, { keptSongs: 0 });
+  assert.deepEqual(first, { keptSongs: [] });
   assert.deepEqual(await tracks(secondAlbum), [[5, recording(1)]]);
 
   // Song 2 gets lyrics; the same list again changes nothing and leaves them alone.
@@ -105,7 +105,7 @@ test('running the song list again replaces tracks and keeps lyrics', { skip: !ur
   assert.equal((await songId(1))?.title, '새 제목');
   assert.equal(await songId(3), undefined, 'a song without lyrics goes');
   assert.equal((await songId(2))?.id, withLyrics?.id, 'a song with lyrics stays');
-  assert.deepEqual(second, { keptSongs: 1 }, 'and is reported');
+  assert.deepEqual(second, { keptSongs: ['곡 2'] }, 'and is reported');
   const lines = await pool.query('SELECT 1 FROM lyric_lines WHERE song_id = $1', [withLyrics?.id]);
   assert.equal(lines.rowCount, 1);
 
@@ -114,4 +114,13 @@ test('running the song list again replaces tracks and keeps lyrics', { skip: !ur
     code: '23505',
   });
   assert.equal((await tracks(firstAlbum)).length, 2, 'the list is as it was');
+
+  // An album taken off the list goes; its song stays while another album has it.
+  await saveSongList(pool, {
+    ...input([track(1, 1, '새 제목'), track(2, 4)], []),
+    albums: input([track(1, 1, '새 제목'), track(2, 4)], []).albums.slice(0, 1),
+  });
+  const albums = await pool.query('SELECT 1 FROM albums WHERE musicbrainz_id = $1', [secondAlbum]);
+  assert.equal(albums.rowCount, 0);
+  assert.equal((await songId(1))?.id, before?.id);
 });

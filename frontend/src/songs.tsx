@@ -212,6 +212,7 @@ function PasteForm({
           id={`${id}-text`}
           rows={12}
           required
+          readOnly={pending}
           className={cn(controlClass, 'max-h-[50dvh] min-h-48 py-2')}
           value={text}
           onChange={(event) => {
@@ -242,8 +243,13 @@ function PasteForm({
   );
 }
 
+// A new key per song, so an open form or a save in progress does not carry over to another song.
 export function SongDetail({ paths }: { paths: SongPaths }) {
   const { id = '' } = useParams();
+  return <SongPage key={id} id={id} paths={paths} />;
+}
+
+function SongPage({ id, paths }: { id: string; paths: SongPaths }) {
   const loaded = useLoad(id, loadSong);
   // The song as last saved from this page.
   const [saved, setSaved] = useState<Song>();
@@ -307,7 +313,12 @@ export function SongDetail({ paths }: { paths: SongPaths }) {
       {back}
       <header className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 id="page-title" className="wrap-anywhere">
+          <h1
+            id="page-title"
+            ref={focus.heading}
+            tabIndex={-1}
+            className="wrap-anywhere outline-none"
+          >
             {song.title}
           </h1>
           <StatusBadge status={song.status} />

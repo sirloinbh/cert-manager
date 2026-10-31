@@ -193,7 +193,8 @@ export function albumTracks(album: Pick<ListAlbum, 'kind'>, release: MbRelease):
       return {
         trackNumber,
         title: songTitle(track.title),
-        durationSeconds: length === null || length <= 0 ? null : Math.round(length / 1000),
+        // Under half a second rounds to 0, which the column does not take.
+        durationSeconds: length === null || length <= 0 ? null : Math.round(length / 1000) || null,
         recordingId: track.recording.id,
       };
     });

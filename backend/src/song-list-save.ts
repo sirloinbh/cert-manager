@@ -10,7 +10,7 @@ export type SongListInput = {
 
 /**
  * Saves the song list in one transaction, so a failed run leaves the list as it was.
- * Never touches lyrics. Returns how many songs hold lyrics but are no longer on any album.
+ * Never touches lyrics. Returns the titles of songs that hold lyrics but are no longer on any album.
  */
 export async function saveSongList(pool: Pool, input: SongListInput) {
   const client = await pool.connect();
@@ -50,6 +50,11 @@ export async function saveSongList(pool: Pool, input: SongListInput) {
         );
       }
     }
+    // Albums taken off the list go, with their tracks.
+    await client.query(
+      'DELETE FROM albums WHERE artist_id = $1 AND NOT (musicbrainz_id = ANY($2::uuid[]))',
+      [artistId, input.albums.map(({ album }) => album.releaseGroupId)],
+    );
     // Songs no longer on any album go too, unless they already hold lyrics.
     await client.query(
       `DELETE FROM songs s
@@ -58,9 +63,10 @@ export async function saveSongList(pool: Pool, input: SongListInput) {
          AND NOT EXISTS (SELECT 1 FROM lyric_lines l WHERE l.song_id = s.id)`,
       [artistId],
     );
-    const kept = await client.query(
-      `SELECT 1 FROM songs s
-       WHERE s.artist_id = $1 AND NOT EXISTS (SELECT 1 FROM album_tracks t WHERE t.song_id = s.id)`,
+    const kept = await client.query<{ title: string }>(
+      `SELECT s.title FROM songs s
+       WHERE s.artist_id = $1 AND NOT EXISTS (SELECT 1 FROM album_tracks t WHERE t.song_id = s.id)
+       ORDER BY s.title`,
       [artistId],
     );
     await client.query(
@@ -69,7 +75,7 @@ export async function saveSongList(pool: Pool, input: SongListInput) {
       [input.sourceUrl],
     );
     await client.query('COMMIT');
-    return { keptSongs: kept.rowCount ?? 0 };
+    return { keptSongs: kept.rows.map((row) => row.title) };
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
