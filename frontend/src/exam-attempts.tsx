@@ -1,8 +1,12 @@
 import { ClipboardList, Pencil, Plus, Trash2 } from 'lucide-react';
-import { type FormEvent, type MouseEvent, useEffect, useId, useRef, useState } from 'react';
+import { type FormEvent, type MouseEvent, useId, useRef, useState } from 'react';
 import { Link } from 'react-router';
 
-import type { Certification, CertificationPaths } from './certification-data';
+import {
+  type Certification,
+  type CertificationPaths,
+  deadlineCountdown,
+} from './certification-data';
 import { Badge } from './components/ui/badge';
 import { Button } from './components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
@@ -30,7 +34,6 @@ import {
   examAttemptApi,
   type ExamAttemptInput,
   expiringSoon,
-  expiryCountdown,
   expiryLabels,
   type ExpiryState,
   expiryState,
@@ -44,7 +47,8 @@ import { controlClass, toNumber } from './form-fields';
 import { RequestError } from './lib/api';
 import { errorText, useNotice } from './lib/use-notice';
 import { cn } from './lib/utils';
-import { useLoad } from './use-load';
+import { useLoad, useReloading } from './use-load';
+import { useSectionFocus } from './use-section-focus';
 
 // Screens for exam attempts (#32): the section on a goal's detail page and the dashboard card.
 
@@ -75,7 +79,7 @@ function ExpiryLine({ attempt, state }: { attempt: ExamAttempt; state: ExpirySta
         <span>
           <time dateTime={attempt.expiresOn}>{attempt.expiresOn}</time>
           {' · '}
-          {expiryCountdown(attempt.daysUntilExpiry)}
+          {deadlineCountdown(attempt.daysUntilExpiry)}
         </span>
       ) : null}
     </p>
@@ -277,7 +281,7 @@ function AttemptForm({
   );
 }
 
-const loadAttempts = (key: string) => examAttemptApi.list(Number(key.split('/')[0]));
+const loadAttempts = (id: string) => examAttemptApi.list(Number(id));
 
 /** The section on a goal's detail page. Marking the goal passed is left to the page that owns the goal. */
 export function ExamAttempts({
@@ -287,9 +291,7 @@ export function ExamAttempts({
   certification: Certification;
   onMarkPassed: () => Promise<unknown>;
 }) {
-  // A new version reloads the list after a change.
-  const [version, setVersion] = useState(0);
-  const loaded = useLoad(`${certification.id}/${version}`, loadAttempts);
+  const { loaded, data, reload } = useReloading(String(certification.id), loadAttempts);
   // The attempt stays while the dialog closes, so its title and form do not change as it fades out.
   const [editing, setEditing] = useState<{ open: boolean; attempt: ExamAttempt | null }>({
     open: false,
@@ -298,32 +300,30 @@ export function ExamAttempts({
   const [saving, setSaving] = useState(false);
   const [askPassed, setAskPassed] = useState(false);
   const titleId = useId();
-  // The dialog has no trigger of its own, so it is told where focus goes back to.
-  const opener = useRef<HTMLElement>(null);
-  const heading = useRef<HTMLHeadingElement>(null);
+  const focus = useSectionFocus();
   const openForm = (event: MouseEvent<HTMLElement>, attempt: ExamAttempt | null) => {
-    opener.current = event.currentTarget;
+    focus.remember(event);
     setEditing({ open: true, attempt });
   };
-  // The last list stays on screen while a change reloads it, and when that reload fails.
-  const [shown, setShown] = useState<{ attempts: ExamAttempt[] }>();
-  if (loaded.state === 'ok' && loaded.data !== shown) setShown(loaded.data);
-  // A deleted row takes its button with it, so focus goes to the section heading afterwards.
-  const [deletions, setDeletions] = useState(0);
-  useEffect(() => {
-    if (deletions > 0) heading.current?.focus();
-  }, [deletions]);
 
   const save = async (attempt: ExamAttempt | null, input: ExamAttemptInput) => {
+    let saved: ExamAttempt;
     setSaving(true);
     try {
-      if (attempt) await examAttemptApi.update(certification.id, attempt.id, input);
-      else await examAttemptApi.create(certification.id, input);
+      ({ attempt: saved } = attempt
+        ? await examAttemptApi.update(certification.id, attempt.id, input)
+        : await examAttemptApi.create(certification.id, input));
     } finally {
       setSaving(false);
     }
     setEditing({ open: false, attempt });
-    setVersion((current) => current + 1);
+    // What was saved shows even if reloading the list then fails.
+    reload((list) => ({
+      ...list,
+      attempts: [saved, ...list.attempts.filter((item) => item.id !== saved.id)].sort(
+        (a, b) => b.examDate.localeCompare(a.examDate) || b.id - a.id,
+      ),
+    }));
     toast.success('응시 기록을 저장했습니다');
     const newlyPassed = input.outcome === 'passed' && attempt?.outcome !== 'passed';
     if (newlyPassed && certification.status !== 'passed') setAskPassed(true);
@@ -340,12 +340,11 @@ export function ExamAttempts({
       }
     }
     toast.success('응시 기록을 지웠습니다');
-    // Gone from the screen right away, even if reloading the list then fails.
-    setShown(
-      (list) => list && { attempts: list.attempts.filter((item) => item.id !== attempt.id) },
-    );
-    setDeletions((current) => current + 1);
-    setVersion((current) => current + 1);
+    focus.afterRemoval();
+    reload((list) => ({
+      ...list,
+      attempts: list.attempts.filter((item) => item.id !== attempt.id),
+    }));
   };
 
   const addButton = (
@@ -354,24 +353,24 @@ export function ExamAttempts({
       기록 추가
     </Button>
   );
-  const attempts = (loaded.state === 'ok' ? loaded.data : shown)?.attempts ?? [];
+  const attempts = data?.attempts ?? [];
   const current = currentAttempt(attempts);
 
   return (
     <section aria-labelledby={titleId} className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id={titleId} ref={heading} tabIndex={-1} className="outline-none">
+        <h2 id={titleId} ref={focus.heading} tabIndex={-1} className="outline-none">
           응시·취득 기록
         </h2>
         {attempts.length > 0 ? addButton : null}
       </div>
-      {loaded.state === 'loading' && !shown ? <SkeletonList rows={2} /> : null}
+      {loaded.state === 'loading' && !data ? <SkeletonList rows={2} /> : null}
       {loaded.state === 'error' ? (
         <Notice
           notice={{ kind: 'error', text: errorText(loaded.error, '기록을 불러오지 못했습니다') }}
         />
       ) : null}
-      {loaded.state === 'ok' && attempts.length === 0 ? (
+      {data && attempts.length === 0 ? (
         <EmptyState
           icon={<ClipboardList />}
           title="아직 응시 기록이 없습니다"
@@ -453,13 +452,7 @@ export function ExamAttempts({
         // Closing during a save would lose its error and invite a duplicate.
         onOpenChange={(open) => !saving && setEditing((current) => ({ ...current, open }))}
       >
-        <DialogContent
-          onCloseAutoFocus={(event) => {
-            event.preventDefault();
-            // A saved first record replaces the button that opened the form.
-            (opener.current?.isConnected ? opener.current : heading.current)?.focus();
-          }}
-        >
+        <DialogContent onCloseAutoFocus={focus.restore}>
           <DialogHeader>
             <DialogTitle>{editing.attempt ? '응시 기록 수정' : '응시 기록 추가'}</DialogTitle>
             <DialogDescription className="break-keep">{certification.name}</DialogDescription>
@@ -531,7 +524,7 @@ export function ExpiringCertifications({ paths }: { paths: CertificationPaths })
                     <time dateTime={attempt.expiresOn ?? undefined}>{attempt.expiresOn}</time>
                     {attempt.daysUntilExpiry === null
                       ? null
-                      : ` · ${expiryCountdown(attempt.daysUntilExpiry)}`}
+                      : ` · ${deadlineCountdown(attempt.daysUntilExpiry)}`}
                   </span>
                 </div>
                 <ExpiryBadge state={expiryState(attempt, attempt.validityKind) ?? 'soon'} />

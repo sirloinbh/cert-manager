@@ -6,14 +6,14 @@ import { App } from './app';
 const json = (body: object, status = 200) =>
   Promise.resolve(new Response(JSON.stringify(body), { status }));
 
-// /api/health answers with the given body; the dashboard's goal and attempt lists are empty.
+// /api/health answers with the given body; the dashboard's lists are empty.
 const health = (body: object, status = 200) =>
   vi.stubGlobal(
     'fetch',
     vi.fn((path: string) =>
       path === '/api/health'
         ? json(body, status)
-        : json({ today: '2026-10-26', certifications: [], attempts: [] }),
+        : json({ today: '2026-10-26', certifications: [], attempts: [], tasks: [] }),
     ),
   );
 

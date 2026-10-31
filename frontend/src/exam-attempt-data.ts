@@ -66,11 +66,6 @@ export function expiryState(
   return attempt.daysUntilExpiry <= soonDays ? 'soon' : 'valid';
 }
 
-export function expiryCountdown(days: number) {
-  if (days === 0) return '오늘까지';
-  return days > 0 ? `${days}일 남음` : `${-days}일 지남`;
-}
-
 /** Whether the score meets the goal; never true without both numbers. The app does not judge pass or fail. */
 export const reachedGoal = (score: number | null, targetScore: number | null) =>
   score !== null && targetScore !== null && score >= targetScore;

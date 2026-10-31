@@ -6,21 +6,20 @@
 
 우선순위 규칙(std-backlog 5장): 선행 조건이 끝난 이슈 중 우선순위 숫자가 작은 것, 같으면 번호가 작은 것부터 한다.
 
-| 순서 | 할 일                                     | 우선순위 | 상태      | 다음 행동                                                                                 |
-| ---- | ----------------------------------------- | -------- | --------- | ----------------------------------------------------------------------------------------- |
-| 1    | #33 자격증별 공부 계획 기능               | P2       | PR #48    | 새로 시작하지 않는다. #49 병합 뒤 PR #48에 `origin/main`을 병합하고 CodeQL 확인 뒤 병합   |
-| 2    | #34 목표 자격증 6개의 세부 공부 계획 작성 | P2       | 착수 가능 | 목표 점수·응시 시기를 사용자에게 먼저 확인                                                |
-| 3    | #35 팝송 가사 원문·번역 보기              | P2       | 착수 가능 | [자료 출처 조사](../research/english-content-sources.md)의 LRCLIB·세션 번역 절차를 따른다 |
-| 4    | #36 영어 단어장과 어원 분석               | P2       | 착수 가능 | NGSL·Wiktionary(kaikki.org). `import_sources`는 #35·#36 중 먼저 하는 쪽에서               |
-| 5    | #37 오늘의 영어 단어                      | P3       | #36 다음  | 대시보드 카드                                                                             |
-| 6    | #22 모바일 빈 화면 안내 줄바꿈            | P4       | 착수 가능 | 호출부 `frontend/src/app.tsx`에서 `break-keep`                                            |
-| 7    | #38 자격증 후보 목록과 추천 로드맵 문서   | P4       | 착수 가능 | AWS 라인업 포함                                                                           |
+| 순서 | 할 일                                     | 우선순위 | 상태      | 다음 행동                                                                                                     |
+| ---- | ----------------------------------------- | -------- | --------- | ------------------------------------------------------------------------------------------------------------- |
+| 1    | #34 목표 자격증 6개의 세부 공부 계획 작성 | P2       | 착수 가능 | 목표 점수·응시 시기를 사용자에게 먼저 확인. 공부 계획 기능(#33)이 끝났으니 작성한 계획을 화면에 넣어 확인한다 |
+| 2    | #35 팝송 가사 원문·번역 보기              | P2       | 착수 가능 | [자료 출처 조사](../research/english-content-sources.md)의 LRCLIB·세션 번역 절차를 따른다                     |
+| 3    | #36 영어 단어장과 어원 분석               | P2       | 착수 가능 | NGSL·Wiktionary(kaikki.org). `import_sources`는 #35·#36 중 먼저 하는 쪽에서                                   |
+| 4    | #37 오늘의 영어 단어                      | P3       | #36 다음  | 대시보드 카드                                                                                                 |
+| 5    | #22 모바일 빈 화면 안내 줄바꿈            | P4       | 착수 가능 | 호출부 `frontend/src/app.tsx`에서 `break-keep`                                                                |
+| 6    | #38 자격증 후보 목록과 추천 로드맵 문서   | P4       | 착수 가능 | AWS 라인업 포함                                                                                               |
 
 ## 함께 볼 것
 
 - PR #15(`zod` 3 → 4)는 처리하지 않고 그대로 둔다. 2026-10-28 사용자가 project-standards#307에서 후보 A를 골라 zod는 3.25.76에 머문다(project-standards `docs/research/zod4.md` 결정 절). `backend/package.json`의 zod 버전은 중앙 관리 값이다. 이 권고의 공격 경로는 길이 제한 없는 `z.array`이며, 지금 `backend/src`에는 `z.array`가 없고 오류 메시지 개수는 중앙 `backend/src/standard/http.ts`가 제한한다. 새 배열 스키마에는 `.max()`를 붙인다. `npm audit`의 zod high 1건과 Dependabot 알림은 이 결정 때문에 남아 있다.
 - 요청 횟수 제한: `frontend/nginx.conf`의 `limit_req`와 그 뒤의 `backend/src/rate-limit.ts`(`express-rate-limit`) 두 겹이다(#49). 중앙 결정 project-standards#291은 nginx만 쓰는 것이고, 이 앱만 사용자 결정으로 다르다. CodeQL은 필수 검사가 아니다(필수: `ci / verify`, `ci / docker-build`).
-- 로컬 앱 DB는 `.env`가 없어 실행돼 있지 않다. 남은 사용자 할 일은 [2026-10-30 일일 기록](../daily/2026-10-30.md)에 있다.
+- 이 PC에는 Docker가 없어 설치된 PostgreSQL 17(포트 5432)의 `cert`, `cert_test` DB를 쓴다. 새 마이그레이션은 두 DB에 모두 적용한다. 사용자 환경변수 `TEST_DATABASE_URL`은 study-log용이므로 바꾸지 말고, 다른 터미널에서는 그 세션에서만 `cert_test` 주소로 지정한다.
 - 브라우저 확인은 임시 Postgres 컨테이너 + `node node_modules/tsx/dist/cli.mjs src/server.ts`(백엔드) + `npm run dev -w frontend`로 했다. `npx`는 프로젝트 훅이 막는다.
 - `npm run knip`: 결과 없음(#30에서 `backend/src/standard/http.ts`를 쓰기 시작했다). CI는 `knip-strict`로 실패 단계를 쓴다.
 - 모바일 빈 화면 안내 문구가 단어 중간에서 줄바꿈된다. 호출부 `frontend/src/app.tsx`에서 고치는 [#22](https://github.com/sirloinbh/cert-manager/issues/22)로 분리했다.

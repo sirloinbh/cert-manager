@@ -70,6 +70,12 @@ export function examCountdown(days: number | null) {
   return days > 0 ? `${days}일 남음` : `${-days}일 지남`;
 }
 
+/** Days left until a last day, such as an expiry or a due date. */
+export function deadlineCountdown(days: number) {
+  if (days === 0) return '오늘까지';
+  return days > 0 ? `${days}일 남음` : `${-days}일 지남`;
+}
+
 export function validityText(
   certification: Pick<Certification, 'validityKind' | 'validityMonths'>,
 ) {
