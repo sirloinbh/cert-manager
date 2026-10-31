@@ -69,7 +69,13 @@ const attempt = (fields: Partial<ExamAttempt>): ExamAttempt => ({
 type Sent = { method: string; path: string; body?: Record<string, unknown> };
 
 function fakeApi(
-  options: { goal?: Certification; attempts?: ExamAttempt[]; scalesFail?: boolean } = {},
+  options: {
+    goal?: Certification;
+    attempts?: ExamAttempt[];
+    scalesFail?: boolean;
+    /** Answers the list only once this settles. */
+    scalesHold?: Promise<unknown>;
+  } = {},
 ) {
   let current = options.goal ?? goal();
   let attempts = options.attempts ?? [];
@@ -85,9 +91,11 @@ function fakeApi(
       sent.push({ method, path, body });
       if (path === '/api/health') return reply(200, { ok: true, today });
       if (path === '/api/grade-scales')
-        return options.scalesFail
-          ? reply(500, { error: '서버 오류가 발생했습니다' })
-          : reply(200, { scales });
+        return Promise.resolve(options.scalesHold).then(() =>
+          options.scalesFail
+            ? reply(500, { error: '서버 오류가 발생했습니다' })
+            : reply(200, { scales }),
+        );
       if (path === '/api/certifications' && method === 'POST') {
         current = goal({ ...(body as Partial<Certification>), id: 1 });
         return reply(201, { certification: current });
@@ -199,8 +207,93 @@ test('a saved grade from an older format stays selectable', async () => {
   expect(screen.getByLabelText('등급')).toHaveValue('Level 7');
 });
 
+test('a failed attempt names a level but does not reach it', async () => {
+  await openDetail({
+    attempts: [attempt({ outcome: 'failed', score: 800, grade: 'B2' })],
+  });
+  expect(await screen.findByText('800점 · B2')).toBeInTheDocument();
+  expect(screen.queryByText('목표 달성')).not.toBeInTheDocument();
+});
+
+test('a goal with both targets needs both', async () => {
+  await openDetail({
+    goal: goal({ targetScore: 900 }),
+    attempts: [attempt({ score: 800, grade: 'B2' })],
+  });
+  expect(await screen.findByText('800점 · B2')).toBeInTheDocument();
+  expect(screen.queryByText('목표 달성')).not.toBeInTheDocument();
+});
+
+test('a waiting attempt fills its grade once the result and score are in', async () => {
+  await openDetail({ attempts: [attempt({ outcome: 'waiting', grade: null })] });
+  fireEvent.click(await screen.findByRole('button', { name: '2026-03-15 기록 수정' }));
+  change('결과', 'scored');
+  change('점수', '800');
+  expect(screen.getByLabelText('등급')).toHaveValue('B2');
+  change('점수', '');
+  expect(screen.getByLabelText('등급')).toHaveValue('');
+});
+
+test('a saved grade stays when the score changes, and an empty one follows the score', async () => {
+  await openDetail({
+    attempts: [
+      attempt({ id: 5, score: 800, grade: 'B1' }),
+      attempt({ id: 6, examDate: '2026-01-10', score: 800, grade: '' }),
+    ],
+  });
+  fireEvent.click(await screen.findByRole('button', { name: '2026-03-15 기록 수정' }));
+  change('점수', '900');
+  expect(screen.getByLabelText('등급')).toHaveValue('B1');
+  fireEvent.click(screen.getByRole('button', { name: '취소' }));
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+  fireEvent.click(screen.getByRole('button', { name: '2026-01-10 기록 수정' }));
+  expect(screen.getByLabelText('등급')).toHaveValue('B2');
+});
+
+test('a grade typed before the list arrives stays afterwards', async () => {
+  let release = () => {};
+  const scalesHold = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  fakeApi({ scalesHold });
+  window.history.pushState({}, '', '/certifications/1');
+  render(<App />);
+  fireEvent.click(await screen.findByRole('button', { name: '기록 추가' }));
+  change('결과', 'scored');
+  change('등급', 'B1');
+  release();
+  await waitFor(() => expect(screen.getByLabelText('등급').tagName).toBe('SELECT'));
+  expect(screen.getByLabelText('등급')).toHaveValue('B1');
+});
+
+test('marking the goal passed keeps its scale and target', async () => {
+  const api = await openDetail();
+  await addRecord();
+  change('결과', 'passed');
+  change('등급', 'B2');
+  fireEvent.click(screen.getByRole('button', { name: '저장' }));
+  const dialog = await screen.findByRole('dialog', { name: '목표 상태를 합격으로 바꿀까요?' });
+  fireEvent.click(within(dialog).getByRole('button', { name: '바꾸기' }));
+  await waitFor(() =>
+    expect(
+      api.sent.find((item) => item.path === '/api/certifications/1' && item.method === 'PUT')?.body,
+    ).toMatchObject({ status: 'passed', gradeScale: 'toeic', targetGrade: 'B2' }),
+  );
+});
+
+test('the detail page says so when the list cannot load', async () => {
+  fakeApi({ scalesFail: true });
+  window.history.pushState({}, '', '/certifications/1');
+  render(<App />);
+  expect(await screen.findByText(/등급표를 보여 줄 수 없습니다/)).toBeInTheDocument();
+  expect(screen.getByText('목표 등급')).toBeInTheDocument();
+});
+
 test('a goal without a scale keeps the free text field and no ladder', async () => {
-  await openDetail({ goal: goal({ gradeScale: 'none', targetGrade: null }) }).catch(() => {});
+  fakeApi({ goal: goal({ gradeScale: 'none', targetGrade: null }) });
+  window.history.pushState({}, '', '/certifications/1');
+  render(<App />);
   fireEvent.click(await screen.findByRole('button', { name: '기록 추가' }));
   change('결과', 'scored');
   expect(screen.getByLabelText('등급').tagName).toBe('INPUT');
@@ -233,7 +326,7 @@ test('the goal form keeps the saved scale when the list cannot load', async () =
   const api = fakeApi({ scalesFail: true });
   window.history.pushState({}, '', '/certifications/1/edit');
   render(<App />);
-  expect(await screen.findByText(/등급 목록을 불러오지 못했습니다/)).toBeInTheDocument();
+  expect(await screen.findByText(/이미 고른 값은 그대로 저장됩니다/)).toBeInTheDocument();
   expect(screen.getByLabelText('등급 체계')).toBeDisabled();
   fireEvent.click(screen.getByRole('button', { name: '저장' }));
   await waitFor(() =>

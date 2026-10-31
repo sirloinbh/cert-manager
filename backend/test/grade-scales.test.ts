@@ -80,6 +80,23 @@ test('an unknown scale or a target outside the scale is a Korean 400', async () 
   assert.equal(queries.length, 0);
 });
 
+test('the published scores are the ones in the table', () => {
+  const levels = (key: string) => gradeScales.find((scale) => scale.key === key)?.levels ?? [];
+  const fit = (key: string, score: number) =>
+    levels(key)
+      .filter((level) => score >= Number(level.minScore) && score <= Number(level.maxScore))
+      .filter((level) => level.minScore !== null)
+      .map((level) => level.value);
+  assert.deepEqual(fit('toeic', 800), ['B2']);
+  assert.deepEqual(fit('toeic', 945), ['C1']);
+  assert.deepEqual(fit('toeic', 944), ['B2']);
+  assert.deepEqual(fit('toeic', 119), []);
+  assert.deepEqual(fit('toeic_speaking', 120), ['IM1', 'IM2', 'IM3']);
+  assert.deepEqual(fit('toeic_speaking', 170), ['AL']);
+  assert.deepEqual(fit('toeic_speaking', 200), ['AH']);
+  assert.equal(levels('aws').find((level) => level.value === 'Specialty')?.offLadder, true);
+});
+
 test('score ranges rise from the lowest level and only IM1~IM3 share one', () => {
   for (const scale of gradeScales) {
     const ranges = scale.levels.filter((level) => level.minScore !== null);

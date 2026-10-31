@@ -3,6 +3,7 @@ import { test } from 'node:test';
 
 import { Pool } from 'pg';
 
+import { gradeScaleKeys } from '../src/grade-scales.js';
 import { withApi } from './helpers.js';
 
 const url = process.env.TEST_DATABASE_URL;
@@ -53,6 +54,15 @@ test(
         ['none', null],
       );
     });
+
+    // The table accepts every scale the API offers, so a new scale cannot pass validation and then fail with a 500.
+    for (const key of gradeScaleKeys) {
+      const { rows } = await pool.query<{ id: string }>(
+        "INSERT INTO certifications (name, category, grade_scale) VALUES ('#51 체계', 'dev', $1) RETURNING id",
+        [key],
+      );
+      created.push(Number(rows[0]?.id));
+    }
 
     await assert.rejects(
       pool.query(

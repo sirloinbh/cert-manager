@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest';
 
+import { reachedTarget } from './exam-attempt-data';
 import { type GradeScale, gradesForScore, reachedGrade, scoreRange } from './grade-scale-data';
 
 const scale = (fields: Partial<GradeScale>): GradeScale => ({
@@ -71,6 +72,39 @@ test('a separate field and kinds of licence only match themselves', () => {
   expect(reachedGrade(aws, 'Specialty', 'Specialty')).toBe(true);
   expect(reachedGrade(licences, '1종 보통', '2종 보통')).toBe(false);
   expect(reachedGrade(licences, '2종 보통', '2종 보통')).toBe(true);
+});
+
+test('an attempt meets every target the goal has', () => {
+  const result = { outcome: 'scored' as const, score: 800, grade: 'B2' };
+  const met = (targetScore: number | null, targetGrade: string | null, outcome = result.outcome) =>
+    reachedTarget({ ...result, outcome }, { targetScore, targetGrade }, toeic);
+  expect(met(null, null)).toBe(false);
+  expect(met(700, null)).toBe(true);
+  expect(met(900, null)).toBe(false);
+  expect(met(null, 'B1')).toBe(true);
+  expect(met(700, 'B2')).toBe(true);
+  expect(met(900, 'B2')).toBe(false);
+  expect(
+    reachedTarget(
+      { outcome: 'scored', score: 720, grade: 'B1' },
+      { targetScore: 700, targetGrade: 'B2' },
+      toeic,
+    ),
+  ).toBe(false);
+  expect(
+    reachedTarget(
+      { outcome: 'failed', score: 800, grade: 'B2' },
+      { targetScore: null, targetGrade: 'B2' },
+      toeic,
+    ),
+  ).toBe(false);
+  expect(
+    reachedTarget(
+      { outcome: 'failed', score: 800, grade: '' },
+      { targetScore: 700, targetGrade: null },
+      toeic,
+    ),
+  ).toBe(true);
 });
 
 test('score ranges read as one number when the level has one score', () => {

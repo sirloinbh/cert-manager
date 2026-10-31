@@ -41,10 +41,10 @@ import {
   type Outcome,
   outcomeLabels,
   outcomes,
-  reachedGoal,
+  reachedTarget,
 } from './exam-attempt-data';
 import { controlClass, toNumber } from './form-fields';
-import { type GradeScale, gradesForScore, reachedGrade } from './grade-scale-data';
+import { type GradeScale, gradesForScore } from './grade-scale-data';
 import { GradeLadder } from './grade-scales';
 import { RequestError } from './lib/api';
 import { errorText, useNotice } from './lib/use-notice';
@@ -126,8 +126,8 @@ function AttemptForm({
   });
   // A saved result keeps what the user decided, even an empty date ("not known"). Until then the date follows the exam.
   const [expiryEdited, setExpiryEdited] = useState(attempt !== null && hasExpiry(attempt.outcome));
-  // Likewise a saved result keeps its grade. Until then the grade follows the score when one level fits.
-  const [gradeEdited, setGradeEdited] = useState(attempt !== null && attempt.outcome !== 'waiting');
+  // Likewise a saved grade stays. Until there is one, the grade follows the score when one level fits.
+  const [gradeEdited, setGradeEdited] = useState(Boolean(attempt?.grade));
   const [pending, setPending] = useState(false);
   const expiryInput = useRef<HTMLInputElement>(null);
   const notice = useNotice();
@@ -241,6 +241,8 @@ function AttemptForm({
                 </select>
                 <p
                   id={`${id}-grade-hint`}
+                  // The grade changes with the score, so the reason is announced too.
+                  aria-live="polite"
                   className="text-caption break-keep text-muted-foreground"
                 >
                   {fitting.length > 1
@@ -255,7 +257,11 @@ function AttemptForm({
                 id={`${id}-grade`}
                 maxLength={200}
                 value={form.grade}
-                onChange={(e) => set('grade')(e.target.value)}
+                onChange={(e) => {
+                  // The list can arrive while this is being typed; what was typed stays.
+                  setGradeEdited(true);
+                  set('grade')(e.target.value);
+                }}
                 placeholder="예: Level 7, IH"
               />
             )}
@@ -481,8 +487,7 @@ export function ExamAttempts({
                 {result ? (
                   <p className="flex flex-wrap items-center gap-2 text-body">
                     {result}
-                    {reachedGoal(attempt.score, certification.targetScore) ||
-                    reachedGrade(gradeScale, attempt.grade, certification.targetGrade) ? (
+                    {reachedTarget(attempt, certification, gradeScale) ? (
                       <Badge variant="success">목표 달성</Badge>
                     ) : null}
                   </p>

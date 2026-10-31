@@ -1,4 +1,5 @@
-import type { ValidityKind } from './certification-data';
+import type { Certification, ValidityKind } from './certification-data';
+import { type GradeScale, reachedGrade } from './grade-scale-data';
 import { requestJson } from './lib/api';
 
 // Exam attempts (#32): API calls and display rules. The screens are in exam-attempts.tsx.
@@ -69,6 +70,23 @@ export function expiryState(
 /** Whether the score meets the goal; never true without both numbers. The app does not judge pass or fail. */
 export const reachedGoal = (score: number | null, targetScore: number | null) =>
   score !== null && targetScore !== null && score >= targetScore;
+
+/**
+ * Whether the attempt meets every target the goal has. Only a passed or scored result earns a grade:
+ * a failed attempt names the level it tried.
+ */
+export function reachedTarget(
+  attempt: Pick<ExamAttempt, 'outcome' | 'score' | 'grade'>,
+  goal: Pick<Certification, 'targetScore' | 'targetGrade'>,
+  scale: GradeScale | undefined,
+) {
+  if (goal.targetScore === null && goal.targetGrade === null) return false;
+  const score = goal.targetScore === null || reachedGoal(attempt.score, goal.targetScore);
+  const grade =
+    goal.targetGrade === null ||
+    (hasExpiry(attempt.outcome) && reachedGrade(scale, attempt.grade, goal.targetGrade));
+  return score && grade;
+}
 
 /**
  * The exam date plus some months, clamped to the month's last day like PostgreSQL's date + interval

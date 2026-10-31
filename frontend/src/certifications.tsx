@@ -284,7 +284,7 @@ function notFoundText(error: unknown) {
 export function CertificationDetail({ paths }: { paths: CertificationPaths }) {
   const { id = '' } = useParams();
   const loaded = useLoad(id, loadOne);
-  const { scales } = useGradeScales();
+  const { scales, failed: scalesFailed } = useGradeScales();
   const navigate = useNavigate();
   // The goal as last saved from this page, so the status changes without reloading the attempts below.
   const [changed, setChanged] = useState<Certification>();
@@ -399,6 +399,14 @@ export function CertificationDetail({ paths }: { paths: CertificationPaths }) {
           value={item.memo || <span className="text-muted-foreground">없음</span>}
         />
       </dl>
+      {scalesFailed && item.gradeScale !== 'none' ? (
+        <Notice
+          notice={{
+            kind: 'error',
+            text: '등급 목록을 불러오지 못해 등급표를 보여 줄 수 없습니다. 목표 등급과 기록은 그대로입니다.',
+          }}
+        />
+      ) : null}
       <ExamAttempts
         key={item.id}
         certification={item}
@@ -593,6 +601,7 @@ function FormFields({
             className={cn(controlClass, 'h-9')}
             // Until the list arrives the saved choice stays as it is, so saving cannot change it.
             disabled={scales.length === 0}
+            aria-describedby={`${id}-scale-hint`}
             value={form.gradeScale}
             onChange={(e) =>
               setForm((current) => ({ ...current, gradeScale: e.target.value, targetGrade: '' }))
@@ -608,10 +617,12 @@ function FormFields({
               <option value={form.gradeScale}>저장된 등급 체계</option>
             ) : null}
           </select>
-          <p className="text-caption break-keep text-muted-foreground">
+          <p id={`${id}-scale-hint`} className="text-caption break-keep text-muted-foreground">
             {failed
-              ? '등급 목록을 불러오지 못했습니다. 저장된 값은 그대로 유지됩니다.'
-              : (scale?.note ?? '점수·레벨·단계가 있는 자격증이면 고릅니다.')}
+              ? '등급 목록을 불러오지 못해 지금은 고를 수 없습니다. 이미 고른 값은 그대로 저장됩니다.'
+              : scales.length === 0
+                ? '등급 목록을 불러오는 중입니다.'
+                : (scale?.note ?? '점수·레벨·단계가 있는 자격증이면 고릅니다.')}
           </p>
         </div>
         {scale ? (

@@ -50,7 +50,7 @@ export const gradeScales: GradeScale[] = [
   {
     key: 'toeic_speaking',
     label: '토익 스피킹',
-    note: 'IM은 110~130점 안에서 IM1·IM2·IM3로 나뉘며 점수별 구간은 공개되어 있지 않습니다.',
+    note: 'IM은 110~130점 안에서 IM1·IM2·IM3로 나뉩니다. 점수별 구간을 공식 자료에서 확인하지 못해 성적표의 등급을 직접 고릅니다.',
     sourceUrl: 'https://www.toeicstory.co.kr/2607',
     ranked: true,
     levels: [
@@ -69,7 +69,7 @@ export const gradeScales: GradeScale[] = [
   {
     key: 'information_processing',
     label: '국가기술자격 (정보처리)',
-    note: '정보처리 분야에 있는 단계만 넣었습니다. 기능사는 2026년부터 프로그래밍기능사로, 기술사는 정보관리기술사로 시행합니다.',
+    note: '정보처리 분야에 있는 단계만 넣었습니다. 기능사는 2026년부터 프로그래밍기능사로 이름이 바뀌었습니다.',
     sourceUrl: 'https://www.q-net.or.kr/crf005.do?id=crf00503&jmCd=1320',
     ranked: true,
     levels: [named('기능사'), named('산업기사'), named('기사'), named('기술사')],
