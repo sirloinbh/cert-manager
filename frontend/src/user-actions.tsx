@@ -55,6 +55,7 @@ function ActionItem({
           // Not disabled: a disabled button would drop keyboard focus while the request runs.
           aria-disabled={pending || undefined}
           aria-busy={pending || undefined}
+          className={pending ? 'pointer-events-none opacity-60' : undefined}
           aria-label={`'${action.title}' 완료`}
           onClick={pending ? undefined : onComplete}
         >
@@ -86,8 +87,13 @@ export function UserActionAlerts() {
   const [pendingId, setPendingId] = useState<number>();
   const title = useRef<HTMLHeadingElement>(null);
   const actions = data?.actions ?? [];
+  // The last failure stays until a read succeeds, so reloading does not make it look fine for a moment.
+  const [lastError, setLastError] = useState<unknown>();
+  if (loaded.state === 'error' && loaded.error !== lastError) setLastError(loaded.error);
+  if (loaded.state === 'ok' && lastError !== undefined) setLastError(undefined);
+  const hasError = lastError !== undefined;
   // Nothing to show because the list failed, which must not look like "nothing to do".
-  const failed = loaded.state === 'error' && !data;
+  const failed = hasError && !data;
 
   // The bell stays mounted across pages, so a tab left open would keep yesterday's alerts and counts.
   useEffect(() => {
@@ -177,20 +183,25 @@ export function UserActionAlerts() {
         {/* The list scrolls, not the panel, so the close button stays in reach. */}
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-4">
           {loaded.state === 'loading' && !data ? <SkeletonList rows={2} /> : null}
-          {loaded.state === 'error' ? (
+          {hasError ? (
             <Notice
-              notice={{
-                kind: 'error',
-                text: errorText(loaded.error, '알림을 불러오지 못했습니다'),
-              }}
+              notice={{ kind: 'error', text: errorText(lastError, '알림을 불러오지 못했습니다') }}
             />
           ) : null}
-          {loaded.state === 'error' ? (
-            <Button variant="outline" size="sm" className="w-fit" onClick={() => reload()}>
+          {hasError ? (
+            // Stays in place while retrying, so keyboard focus is not lost.
+            <Button
+              variant="outline"
+              size="sm"
+              aria-disabled={loaded.state === 'loading' || undefined}
+              aria-busy={loaded.state === 'loading' || undefined}
+              className={`w-fit ${loaded.state === 'loading' ? 'pointer-events-none opacity-60' : ''}`}
+              onClick={loaded.state === 'loading' ? undefined : () => reload()}
+            >
               다시 불러오기
             </Button>
           ) : null}
-          {data && count === 0 ? (
+          {data && count === 0 && !hasError ? (
             <p className="text-body-sm break-keep text-muted-foreground">
               지금 직접 할 일이 없습니다.
             </p>

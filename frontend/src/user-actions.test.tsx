@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
 
 import { App } from './app';
@@ -6,6 +6,12 @@ import { toast } from './components/ui/sonner';
 import { alertCount, type UserAction } from './user-action-data';
 
 const today = '2027-03-08';
+
+// Long enough for pending requests to answer and for sonner, which draws after a timeout, to show a toast.
+const settle = () =>
+  act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  });
 
 // Toasts live outside the component tree, so they would carry over into the next test.
 afterEach(() => {
@@ -40,10 +46,14 @@ function fakeApi(
     actions?: UserAction[];
     listFails?: boolean;
     completeFails?: boolean;
+    /** Fails this many list requests, then answers. */
+    listFailures?: number;
     /** Answers the list once, then fails. */
     reloadFails?: boolean;
     /** Answers the completion only once this settles. */
     completeHold?: Promise<unknown>;
+    /** The alert was removed elsewhere: completing it is a 404 and it is gone from the list. */
+    completeGone?: boolean;
   } = {},
 ) {
   let actions = options.actions ?? [];
@@ -63,13 +73,21 @@ function fakeApi(
       if (path === '/api/health') return reply(200, { ok: true, today });
       if (path === '/api/user-actions') {
         listed += 1;
-        if (options.listFails || (options.reloadFails && listed > 1))
+        if (
+          options.listFails ||
+          (options.reloadFails && listed > 1) ||
+          listed <= (options.listFailures ?? 0)
+        )
           return reply(500, { error: '알림 서버 오류' });
         return reply(200, { today, actions });
       }
       const id = Number(/\/user-actions\/(\d+)\/completion$/.exec(path)?.[1]);
       if (id) {
         await options.completeHold;
+        if (options.completeGone) {
+          actions = actions.filter((item) => item.id !== id);
+          return reply(404, { error: '직접 할 일을 찾을 수 없습니다' });
+        }
         if (options.completeFails) return reply(500, { error: '저장 서버 오류' });
         const done = actions.find((item) => item.id === id);
         actions = actions.filter((item) => item.id !== id);
@@ -124,6 +142,7 @@ test('with nothing waiting there is no count and no announcement', async () => {
   openApp();
   const panel = await openPanel('직접 할 일 알림');
   expect(within(panel).getByText('지금 직접 할 일이 없습니다.')).toBeInTheDocument();
+  await settle();
   expect(screen.queryByText(/건 있습니다/)).not.toBeInTheDocument();
 });
 
@@ -206,28 +225,58 @@ test('large counts stay short on the badge', async () => {
   expect(within(bell).getByText('99+')).toBeInTheDocument();
 });
 
-test('completing an alert does not announce again', async () => {
+test('opening the panel and completing an alert do not announce again', async () => {
   openApp({ actions: [register, open] });
   await screen.findByText('직접 할 일이 2건 있습니다');
   const panel = await openPanel('직접 할 일 알림 2건');
+  await settle();
   fireEvent.click(within(panel).getByRole('button', { name: "'기한 확인' 완료" }));
-  await within(panel).findByText('실기 1회 접수');
   await screen.findByText('완료로 표시했습니다');
-  expect(screen.queryByText('직접 할 일이 1건 있습니다')).not.toBeInTheDocument();
+  await settle();
+  expect(screen.getAllByText(/건 있습니다/)).toHaveLength(1);
 });
 
-test('a failed first load looks different from nothing to do, and can be retried', async () => {
-  const api = openApp({ listFails: true });
+test('a failed first load looks different from nothing to do, and a retry recovers', async () => {
+  // The first load and the read when the panel opens both fail.
+  openApp({ actions: [open], listFailures: 2 });
   const panel = await openPanel('직접 할 일 알림을 불러오지 못했습니다');
-  expect(await within(panel).findByText('알림 서버 오류')).toBeInTheDocument();
+  await within(panel).findByText('알림 서버 오류');
   expect(within(panel).queryByText('지금 직접 할 일이 없습니다.')).not.toBeInTheDocument();
-  const before = api.sent.filter((item) => item.path === '/api/user-actions').length;
-  fireEvent.click(await within(panel).findByRole('button', { name: '다시 불러오기' }));
-  await waitFor(() =>
-    expect(api.sent.filter((item) => item.path === '/api/user-actions').length).toBeGreaterThan(
-      before,
-    ),
-  );
+  await settle();
+  const retry = within(panel).getByRole('button', { name: '다시 불러오기' });
+  retry.focus();
+  fireEvent.click(retry);
+  expect(await within(panel).findByText('기한 확인')).toBeInTheDocument();
+  expect(within(panel).queryByText('알림 서버 오류')).not.toBeInTheDocument();
+  expect(within(panel).queryByRole('button', { name: '다시 불러오기' })).not.toBeInTheDocument();
+  expect(
+    await screen.findByRole('button', { name: '직접 할 일 알림 1건', hidden: true }),
+  ).toBeInTheDocument();
+});
+
+test('the failure stays visible while reading again, and the retry button keeps its place', async () => {
+  openApp({ listFails: true });
+  const panel = await openPanel('직접 할 일 알림을 불러오지 못했습니다');
+  await within(panel).findByText('알림 서버 오류');
+  await settle();
+  const retry = within(panel).getByRole('button', { name: '다시 불러오기' });
+  retry.focus();
+  fireEvent.click(retry);
+  // Right after the click, before the answer.
+  expect(within(panel).getByText('알림 서버 오류')).toBeInTheDocument();
+  expect(retry).toBeInTheDocument();
+  expect(retry).toHaveFocus();
+  await settle();
+  expect(
+    screen.getByRole('button', { name: '직접 할 일 알림을 불러오지 못했습니다', hidden: true }),
+  ).toBeInTheDocument();
+});
+
+test('a failed read after an empty list does not say there is nothing to do', async () => {
+  openApp({ reloadFails: true });
+  const panel = await openPanel('직접 할 일 알림');
+  await within(panel).findByText('알림 서버 오류');
+  expect(within(panel).queryByText('지금 직접 할 일이 없습니다.')).not.toBeInTheDocument();
 });
 
 test('opening the panel reads the list again', async () => {
@@ -250,17 +299,25 @@ test('coming back to the tab reads the list again', async () => {
   );
 });
 
-test('a completion that fails reads the list again, so a removed alert goes away', async () => {
-  const api = openApp({ actions: [open], completeFails: true });
-  const panel = await openPanel('직접 할 일 알림 1건');
-  await waitFor(() =>
-    expect(api.sent.filter((item) => item.path === '/api/user-actions').length).toBe(2),
-  );
+test('leaving the tab does not read the list', async () => {
+  const api = openApp({ actions: [open] });
+  await screen.findByRole('button', { name: '직접 할 일 알림 1건' });
+  const before = api.sent.filter((item) => item.path === '/api/user-actions').length;
+  const hidden = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+  document.dispatchEvent(new Event('visibilitychange'));
+  await settle();
+  hidden.mockRestore();
+  expect(api.sent.filter((item) => item.path === '/api/user-actions')).toHaveLength(before);
+});
+
+test('an alert removed elsewhere goes away after its completion fails', async () => {
+  openApp({ actions: [open, register], completeGone: true });
+  const panel = await openPanel('직접 할 일 알림 2건');
+  await settle();
   fireEvent.click(within(panel).getByRole('button', { name: "'기한 확인' 완료" }));
-  await screen.findByText('저장 서버 오류');
-  await waitFor(() =>
-    expect(api.sent.filter((item) => item.path === '/api/user-actions').length).toBe(3),
-  );
+  await screen.findByText('직접 할 일을 찾을 수 없습니다');
+  await waitFor(() => expect(within(panel).queryByText('기한 확인')).not.toBeInTheDocument());
+  expect(within(panel).getByText('실기 1회 접수')).toBeInTheDocument();
 });
 
 test('one completion at a time: other rows wait too', async () => {
