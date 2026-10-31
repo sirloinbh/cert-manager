@@ -21,6 +21,8 @@ const goal = (fields: Partial<Certification>): Certification => ({
   validityKind: 'unknown',
   validityMonths: null,
   memo: '',
+  gradeScale: 'none',
+  targetGrade: null,
   ...fields,
 });
 

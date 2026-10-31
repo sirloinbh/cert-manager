@@ -35,6 +35,7 @@ import { RequestError } from './lib/api';
 import { errorText, useNotice } from './lib/use-notice';
 import { cn } from './lib/utils';
 import { StudyPlan } from './study-plan';
+import { useGradeScales } from './use-grade-scales';
 import { useLoad } from './use-load';
 
 // Screens for certification goals (#30). API calls and display rules are in certification-data.ts;
@@ -96,7 +97,8 @@ function BackLink({ to, children }: { to: string; children: ReactNode }) {
 }
 
 function goalSummary(item: Certification) {
-  return [item.issuer, item.goalText].filter(Boolean).join(' · ');
+  const grade = item.targetGrade ? `목표 등급 ${item.targetGrade}` : '';
+  return [item.issuer, item.goalText, grade].filter(Boolean).join(' · ');
 }
 
 function ExamDate({ item }: { item: Certification }) {
@@ -282,6 +284,7 @@ function notFoundText(error: unknown) {
 export function CertificationDetail({ paths }: { paths: CertificationPaths }) {
   const { id = '' } = useParams();
   const loaded = useLoad(id, loadOne);
+  const { scales, failed: scalesFailed } = useGradeScales();
   const navigate = useNavigate();
   // The goal as last saved from this page, so the status changes without reloading the attempts below.
   const [changed, setChanged] = useState<Certification>();
@@ -301,6 +304,7 @@ export function CertificationDetail({ paths }: { paths: CertificationPaths }) {
   }
 
   const item = changed?.id === loaded.data.certification.id ? changed : loaded.data.certification;
+  const gradeScale = scales.find((scale) => scale.key === item.gradeScale);
   const markPassed = async () => {
     try {
       const { certification } = await certificationApi.update(item.id, {
@@ -382,6 +386,12 @@ export function CertificationDetail({ paths }: { paths: CertificationPaths }) {
             )
           }
         />
+        {item.gradeScale === 'none' ? null : (
+          <Field
+            label="목표 등급"
+            value={item.targetGrade ?? <span className="text-muted-foreground">미정</span>}
+          />
+        )}
         <Field label="목표 시험일" value={<ExamDate item={item} />} />
         <Field label="유효기간" value={validityText(item)} />
         <Field
@@ -389,7 +399,20 @@ export function CertificationDetail({ paths }: { paths: CertificationPaths }) {
           value={item.memo || <span className="text-muted-foreground">없음</span>}
         />
       </dl>
-      <ExamAttempts key={item.id} certification={item} onMarkPassed={markPassed} />
+      {scalesFailed && item.gradeScale !== 'none' ? (
+        <Notice
+          notice={{
+            kind: 'error',
+            text: '등급 목록을 불러오지 못해 등급표를 보여 줄 수 없습니다. 목표보다 높은 등급의 달성 표시도 지금은 나오지 않지만, 목표 등급과 기록은 그대로입니다.',
+          }}
+        />
+      ) : null}
+      <ExamAttempts
+        key={item.id}
+        certification={item}
+        gradeScale={gradeScale}
+        onMarkPassed={markPassed}
+      />
       <StudyPlan key={`plan-${item.id}`} certification={item} />
     </section>
   );
@@ -406,6 +429,8 @@ type FormState = {
   validityKind: Certification['validityKind'];
   validityMonths: string;
   memo: string;
+  gradeScale: string;
+  targetGrade: string;
 };
 
 const emptyForm: FormState = {
@@ -419,6 +444,8 @@ const emptyForm: FormState = {
   validityKind: 'unknown',
   validityMonths: '',
   memo: '',
+  gradeScale: 'none',
+  targetGrade: '',
 };
 
 function toForm(item: Certification): FormState {
@@ -433,6 +460,8 @@ function toForm(item: Certification): FormState {
     targetScore: item.targetScore === null ? '' : String(item.targetScore),
     targetExamDate: item.targetExamDate ?? '',
     validityMonths: item.validityMonths === null ? '' : String(item.validityMonths),
+    gradeScale: item.gradeScale,
+    targetGrade: item.targetGrade ?? '',
   };
 }
 
@@ -442,6 +471,7 @@ function toInput(form: FormState): CertificationInput {
     targetScore: toNumber(form.targetScore),
     targetExamDate: form.targetExamDate === '' ? null : form.targetExamDate,
     validityMonths: form.validityKind === 'months' ? toNumber(form.validityMonths) : null,
+    targetGrade: form.targetGrade === '' ? null : form.targetGrade,
   };
 }
 
@@ -460,6 +490,8 @@ function FormFields({
   const [pending, setPending] = useState(false);
   const notice = useNotice();
   const id = useId();
+  const { scales, failed } = useGradeScales();
+  const scale = scales.find((item) => item.key === form.gradeScale);
   const set =
     <K extends keyof FormState>(key: K) =>
     (value: FormState[K]) =>
@@ -560,6 +592,57 @@ function FormFields({
             점수가 없는 시험이면 비워 둡니다.
           </p>
         </div>
+      </div>
+      <div className="grid gap-5 sm:grid-cols-2">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor={`${id}-scale`}>등급 체계</Label>
+          <select
+            id={`${id}-scale`}
+            className={cn(controlClass, 'h-9')}
+            // Until the list arrives the saved choice stays as it is, so saving cannot change it.
+            disabled={scales.length === 0}
+            aria-describedby={`${id}-scale-hint`}
+            value={form.gradeScale}
+            onChange={(e) =>
+              setForm((current) => ({ ...current, gradeScale: e.target.value, targetGrade: '' }))
+            }
+          >
+            <option value="none">쓰지 않음</option>
+            {scales.map((item) => (
+              <option key={item.key} value={item.key}>
+                {item.label}
+              </option>
+            ))}
+            {scales.length === 0 && form.gradeScale !== 'none' ? (
+              <option value={form.gradeScale}>저장된 등급 체계</option>
+            ) : null}
+          </select>
+          <p id={`${id}-scale-hint`} className="text-caption break-keep text-muted-foreground">
+            {failed
+              ? '등급 목록을 불러오지 못해 지금은 고를 수 없습니다. 이미 고른 값은 그대로 저장됩니다.'
+              : scales.length === 0
+                ? '등급 목록을 불러오는 중입니다.'
+                : (scale?.note ?? '점수·레벨·단계가 있는 자격증이면 고릅니다.')}
+          </p>
+        </div>
+        {scale ? (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor={`${id}-target-grade`}>목표 등급</Label>
+            <select
+              id={`${id}-target-grade`}
+              className={cn(controlClass, 'h-9')}
+              value={form.targetGrade}
+              onChange={(e) => set('targetGrade')(e.target.value)}
+            >
+              <option value="">미정</option>
+              {[...scale.levels].reverse().map((level) => (
+                <option key={level.value} value={level.value}>
+                  {level.value}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor={`${id}-date`}>목표 시험일</Label>

@@ -2,6 +2,7 @@ import type { Express } from 'express';
 import type { Pool } from 'pg';
 import { z } from 'zod';
 
+import { gradeScaleKeys, gradeScales, hasLevel } from '../grade-scales.js';
 import { HttpError, parseId } from '../standard/http.js';
 import { body, calendarDate, shortText, toId } from '../validation.js';
 
@@ -49,6 +50,10 @@ const certificationInput = z
         .nullable()
         .default(null),
       memo: z.string({ message: '메모는 문자열이어야 합니다' }).default(''),
+      gradeScale: z
+        .enum(gradeScaleKeys, { message: '등급 체계는 목록에 있는 값이어야 합니다' })
+        .default('none'),
+      targetGrade: shortText('목표 등급').nullable().default(null),
     },
     // express.json() accepts an array or a bare value too; the message stays Korean.
     { message: '요청 본문은 JSON 객체여야 합니다' },
@@ -68,6 +73,13 @@ const certificationInput = z
         message: '유효기간이 개월 수가 아니면 개월 수를 비워 주세요',
       });
     }
+    if (input.targetGrade !== null && !hasLevel(input.gradeScale, input.targetGrade)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['targetGrade'],
+        message: '목표 등급은 고른 등급 체계에 있는 값이어야 합니다',
+      });
+    }
   });
 
 type CertificationRow = {
@@ -83,19 +95,26 @@ type CertificationRow = {
   validityKind: (typeof validityKinds)[number];
   validityMonths: number | null;
   memo: string;
+  gradeScale: string;
+  targetGrade: string | null;
 };
 
 // $1 is today (YYYY-MM-DD in Asia/Seoul); daysUntilExam is negative once the date has passed.
 const columns = `id::text AS id, name, category, issuer, status, goal_text AS "goalText",
   target_score AS "targetScore", target_exam_date AS "targetExamDate",
   target_exam_date - $1::date AS "daysUntilExam",
-  validity_kind AS "validityKind", validity_months AS "validityMonths", memo`;
+  validity_kind AS "validityKind", validity_months AS "validityMonths", memo,
+  grade_scale AS "gradeScale", target_grade AS "targetGrade"`;
 
 const toCertification = (row: CertificationRow) => ({ ...row, id: toId(row.id) });
 
 const notFoundMessage = '자격증 목표를 찾을 수 없습니다';
 
 export function registerCertificationRoutes(app: Express, pool: Pool, today: () => string) {
+  app.get('/api/grade-scales', (_req, res) => {
+    res.json({ scales: gradeScales });
+  });
+
   // Grouped by category in menu order, then the nearest target exam date first; no date goes last.
   app.get('/api/certifications', async (_req, res) => {
     const current = today();
@@ -123,8 +142,8 @@ export function registerCertificationRoutes(app: Express, pool: Pool, today: () 
     const input = certificationInput.parse(body(req.body));
     const { rows } = await pool.query<CertificationRow>(
       `INSERT INTO certifications (name, category, issuer, status, goal_text, target_score,
-         target_exam_date, validity_kind, validity_months, memo)
-       VALUES ($2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+         target_exam_date, validity_kind, validity_months, memo, grade_scale, target_grade)
+       VALUES ($2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        RETURNING ${columns}`,
       [today(), ...values(input)],
     );
@@ -138,12 +157,12 @@ export function registerCertificationRoutes(app: Express, pool: Pool, today: () 
     const { rows } = await pool.query<CertificationRow>(
       `WITH cleared AS (
          UPDATE exam_attempts SET expires_on = NULL, updated_at = now()
-         WHERE certification_id = $12 AND $9::text = 'none' AND expires_on IS NOT NULL
+         WHERE certification_id = $14 AND $9::text = 'none' AND expires_on IS NOT NULL
        )
        UPDATE certifications SET name = $2, category = $3, issuer = $4, status = $5, goal_text = $6,
          target_score = $7, target_exam_date = $8, validity_kind = $9, validity_months = $10,
-         memo = $11, updated_at = now()
-       WHERE id = $12
+         memo = $11, grade_scale = $12, target_grade = $13, updated_at = now()
+       WHERE id = $14
        RETURNING ${columns}`,
       [today(), ...values(input), id],
     );
@@ -172,5 +191,7 @@ function values(input: z.infer<typeof certificationInput>) {
     input.validityKind,
     input.validityMonths,
     input.memo,
+    input.gradeScale,
+    input.targetGrade,
   ];
 }
