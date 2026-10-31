@@ -19,7 +19,7 @@
 ## 함께 볼 것
 
 - PR #15(`zod` 3 → 4)는 처리하지 않고 그대로 둔다. 2026-10-28 사용자가 project-standards#307에서 후보 A를 골라 zod는 3.25.76에 머문다(project-standards `docs/research/zod4.md` 결정 절). `backend/package.json`의 zod 버전은 중앙 관리 값이다. 이 권고의 공격 경로는 길이 제한 없는 `z.array`이며, 지금 `backend/src`에는 `z.array`가 없고 오류 메시지 개수는 중앙 `backend/src/standard/http.ts`가 제한한다. 새 배열 스키마에는 `.max()`를 붙인다. `npm audit`의 zod high 1건과 Dependabot 알림은 이 결정 때문에 남아 있다.
-- CodeQL `js/missing-rate-limiting`은 새 API 경로마다 다시 생긴다. 요청 횟수 제한은 nginx `limit_req`가 맡으므로(project-standards#291), 사용자 확인 뒤 "고치지 않음"으로 닫고 이유를 적는다. CodeQL은 필수 검사가 아니다(필수: `ci / verify`, `ci / docker-build`).
+- 요청 횟수 제한: `frontend/nginx.conf`의 `limit_req`와 그 뒤의 `backend/src/rate-limit.ts`(`express-rate-limit`) 두 겹이다(#49). 중앙 결정 project-standards#291은 nginx만 쓰는 것이고, 이 앱만 사용자 결정으로 다르다. CodeQL은 필수 검사가 아니다(필수: `ci / verify`, `ci / docker-build`).
 - 로컬 앱 DB는 `.env`가 없어 실행돼 있지 않다. 남은 사용자 할 일은 [2026-10-30 일일 기록](../daily/2026-10-30.md)에 있다.
 - 브라우저 확인은 임시 Postgres 컨테이너 + `node node_modules/tsx/dist/cli.mjs src/server.ts`(백엔드) + `npm run dev -w frontend`로 했다. `npx`는 프로젝트 훅이 막는다.
 - `npm run knip`: 결과 없음(#30에서 `backend/src/standard/http.ts`를 쓰기 시작했다). CI는 `knip-strict`로 실패 단계를 쓴다.
