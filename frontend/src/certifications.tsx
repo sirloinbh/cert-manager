@@ -403,7 +403,7 @@ export function CertificationDetail({ paths }: { paths: CertificationPaths }) {
         <Notice
           notice={{
             kind: 'error',
-            text: '등급 목록을 불러오지 못해 등급표를 보여 줄 수 없습니다. 목표 등급과 기록은 그대로입니다.',
+            text: '등급 목록을 불러오지 못해 등급표를 보여 줄 수 없습니다. 목표보다 높은 등급의 달성 표시도 지금은 나오지 않지만, 목표 등급과 기록은 그대로입니다.',
           }}
         />
       ) : null}
