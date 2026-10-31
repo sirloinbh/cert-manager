@@ -62,15 +62,10 @@ test('menu areas without features yet show the empty notice', async () => {
   health({ today: '2026-10-26' });
   render(<App />);
   const menu = screen.getByRole('navigation', { name: '주 메뉴' });
-  for (const [label, path] of [
-    ['팝송 가사', '/songs'],
-    ['단어장', '/words'],
-  ]) {
-    fireEvent.click(within(menu).getByRole('link', { name: label }));
-    expect(window.location.pathname).toBe(path);
-    expect(await screen.findByRole('heading', { level: 1, name: label })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '아직 기능이 없습니다' })).toBeInTheDocument();
-  }
+  fireEvent.click(within(menu).getByRole('link', { name: '단어장' }));
+  expect(window.location.pathname).toBe('/words');
+  expect(await screen.findByRole('heading', { level: 1, name: '단어장' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: '아직 기능이 없습니다' })).toBeInTheDocument();
 });
 
 test('an unknown address falls back to the overview', async () => {

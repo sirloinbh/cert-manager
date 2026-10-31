@@ -26,6 +26,8 @@ npm run dev
 
 Vite http://localhost:5206, API http://localhost:3106/api/health, 호스트 DB 포트 15406.
 
+이미 쓰던 DB에는 `database/migrations`의 새 파일을 직접 적용합니다(빈 볼륨에서만 자동 적용). 곡 목록은 `npm run songs:import -w backend`로 받습니다. `DATABASE_URL`의 DB에 앨범·곡 이름, 발매일, 길이만 저장하고 가사는 받지 않으며, 시작할 때 대상 DB를 출력합니다.
+
 ## 검증
 
 - `npm run check`: 포맷, lint, 타입, 테스트, 스킬 동기화 검사, 빌드.

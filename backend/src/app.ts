@@ -5,6 +5,7 @@ import { types } from 'pg';
 import { apiRateLimit, type RateLimitOptions } from './rate-limit.js';
 import { registerCertificationRoutes } from './routes/certifications.js';
 import { registerExamAttemptRoutes } from './routes/exam-attempts.js';
+import { registerSongRoutes } from './routes/songs.js';
 import { registerStudyPlanRoutes } from './routes/study-plans.js';
 import { registerUserActionRoutes } from './routes/user-actions.js';
 import { errorHandler, notFound, serviceDate } from './standard/http.js';
@@ -30,6 +31,7 @@ export function createApp(
   registerExamAttemptRoutes(app, pool, today);
   registerStudyPlanRoutes(app, pool, today);
   registerUserActionRoutes(app, pool, today);
+  registerSongRoutes(app, pool);
   app.use('/api', notFound);
   app.use(errorHandler);
   return app;

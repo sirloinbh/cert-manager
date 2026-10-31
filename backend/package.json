@@ -8,6 +8,7 @@
     "start": "node dist/server.js",
     "build": "tsc",
     "test": "tsx --test test/*.test.ts",
+    "songs:import": "tsx --env-file-if-exists=../.env src/import-song-list.ts",
     "typecheck": "tsc -p tsconfig.check.json"
   },
   "dependencies": {
