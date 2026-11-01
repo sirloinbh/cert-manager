@@ -24,6 +24,8 @@ const fileSchema = z.object({
       z.object({
         lineNumber: z.number().int().positive(),
         original: z.string().max(5000),
+        // The translation when the file was written, to notice edits made on the screen since.
+        atExport: z.string().max(5000).nullable(),
         translation: z.string().max(5000).nullable(),
       }),
     )
@@ -49,11 +51,23 @@ function lineProblem(file: TranslationFile, originals: TextLine[]) {
   return moved ? '원문이 DB와 다릅니다. 파일을 지우고 다시 내보내 주세요' : null;
 }
 
-// Nothing was written in this file yet, so there is nothing to save or complain about.
-const untouched = (file: TranslationFile, originals: TextLine[]) =>
+const cell = (value: string | null | undefined) => (value ?? '').trim();
+
+// An earlier run saved this file but could not move it. The translation is in, so it only needs moving.
+const alreadySaved = (file: TranslationFile, originals: TextLine[]) =>
   file.lines.every(
-    (line, index) => (line.translation ?? '').trim() === (originals[index]?.translation ?? ''),
+    (line, index) =>
+      cell(line.translation) !== '' &&
+      cell(line.translation) === cell(originals[index]?.translation),
   );
+
+// Nothing was written in this file yet, so there is nothing to save or complain about.
+const nothingTyped = (file: TranslationFile) =>
+  file.lines.every((line) => cell(line.translation) === cell(line.atExport));
+
+// Saving writes every line, which would undo what was changed on the screen after the export.
+const changedSinceExport = (file: TranslationFile, originals: TextLine[]) =>
+  file.lines.some((line, index) => cell(line.atExport) !== cell(originals[index]?.translation));
 
 /** Why these translations cannot be saved, or null. Saving is all or nothing. */
 function translationProblem(file: TranslationFile) {
@@ -92,6 +106,7 @@ export async function exportTranslations(pool: Pool, dir: string) {
     const lines = (await textLines(pool, songId)).map((line) => ({
       lineNumber: line.lineNumber,
       original: line.original,
+      atExport: line.translation,
       translation: line.translation ?? '',
     }));
     const file: TranslationFile = { songId, title: song.title, lines };
@@ -146,8 +161,12 @@ export async function importTranslations(pool: Pool, dir: string) {
         const originals = await textLines(client, file.songId);
         const mismatch = lineProblem(file, originals);
         if (mismatch) throw new RejectedFile(mismatch);
-        skip = untouched(file, originals);
+        if (alreadySaved(file, originals)) return;
+        skip = nothingTyped(file);
         if (skip) return;
+        if (changedSinceExport(file, originals)) {
+          throw new RejectedFile('내보낸 뒤 번역이 바뀌었습니다. 파일을 지우고 다시 내보내 주세요');
+        }
         const problem = translationProblem(file);
         if (problem) throw new RejectedFile(problem);
         await setTranslations(

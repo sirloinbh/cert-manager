@@ -173,6 +173,36 @@ test('a direct answer about another song is not used', async () => {
   );
 });
 
+test('guest credits in a title do not count, on either side', async () => {
+  const answer = async (title: string, trackName: string) => {
+    let found: unknown;
+    await withLrclib(
+      (url, res) =>
+        url.pathname === '/api/get' ? json(res, 200, item({ trackName })) : json(res, 200, []),
+      async (source) => {
+        found = await requestLyrics({ ...query, title }, source);
+      },
+    );
+    return found;
+  };
+  assert.ok(await answer('Foo', 'Foo (feat. 손님)'));
+  assert.ok(await answer('Foo (feat. 손님)', 'Foo'));
+  assert.ok(await answer('Foo', 'Foo [with 손님]'));
+  assert.equal(await answer('Foo', 'Foo (Remix)'), null);
+});
+
+test('an answer the database cannot hold is not used', async () => {
+  await withLrclib(
+    (url, res) =>
+      url.pathname === '/api/get'
+        ? json(res, 200, item({ plainLyrics: '종이배\u0000를 띄운다' }))
+        : json(res, 200, []),
+    async (source) => {
+      assert.equal(await requestLyrics(query, source), null);
+    },
+  );
+});
+
 test('guests count as the artist, a longer name does not', async () => {
   const answer = async (artistName: string) => {
     let found: unknown;
@@ -186,6 +216,8 @@ test('guests count as the artist, a longer name does not', async () => {
     return found;
   };
   assert.ok(await answer('가수 feat. 손님'));
+  assert.ok(await answer('가수 featuring 손님'));
+  assert.ok(await answer('가수 (feat. 손님)'));
   assert.equal(await answer('가수 카라오케'), null);
 });
 

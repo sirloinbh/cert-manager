@@ -83,11 +83,16 @@ function sameArtist(found: string, artist: string) {
   const wanted = artist.toLocaleLowerCase();
   if (!name.startsWith(wanted)) return false;
   const rest = name.slice(wanted.length);
-  return rest === '' || /^\s*(?:,|&|feat\b|ft\b|with\b)/.test(rest);
+  return rest === '' || /^\s*(?:,|&|\(?feat(?:uring)?\b|\(?ft\b|\(?with\b)/.test(rest);
 }
 
 const sameTitle = (a: string, b: string) => {
-  const plain = (title: string) => songTitle(title).replace(/[‘’]/g, "'").toLocaleLowerCase();
+  // Guest credits are written differently from place to place, so they do not count.
+  const plain = (title: string) =>
+    songTitle(title)
+      .replace(/\s*[([]\s*(?:feat\.?|featuring|ft\.?|with)\s[^)\]]*[)\]]/gi, '')
+      .replace(/[‘’]/g, "'")
+      .toLocaleLowerCase();
   return plain(a) === plain(b);
 };
 
@@ -100,7 +105,9 @@ function matches(found: LrclibRecord, query: LyricsQuery) {
     closeEnough &&
     sameTitle(found.trackName, query.title) &&
     sameArtist(found.artistName, query.artist) &&
-    recordLines(found).some((line) => line !== '')
+    recordLines(found).some((line) => line !== '') &&
+    // The database cannot hold this character, and a database error stops the whole run.
+    !recordLines(found).some((line) => line.includes('\u0000'))
   );
 }
 

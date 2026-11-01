@@ -124,11 +124,11 @@ test('lyrics arrive, go out to a file and come back translated', { skip: !url },
   const file = JSON.parse(await readFile(path, 'utf8')) as {
     songId: number;
     title: string;
-    lines: { lineNumber: number; original: string; translation: string }[];
+    lines: { lineNumber: number; original: string; atExport: string | null; translation: string }[];
   };
   assert.deepEqual(file.lines, [
-    { lineNumber: 1, original: '구름이 간다', translation: '' },
-    { lineNumber: 3, original: '새가 난다', translation: '' },
+    { lineNumber: 1, original: '구름이 간다', atExport: null, translation: '' },
+    { lineNumber: 3, original: '새가 난다', atExport: null, translation: '' },
   ]);
   await writeFile(path, '{"mine":true}');
   const exportedAgain = await exportTranslations(pool, dir);
@@ -186,12 +186,26 @@ test('lyrics arrive, go out to a file and come back translated', { skip: !url },
     ['Clouds go', null, 'Birds fly'],
   );
 
+  // A saved file an earlier run could not move is only moved.
+  const notMoved = await importing(translation('Clouds go', 'Birds fly'));
+  assert.deepEqual(notMoved, { saved: [fileName], skipped: [], rejected: [] });
+  assert.ok(!(await readdir(dir)).includes(fileName));
+
   // Importing again cannot bring back an old translation over an edit made on the screen.
   await pool.query(
     'UPDATE lyric_lines SET translation = $2 WHERE song_id = $1 AND line_number = 1',
     [fetched, '화면에서 고친 번역'],
   );
   assert.deepEqual(await importTranslations(pool, dir), { saved: [], skipped: [], rejected: [] });
+  assert.equal((await lines(fetched))[0]?.translation, '화면에서 고친 번역');
+
+  // Nor can a file written before that edit, unless nothing was typed in it.
+  const stale = await importing(translation('Clouds go', 'Birds fly'));
+  assert.deepEqual(stale.rejected, [
+    { file: fileName, reason: '내보낸 뒤 번역이 바뀌었습니다. 파일을 지우고 다시 내보내 주세요' },
+  ]);
+  assert.equal((await lines(fetched))[0]?.translation, '화면에서 고친 번역');
+  assert.deepEqual(await importing(file), { saved: [], skipped: [fileName], rejected: [] });
   assert.equal((await lines(fetched))[0]?.translation, '화면에서 고친 번역');
 
   // A song that is gone is named, not fatal.
