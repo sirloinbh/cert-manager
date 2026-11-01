@@ -86,6 +86,19 @@ test('invalid actions are a Korean 400 and never reach the database', async () =
   assert.equal(queries.length, 0);
 });
 
+test('an array in place of the title answers one message, not one per check', async () => {
+  const { pool, queries } = fakePool(() => ({ rows: [] }));
+  await withApi(pool, async (call) => {
+    const { status, data } = await call(path, {
+      method: 'POST',
+      body: { ...valid, title: [] },
+    });
+    assert.equal(status, 400);
+    assert.deepEqual(data, { error: '할 일을 입력해 주세요' });
+  });
+  assert.equal(queries.length, 0);
+});
+
 test('completion needs a boolean, and a missing action is a 404', async () => {
   const { pool, queries } = fakePool(() => ({ rows: [], rowCount: 0 }));
   await withApi(pool, async (call) => {
