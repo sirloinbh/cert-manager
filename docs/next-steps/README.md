@@ -13,7 +13,7 @@
 ## 함께 볼 것
 
 - zod는 4.6.7이다(PR #75). 이 앱의 코드는 [#73](https://github.com/sirloinbh/cert-manager/issues/73)에서 `zod/v4` 문법으로 옮겼다. `backend/package.json`의 zod 버전은 중앙 관리 값이다. 새 코드는 `zod/v4`의 `{ error }`를 쓰고, 새 배열 스키마에는 `.max()`를 붙인다.
-- `npm audit`(2026-11-02): 전체 moderate 16건, high 이상 없음. `--omit=dev`는 0건이라 운영 의존성에는 없다. ESLint 계열 개발 도구와 `minimatch`이고 자동 수정이 없다. Dependabot 열린 알림은 `minimatch` 1건이다. `npm audit fix --force`는 쓰지 않는다.
+- `npm audit`(2026-11-02): 전체 moderate 16건, high 이상 없음. `--omit=dev`는 0건이라 운영 의존성에는 없다. ESLint 계열 개발 도구와 `minimatch`이고 안전한 자동 수정이 없다. Dependabot 열린 알림은 `minimatch` 1건이다. `npm audit fix --force`는 쓰지 않는다.
 - 요청 횟수 제한: `frontend/nginx.conf`의 `limit_req`와 그 뒤의 `backend/src/rate-limit.ts`(`express-rate-limit`) 두 겹이다(#49). 중앙 결정 project-standards#291은 nginx만 쓰는 것이고, 이 앱만 사용자 결정으로 다르다. CodeQL은 필수 검사가 아니다(필수: `ci / verify`, `ci / docker-build`).
 - 이 PC에는 Docker가 없어 설치된 PostgreSQL 17(포트 5432)의 `cert`, `cert_test` DB를 쓴다. 새 마이그레이션은 두 DB에 모두 적용한다. 사용자 환경변수 `TEST_DATABASE_URL`은 study-log용이므로 바꾸지 말고, 다른 터미널에서는 그 세션에서만 `cert_test` 주소로 지정한다.
 - 브라우저 확인은 임시 Postgres 컨테이너 + `node node_modules/tsx/dist/cli.mjs src/server.ts`(백엔드) + `npm run dev -w frontend`로 했다. `npx`는 프로젝트 훅이 막는다.

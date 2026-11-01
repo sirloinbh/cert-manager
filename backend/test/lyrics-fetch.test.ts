@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import type { AddressInfo } from 'node:net';
 import { test } from 'node:test';
 
 import type { Pool } from 'pg';
 
 import { fetchMissingLyrics, requestLyrics } from '../src/lyrics-fetch.js';
 import { scriptDatabaseUrl } from '../src/script-database.js';
+import { listenLocally } from './helpers.js';
 
 // A fake LRCLIB. All lyrics here are made up for the test.
 
@@ -25,8 +25,7 @@ async function withLrclib(
   ) => Promise<void>,
 ) {
   const server = createServer((req, res) => handler(new URL(req.url ?? '/', 'http://x'), res, req));
-  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-  const { port } = server.address() as AddressInfo;
+  const port = await listenLocally(server);
   const waits: number[] = [];
   try {
     await run(

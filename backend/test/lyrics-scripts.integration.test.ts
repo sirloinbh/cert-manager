@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
-import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -14,6 +13,7 @@ import {
   importTranslations,
   translationsDir,
 } from '../src/translation-files.js';
+import { listenLocally } from './helpers.js';
 
 const url = process.env.TEST_DATABASE_URL;
 
@@ -50,8 +50,7 @@ test('lyrics arrive, go out to a file and come back translated', { skip: !url },
       res.end('[]');
     }
   });
-  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-  const baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  const baseUrl = `http://127.0.0.1:${await listenLocally(server)}`;
   t.after(async () => {
     server.close();
     await rm(dir, { recursive: true, force: true });
