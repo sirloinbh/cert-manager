@@ -58,23 +58,30 @@ test('etymology text loses the generated tree and repeats', () => {
   const tree =
     'Etymology tree\nProto-Italic *portā\nMiddle English wel, wal, wol, wele\nEnglish port\nProbably from a.\nMade-up second line.';
   assert.equal(
-    etymologyText(`${entry(tree)}\n${entry(tree)}\n${entry('From Old English bar.')}\n`),
+    etymologyText(`${entry(tree)}\n${entry(tree)}\n${entry('From Old English bar.')}\n`, 'port'),
     'Probably from a.\nMade-up second line.\n\nFrom Old English bar.',
   );
-  assert.equal(etymologyText(`${entry()}\n`), '');
+  assert.equal(etymologyText(`${entry()}\n`, 'port'), '');
 });
 
 test('a tree with no sentences after it, or no end, is no source at all', () => {
-  assert.equal(etymologyText(entry('Etymology tree\nLatin a\nEnglish a')), '');
-  assert.equal(etymologyText(entry('Etymology tree\nLatin a\nLatin b')), '');
+  assert.equal(etymologyText(entry('Etymology tree\nLatin a\nEnglish port'), 'port'), '');
+  assert.equal(etymologyText(entry('Etymology tree\nLatin a\nLatin b'), 'port'), '');
 });
 
-test('branches of a tree all come off, and a sentence opening with English stays', () => {
+test('branches of a tree come off, and short sentences opening with English stay', () => {
   assert.equal(
     etymologyText(
-      entry('Etymology tree\nEnglish a\nLatin b\nEnglish c\nEnglish speakers made this up.'),
+      entry(
+        'Etymology tree\nEnglish a\nLatin b\nEnglish port\nFrom Latin b.\nEnglish doublet of haven.',
+      ),
+      'port',
     ),
-    'English speakers made this up.',
+    'From Latin b.\nEnglish doublet of haven.',
+  );
+  assert.equal(
+    etymologyText(entry('Etymology tree\nLatin b\nEnglish port der.\nFrom Latin b.'), 'port'),
+    'From Latin b.',
   );
 });
 

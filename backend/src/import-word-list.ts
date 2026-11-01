@@ -22,12 +22,13 @@ const response = await politeGet(ngslUrl, {
 if (!response) throw new Error('NGSL file was not found');
 const csv = await response.text();
 const words = parseWordList(csv);
-await mkdir(sourcesDir, { recursive: true });
-await writeFile(join(sourcesDir, ngslFileName), csv);
 
 const pool = new Pool({ connectionString: url });
 try {
   await saveWordList(pool, words, ngslUrl);
+  // Only now: the kept file should always be the list the database holds.
+  await mkdir(sourcesDir, { recursive: true });
+  await writeFile(join(sourcesDir, ngslFileName), csv);
   console.log(`Saved ${words.length} words.`);
 } finally {
   await pool.end();

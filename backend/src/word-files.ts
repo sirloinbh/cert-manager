@@ -12,7 +12,13 @@ import { inTransaction } from './lyrics-store.js';
 
 export const wordBatchesDir = fileURLToPath(new URL('../../.local/word-batches/', import.meta.url));
 
-const text = (max: number) => z.string().trim().min(1).max(max);
+const text = (max: number) =>
+  z
+    .string()
+    .trim()
+    .min(1)
+    .max(max)
+    .refine((value) => !value.includes('\u0000'));
 
 const batchSchema = z.object({
   words: z
@@ -27,7 +33,10 @@ const batchSchema = z.object({
           .array(
             z.object({
               key: text(200),
-              form: text(200).regex(/^[a-z]+$/),
+              form: z
+                .string()
+                .max(200)
+                .regex(/^[a-z]+$/),
               kind: z.enum(['prefix', 'root', 'suffix']),
               meaningKo: text(200),
               origin: text(100).nullable(),
@@ -139,7 +148,11 @@ function batchProblem(batch: Batch, found: Map<string, WordRow>) {
 
 /** Saves each batch whole, marked as AI-made, then moves it to imported/. Bad ones stay and are named with the reason. */
 export async function importWordBatches(pool: Pool, dir: string) {
-  const result = { saved: [] as string[], rejected: [] as { file: string; reason: string }[] };
+  const result = {
+    saved: [] as string[],
+    notMoved: [] as string[],
+    rejected: [] as { file: string; reason: string }[],
+  };
   const doneDir = join(dir, 'imported');
   await mkdir(doneDir, { recursive: true });
   const names = (await readdir(dir)).filter((name) => name.endsWith('.json')).sort();
@@ -182,19 +195,18 @@ export async function importWordBatches(pool: Pool, dir: string) {
       // A value the database refuses is the file's fault; a lost connection is not.
       const refused = /^2[23]/.test((error as { code?: string }).code ?? '');
       if (!(error instanceof RejectedBatch || refused)) throw error;
-      const reason = refused ? '데이터베이스가 받지 않는 값이 있습니다' : (error as Error).message;
+      const reason = refused
+        ? `데이터베이스가 받지 않는 값이 있습니다 (${(error as { code: string }).code})`
+        : (error as Error).message;
       result.rejected.push({ file: name, reason });
       continue;
     }
+    result.saved.push(name);
     try {
       await rename(join(dir, name), join(doneDir, name));
-      result.saved.push(name);
     } catch {
       // OneDrive can hold a file for a moment. The words are in, and a rerun would only be refused.
-      result.rejected.push({
-        file: name,
-        reason: '저장했지만 파일을 옮기지 못했습니다. 이 파일은 지워 주세요',
-      });
+      result.notMoved.push(name);
     }
   }
   return result;

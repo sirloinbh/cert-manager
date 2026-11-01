@@ -70,7 +70,7 @@ export function WordList({ paths }: { paths: WordPaths }) {
   // In the URL, so coming back from a word finds the same search.
   const [params, setParams] = useSearchParams();
   const search = params.get('q') ?? '';
-  // Pages opened belong to one search, so any other search, however it changed, starts over.
+  // Pages opened belong to the search they were opened for; while another search shows, it starts at one.
   const [paging, setPaging] = useState({ search, pages: 1 });
   const pages = paging.search === search ? paging.pages : 1;
   const searchId = useId();

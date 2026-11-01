@@ -152,10 +152,7 @@ test(
       [{ words: [fill('zzcarry', [{ ...port, key: 'root:other' }])] }, /이름이 규칙과 다릅니다/],
       [{ words: [fill('zzcarry', [{ ...port, key: 'root:zzport:' }])] }, /이름이 규칙과 다릅니다/],
       [{ words: [fill('zzcarry', [port, port])] }, /같은 어원 요소가 두 번/],
-      [
-        { words: [fill('zzcarry', [], { meaningKo: '끝\u0000' })] },
-        /데이터베이스가 받지 않는 값이 있습니다/,
-      ],
+      [{ words: [fill('zzcarry', [], { meaningKo: '끝\u0000' })] }, /words\.0\.meaningKo/],
       [{ words: [fill('zzcarry', [{ ...port, form: 'Zz-Port' }])] }, /파일 형식이 맞지 않습니다/],
     ];
     for (const [content, reason] of refused) {
@@ -179,7 +176,7 @@ test(
     const first = await write(
       `\uFEFF${JSON.stringify({ words: [fill('zzcarry', [carryPart]), fill('zzport', [port])] })}`,
     );
-    assert.deepEqual(first, { saved: [name], rejected: [] });
+    assert.deepEqual(first, { saved: [name], notMoved: [], rejected: [] });
     assert.deepEqual(await readdir(join(dir, 'imported')), [name]);
 
     // A second batch sees the parts already there; the same key is the same part, whatever its wording.
