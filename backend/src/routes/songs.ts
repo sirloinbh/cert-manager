@@ -1,6 +1,6 @@
 import type { Express } from 'express';
 import type { Pool } from 'pg';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 import { inTransaction, lockSong, setTranslations, toLines } from '../lyrics-store.js';
 import { HttpError, parseId } from '../standard/http.js';
@@ -9,7 +9,7 @@ import { body, toId } from '../validation.js';
 // Songs and lyrics (#35). Columns and rules: docs/design/scope-and-data-model.md section 6.
 // Lyrics live only in the local database; nothing here copies them anywhere else.
 
-const objectMessage = { message: '요청 본문은 JSON 객체여야 합니다' };
+const objectMessage = { error: '요청 본문은 JSON 객체여야 합니다' };
 
 // Large enough for any song, small enough to keep one request cheap.
 const maxText = 50_000;
@@ -17,8 +17,8 @@ const maxText = 50_000;
 const lyricsInput = z.object(
   {
     original: z
-      .string({ message: '가사를 입력해 주세요' })
-      .max(maxText, `가사는 ${maxText}자 이하로 입력해 주세요`),
+      .string({ error: '가사를 입력해 주세요' })
+      .refine((value) => value.length <= maxText, `가사는 ${maxText}자 이하로 입력해 주세요`),
   },
   objectMessage,
 );
@@ -26,8 +26,8 @@ const lyricsInput = z.object(
 const translationInput = z.object(
   {
     translation: z
-      .string({ message: '번역을 입력해 주세요' })
-      .max(maxText, `번역은 ${maxText}자 이하로 입력해 주세요`),
+      .string({ error: '번역을 입력해 주세요' })
+      .refine((value) => value.length <= maxText, `번역은 ${maxText}자 이하로 입력해 주세요`),
   },
   objectMessage,
 );

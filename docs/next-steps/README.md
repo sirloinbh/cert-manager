@@ -17,7 +17,7 @@
 
 ## 함께 볼 것
 
-- PR #15(`zod` 3 → 4)는 처리하지 않고 그대로 둔다. 2026-10-28 사용자가 project-standards#307에서 후보 A를 골라 zod는 3.25.76에 머문다(project-standards `docs/research/zod4.md` 결정 절). `backend/package.json`의 zod 버전은 중앙 관리 값이다. 이 권고의 공격 경로는 길이 제한 없는 `z.array`이며, 지금 `backend/src`의 `z.array`는 스크립트 세 곳(#64 외부 API 응답과 번역 파일, #36 단어 파일)뿐이고 `.max()`가 붙어 있으며 오류 메시지 개수는 중앙 `backend/src/standard/http.ts`가 제한한다. 새 배열 스키마에는 `.max()`를 붙인다. `npm audit`의 zod high 1건과 Dependabot 알림은 이 결정 때문에 남아 있다.
+- PR #15(`zod` 3 → 4)는 처리하지 않고 그대로 둔다. 2026-11-01 사용자가 project-standards#307의 zod 3 유지 결정을 바꿔, project-standards#386에서 앱 8개를 4.6.7로 올린다. 이 앱의 코드는 [#73](https://github.com/sirloinbh/cert-manager/issues/73)에서 `zod/v4` 문법으로 옮겼다. `backend/package.json`의 zod 버전은 중앙 관리 값이라 중앙 동기화 PR로 올라가고, `npm audit`의 zod high 1건과 Dependabot 알림은 그때 닫힌다. 그때까지 `backend/src`의 `z.array`는 스크립트 세 곳(#64 외부 API 응답과 번역 파일, #36 단어 파일)뿐이고 `.max()`가 붙어 있으며, 오류 메시지 개수는 중앙 `backend/src/standard/http.ts`가 제한한다. 새 배열 스키마에는 `.max()`를 붙인다.
 - 요청 횟수 제한: `frontend/nginx.conf`의 `limit_req`와 그 뒤의 `backend/src/rate-limit.ts`(`express-rate-limit`) 두 겹이다(#49). 중앙 결정 project-standards#291은 nginx만 쓰는 것이고, 이 앱만 사용자 결정으로 다르다. CodeQL은 필수 검사가 아니다(필수: `ci / verify`, `ci / docker-build`).
 - 이 PC에는 Docker가 없어 설치된 PostgreSQL 17(포트 5432)의 `cert`, `cert_test` DB를 쓴다. 새 마이그레이션은 두 DB에 모두 적용한다. 사용자 환경변수 `TEST_DATABASE_URL`은 study-log용이므로 바꾸지 말고, 다른 터미널에서는 그 세션에서만 `cert_test` 주소로 지정한다.
 - 브라우저 확인은 임시 Postgres 컨테이너 + `node node_modules/tsx/dist/cli.mjs src/server.ts`(백엔드) + `npm run dev -w frontend`로 했다. `npx`는 프로젝트 훅이 막는다.

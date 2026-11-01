@@ -132,6 +132,37 @@ test('invalid attempts are a Korean 400 and never reach the database', async () 
   assert.equal(queries.length, 0);
 });
 
+// The whole answer, not a part of it: which messages come together is decided by zod's rules for carrying on after a failure.
+test('each invalid attempt answers exactly these messages', async () => {
+  const { pool } = fakePool(() => ({ rows: [] }));
+  const examDate = '2026-03-15';
+  const cases: [unknown, string][] = [
+    [{ examDate, outcome: 'scored', score: 'x' }, '점수는 숫자여야 합니다'],
+    [{ examDate, outcome: 'scored', score: 1.5 }, '점수는 정수여야 합니다'],
+    [{ examDate, outcome: 'scored', score: 100001 }, '점수는 100000 이하여야 합니다'],
+    // A score that is not an integer stops the other checks, so this no longer adds "0 이상".
+    [{ examDate, outcome: 'scored', score: -1.5 }, '점수는 정수여야 합니다'],
+    // Nor does a fractional score reach the rule across fields.
+    [{ examDate, score: 1.5 }, '점수는 정수여야 합니다'],
+    [{ examDate, score: 900 }, '결과 전에는 점수와 등급을 비워 주세요'],
+    [{ examDate: 'abc' }, '시험일은 YYYY-MM-DD 형식이어야 합니다, 시험일이 실제 날짜가 아닙니다'],
+    // An expiry that already failed its own checks is not compared with the exam date.
+    [{ examDate, expiresOn: '2026-02-30' }, '만료일이 실제 날짜가 아닙니다'],
+    [
+      { examDate, grade: 'x'.repeat(201) },
+      '등급은 200자 이하로 입력해 주세요, 결과 전에는 점수와 등급을 비워 주세요',
+    ],
+    [[1], '요청 본문은 JSON 객체여야 합니다'],
+  ];
+  await withApi(pool, async (call) => {
+    for (const [body, message] of cases) {
+      const { status, data } = await call(path, { method: 'POST', body });
+      assert.equal(status, 400, JSON.stringify(body));
+      assert.deepEqual(data, { error: message }, JSON.stringify(body));
+    }
+  });
+});
+
 test('a missing goal or attempt is a 404, and a bad id a 400', async () => {
   const { pool } = fakePool(() => ({ rows: [], rowCount: 0 }));
   const body = { examDate: '2026-03-15' };

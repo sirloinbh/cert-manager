@@ -122,6 +122,22 @@ test('invalid input is a Korean 400 and never reaches the database', async () =>
   assert.equal(queries.length, 0);
 });
 
+test('an array sent as text answers only the type message', async () => {
+  const { pool } = fakePool(() => ({ rows: [] }));
+  const cases: [unknown, string][] = [
+    [{ name: [], category: 'dev' }, '자격증 이름을 입력해 주세요'],
+    [{ name: Array(201).fill(0), category: 'dev' }, '자격증 이름을 입력해 주세요'],
+    [{ name: 'n', category: 'dev', issuer: Array(201).fill(0) }, '주관 기관은 문자열이어야 합니다'],
+  ];
+  await withApi(pool, async (call) => {
+    for (const [body, message] of cases) {
+      const { status, data } = await call('/api/certifications', { method: 'POST', body });
+      assert.equal(status, 400);
+      assert.deepEqual(data, { error: message });
+    }
+  });
+});
+
 test('a missing goal is a Korean 404 for read, update and delete', async () => {
   const { pool } = fakePool(() => ({ rows: [], rowCount: 0 }));
   await withApi(pool, async (call) => {

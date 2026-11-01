@@ -1,6 +1,6 @@
 import type { Express } from 'express';
 import type { Pool } from 'pg';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 import { HttpError, parseId } from '../standard/http.js';
 import { body, calendarDate, toId } from '../validation.js';
@@ -9,13 +9,13 @@ import { body, calendarDate, toId } from '../validation.js';
 
 const title = (label: string) =>
   z
-    .string({ message: `${label}을 입력해 주세요` })
+    .string({ error: `${label}을 입력해 주세요` })
     .trim()
-    .min(1, `${label}을 입력해 주세요`)
-    .max(200, `${label}은 200자 이하로 입력해 주세요`);
+    .refine((value) => value.length >= 1, `${label}을 입력해 주세요`)
+    .refine((value) => value.length <= 200, `${label}은 200자 이하로 입력해 주세요`);
 
 // express.json() accepts an array or a bare value too; the message stays Korean.
-const objectMessage = { message: '요청 본문은 JSON 객체여야 합니다' };
+const objectMessage = { error: '요청 본문은 JSON 객체여야 합니다' };
 
 // PUT replaces the whole stage or task, so POST and PUT share one input.
 const stageInput = z
@@ -46,7 +46,7 @@ const taskInput = z.object(
 );
 
 const completionInput = z.object(
-  { completed: z.boolean({ message: '완료 여부는 true나 false여야 합니다' }) },
+  { completed: z.boolean({ error: '완료 여부는 true나 false여야 합니다' }) },
   objectMessage,
 );
 

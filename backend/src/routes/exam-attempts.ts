@@ -1,6 +1,6 @@
 import type { Express } from 'express';
 import type { Pool } from 'pg';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 import { HttpError, parseId } from '../standard/http.js';
 import { body, calendarDate, shortText, toId } from '../validation.js';
@@ -16,10 +16,10 @@ const attemptInput = z
     {
       examDate: calendarDate('시험일'),
       outcome: z
-        .enum(outcomes, { message: '결과는 결과 전, 합격, 불합격, 점수·등급 중 하나여야 합니다' })
+        .enum(outcomes, { error: '결과는 결과 전, 합격, 불합격, 점수·등급 중 하나여야 합니다' })
         .default('waiting'),
       score: z
-        .number({ message: '점수는 숫자여야 합니다' })
+        .number({ error: '점수는 숫자여야 합니다' })
         .int('점수는 정수여야 합니다')
         .min(0, '점수는 0 이상이어야 합니다')
         .max(100000, '점수는 100000 이하여야 합니다')
@@ -27,10 +27,10 @@ const attemptInput = z
         .default(null),
       grade: shortText('등급').nullable().default(null),
       expiresOn: calendarDate('만료일').nullable().optional(),
-      memo: z.string({ message: '메모는 문자열이어야 합니다' }).default(''),
+      memo: z.string({ error: '메모는 문자열이어야 합니다' }).default(''),
     },
     // express.json() accepts an array or a bare value too; the message stays Korean.
-    { message: '요청 본문은 JSON 객체여야 합니다' },
+    { error: '요청 본문은 JSON 객체여야 합니다' },
   )
   .superRefine((input, ctx) => {
     if (input.outcome === 'waiting' && (input.score !== null || input.grade)) {

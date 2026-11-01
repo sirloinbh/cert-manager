@@ -1,12 +1,14 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 // Input rules shared by the feature routes. Messages are shown to the user, so they stay Korean.
+// Text length is checked with refine: zod 4 runs .min and .max on any value with a length, even after the
+// type check failed, so an array sent as text would also answer the length message.
 
 // A real calendar day as YYYY-MM-DD: 2026-02-30 is rejected, not rolled over to March.
 // Year 0 passes the Date round trip but PostgreSQL rejects it, so the range starts at 1900.
 export const calendarDate = (label: string) =>
   z
-    .string({ message: `${label}은 YYYY-MM-DD 형식이어야 합니다` })
+    .string({ error: `${label}은 YYYY-MM-DD 형식이어야 합니다` })
     .regex(/^\d{4}-\d{2}-\d{2}$/, `${label}은 YYYY-MM-DD 형식이어야 합니다`)
     .refine((value) => {
       const date = new Date(`${value}T00:00:00Z`);
@@ -16,9 +18,9 @@ export const calendarDate = (label: string) =>
 
 export const shortText = (label: string) =>
   z
-    .string({ message: `${label}은 문자열이어야 합니다` })
+    .string({ error: `${label}은 문자열이어야 합니다` })
     .trim()
-    .max(200, `${label}은 200자 이하로 입력해 주세요`);
+    .refine((value) => value.length <= 200, `${label}은 200자 이하로 입력해 주세요`);
 
 // Express leaves req.body undefined without a JSON body; parse {} so field messages stay Korean.
 export const body = (value: unknown) => value ?? {};
