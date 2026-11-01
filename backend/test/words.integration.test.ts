@@ -349,11 +349,14 @@ test(
         assert.deepEqual(names(same), lemmas.slice(0, 5));
         assert.equal(same.words[1]?.learnedAt, stamp);
 
-        // One second past midnight in Seoul is a new day: words not shown yet.
+        // A new day brings words not shown yet, and among those a word with a meaning comes first.
+        await pool.query("UPDATE words SET meaning_ko = '뜻' WHERE lemma = $1", [lemmas[7]]);
         current = '2026-11-02';
+        const notChosenYet = await open(call, '2026-11-01');
+        assert.equal(notChosenYet.nextDay, '2026-11-02', 'today is reachable before it is chosen');
         const next = await open(call);
         assert.equal(next.day, '2026-11-02');
-        assert.deepEqual(names(next), lemmas.slice(5, 10));
+        assert.deepEqual(names(next), [lemmas[7], lemmas[5], lemmas[6], lemmas[8], lemmas[9]]);
         assert.equal(next.previousDay, '2026-11-01');
         assert.equal(next.nextDay, null);
 
@@ -372,7 +375,7 @@ test(
           lemmas[3],
         ]);
 
-        // A word with a meaning comes before any other, and undoing makes a word eligible again.
+        // Undoing makes a word eligible again, and a word with a meaning does not repeat ahead of older ones.
         const undone = await call(`/api/words/${learned.id}/learned`, {
           method: 'PUT',
           body: { learned: false },
@@ -381,9 +384,9 @@ test(
         await pool.query("UPDATE words SET meaning_ko = '뜻' WHERE lemma = $1", [lemmas[11]]);
         current = '2026-11-04';
         assert.deepEqual(names(await open(call)), [
-          lemmas[11],
           lemmas[1],
           lemmas[4],
+          lemmas[7],
           lemmas[5],
           lemmas[6],
         ]);
@@ -393,7 +396,14 @@ test(
           lemmas,
         ]);
         current = '2026-11-05';
-        assert.deepEqual(names(await open(call)), []);
+        const empty = await open(call);
+        assert.deepEqual(names(empty), []);
+        assert.equal(empty.previousDay, '2026-11-04');
+        assert.equal(
+          (await open(call, '2026-11-04')).nextDay,
+          '2026-11-05',
+          'back to the empty day',
+        );
       },
       { today: () => current },
     );

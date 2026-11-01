@@ -1,5 +1,5 @@
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 
 import { Badge } from './components/ui/badge';
@@ -15,13 +15,21 @@ import {
   dailyWordApi,
   type DailyWordsDay,
   isLearned,
+  serviceToday,
   type WordPaths,
 } from './word-data';
 import { SourceNote } from './words';
 
 // The dashboard card for the day's words (#37). The meaning stays folded, so the word can be tried first.
 
-const loadDay = (key: string) => dailyWordApi.get(key === 'today' ? undefined : key);
+// The key is "<day or today>/<attempt>": moving again, even to the same day, asks again after a failure.
+const loadDay = (key: string) => {
+  const day = key.slice(0, key.indexOf('/'));
+  return dailyWordApi.get(day === 'today' ? undefined : day);
+};
+
+// Not the disabled attribute: the arrow just pressed would lose keyboard focus at the first or last day.
+const arrowClass = 'aria-disabled:cursor-not-allowed aria-disabled:opacity-50';
 
 function WordMeaning({ word, paths }: { word: DailyWord; paths: WordPaths }) {
   return (
@@ -51,7 +59,11 @@ function WordMeaning({ word, paths }: { word: DailyWord; paths: WordPaths }) {
           ) : null}
         </>
       )}
-      {word.etymologySource ? (
+      {word.etymologySource === null ? (
+        <p className="text-caption break-keep text-muted-foreground">
+          아직 어원을 찾아보지 않았습니다.
+        </p>
+      ) : word.etymologySource ? (
         <p lang="en" className="line-clamp-4 text-caption wrap-anywhere text-muted-foreground">
           {word.etymologySource}
         </p>
@@ -71,12 +83,28 @@ function WordMeaning({ word, paths }: { word: DailyWord; paths: WordPaths }) {
 export function DailyWords({ paths }: { paths: WordPaths }) {
   // No day chosen means today, whatever date that is by the time the card loads.
   const [day, setDay] = useState<string>();
-  const loaded = useLoad(day ?? 'today', loadDay);
+  const [attempt, setAttempt] = useState(0);
+  const loaded = useLoad(`${day ?? 'today'}/${attempt}`, loadDay);
   // The last answer stays on screen while another day loads, so the arrows keep keyboard focus.
   const [shown, setShown] = useState<DailyWordsDay>();
   if (loaded.state === 'ok' && loaded.data !== shown) setShown(loaded.data);
   const [changed, setChanged] = useState<Record<number, boolean>>({});
   const [saving, setSaving] = useState<number[]>([]);
+
+  // A page left open overnight must not keep showing yesterday's words as today's.
+  const shownToday = shown?.today;
+  useEffect(() => {
+    const check = () => {
+      if (document.visibilityState !== 'visible' || !shownToday) return;
+      if (serviceToday() !== shownToday) setAttempt((current) => current + 1);
+    };
+    window.addEventListener('focus', check);
+    document.addEventListener('visibilitychange', check);
+    return () => {
+      window.removeEventListener('focus', check);
+      document.removeEventListener('visibilitychange', check);
+    };
+  }, [shownToday]);
 
   const toggle = async (word: DailyWord, learned: boolean) => {
     setSaving((current) => [...current, word.id]);
@@ -91,7 +119,9 @@ export function DailyWords({ paths }: { paths: WordPaths }) {
   };
 
   const go = (target: string | null) => {
-    if (target) setDay(target === shown?.today ? undefined : target);
+    if (!target) return;
+    setDay(target === shown?.today ? undefined : target);
+    setAttempt((current) => current + 1);
   };
 
   return (
@@ -102,11 +132,10 @@ export function DailyWords({ paths }: { paths: WordPaths }) {
             <CardTitle asHeading="h2" className="text-body">
               오늘의 단어
             </CardTitle>
-            {shown && shown.day !== shown.today ? (
-              <p role="status" className="text-caption text-muted-foreground">
-                {shown.day}의 단어
-              </p>
-            ) : null}
+            {/* Always there, so a screen reader announces the change of day. */}
+            <p role="status" className="text-caption text-muted-foreground">
+              {shown ? (shown.day === shown.today ? shown.day : `${shown.day}의 단어`) : null}
+            </p>
           </div>
           {shown ? (
             <div className="flex shrink-0 gap-1">
@@ -114,7 +143,8 @@ export function DailyWords({ paths }: { paths: WordPaths }) {
                 variant="outline"
                 size="icon"
                 aria-label="이전 날의 단어"
-                disabled={!shown.previousDay}
+                className={arrowClass}
+                aria-disabled={!shown.previousDay}
                 onClick={() => go(shown.previousDay)}
               >
                 <ChevronLeft aria-hidden />
@@ -123,7 +153,8 @@ export function DailyWords({ paths }: { paths: WordPaths }) {
                 variant="outline"
                 size="icon"
                 aria-label="다음 날의 단어"
-                disabled={!shown.nextDay}
+                className={arrowClass}
+                aria-disabled={!shown.nextDay}
                 onClick={() => go(shown.nextDay)}
               >
                 <ChevronRight aria-hidden />

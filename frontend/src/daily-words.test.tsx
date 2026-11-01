@@ -118,7 +118,10 @@ test('a failed save says so and leaves the word as it was', async () => {
 test('the arrows move through the earlier days and back to today', async () => {
   const fetcher = serve();
   await screen.findByRole('link', { name: 'export' });
-  expect(screen.getByRole('button', { name: '다음 날의 단어' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: '다음 날의 단어' })).toHaveAttribute(
+    'aria-disabled',
+    'true',
+  );
   fireEvent.click(screen.getByRole('button', { name: '이전 날의 단어' }));
   expect(await screen.findByRole('link', { name: 'carry' })).toBeInTheDocument();
   expect(fetcher).toHaveBeenCalledWith('/api/daily-words?day=2026-11-01', expect.anything());
@@ -127,10 +130,14 @@ test('the arrows move through the earlier days and back to today', async () => {
     'aria-pressed',
     'true',
   );
-  expect(screen.getByRole('button', { name: '이전 날의 단어' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: '이전 날의 단어' })).toHaveAttribute(
+    'aria-disabled',
+    'true',
+  );
   fireEvent.click(screen.getByRole('button', { name: '다음 날의 단어' }));
   expect(await screen.findByRole('link', { name: 'export' })).toBeInTheDocument();
   expect(fetcher).toHaveBeenLastCalledWith('/api/daily-words', expect.anything());
+  expect(screen.getByRole('status')).toHaveTextContent('2026-11-02');
 });
 
 test('no words gets a notice instead of an empty card', async () => {
@@ -157,4 +164,77 @@ test('a failed load says so', async () => {
     </MemoryRouter>,
   );
   expect(await screen.findByText('데이터베이스에 연결할 수 없습니다')).toBeInTheDocument();
+});
+
+test('a word not looked up yet is not called one without a source', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(() => json({ ...todayAnswer, words: [{ ...unfilled, etymologySource: null }] })),
+  );
+  render(
+    <MemoryRouter>
+      <DailyWords paths={paths} />
+    </MemoryRouter>,
+  );
+  expect(await screen.findByText('아직 어원을 찾아보지 않았습니다.')).toBeInTheDocument();
+  expect(screen.queryByText('어원 자료 없음')).not.toBeInTheDocument();
+});
+
+test('a failed move says so, keeps the words, and the same arrow tries again', async () => {
+  let fail = true;
+  const fetcher = vi.fn((path: string) => {
+    if (!path.includes('2026-11-01')) return json(todayAnswer);
+    return fail ? json({ error: '잠시 연결할 수 없습니다' }, 503) : json(yesterday);
+  });
+  vi.stubGlobal('fetch', fetcher);
+  render(
+    <MemoryRouter>
+      <DailyWords paths={paths} />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('link', { name: 'export' });
+  const previous = screen.getByRole('button', { name: '이전 날의 단어' });
+  fireEvent.click(previous);
+  expect(await screen.findByText('잠시 연결할 수 없습니다')).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'export' })).toBeInTheDocument();
+  fail = false;
+  fireEvent.click(previous);
+  expect(await screen.findByRole('link', { name: 'carry' })).toBeInTheDocument();
+  expect(screen.queryByText('잠시 연결할 수 없습니다')).not.toBeInTheDocument();
+});
+
+test('coming back after midnight in Seoul asks for the new day; the same day does not', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-11-02T14:59:00Z'));
+    const fetcher = serve();
+    await screen.findByRole('link', { name: 'export' });
+    const asked = fetcher.mock.calls.length;
+    fireEvent.focus(window);
+    expect(fetcher).toHaveBeenCalledTimes(asked);
+    vi.setSystemTime(new Date('2026-11-02T15:00:00Z'));
+    fireEvent.focus(window);
+    await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(asked + 1));
+    expect(fetcher).toHaveBeenLastCalledWith('/api/daily-words', expect.anything());
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test('the arrow at the first day keeps its focus and does nothing', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(() => json({ ...todayAnswer, previousDay: null })),
+  );
+  render(
+    <MemoryRouter>
+      <DailyWords paths={paths} />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('link', { name: 'export' });
+  const previous = screen.getByRole('button', { name: '이전 날의 단어' });
+  previous.focus();
+  fireEvent.click(previous);
+  expect(previous).toHaveFocus();
+  expect(fetch).toHaveBeenCalledTimes(1);
 });

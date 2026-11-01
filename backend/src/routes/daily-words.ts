@@ -17,8 +17,9 @@ const learnedInput = z.object(
 
 /**
  * Chooses the day's words the first time that day is opened. Two requests at once choose the same
- * words, so the second inserts nothing. Words with a meaning come first, then the ones not shown for
- * the longest time (never shown before all others), then the most frequent.
+ * words, so the second inserts nothing. Words never shown come first, then the ones not shown for the
+ * longest time; among those, words with a meaning, then the most frequent. A day already chosen stays
+ * as it is, even when it got fewer words than usual.
  */
 async function chooseWords(pool: Pool, day: string) {
   await pool.query(
@@ -26,8 +27,8 @@ async function chooseWords(pool: Pool, day: string) {
      SELECT $1::date, chosen.position, chosen.id
      FROM (
        SELECT w.id, (row_number() OVER (
-         ORDER BY w.meaning_ko IS NULL,
-           (SELECT max(d.day) FROM daily_words d WHERE d.word_id = w.id) ASC NULLS FIRST,
+         ORDER BY (SELECT max(d.day) FROM daily_words d WHERE d.word_id = w.id) ASC NULLS FIRST,
+           w.meaning_ko IS NULL,
            w.frequency_rank
        ))::integer AS position
        FROM words w
@@ -42,6 +43,7 @@ async function chooseWords(pool: Pool, day: string) {
 
 export function registerDailyWordRoutes(app: Express, pool: Pool, today: () => string) {
   // Today's words, or an earlier day's with ?day=. Only today can choose new words.
+  // Today always counts as the next day of an earlier one, even before its words are chosen.
   app.get('/api/daily-words', async (req, res) => {
     const current = today();
     const day = dayQuery.parse(req.query).day ?? current;
@@ -58,7 +60,10 @@ export function registerDailyWordRoutes(app: Express, pool: Pool, today: () => s
     );
     const days = await pool.query<{ previousDay: string | null; nextDay: string | null }>(
       `SELECT (SELECT max(d.day) FROM daily_words d WHERE d.day < $1::date) AS "previousDay",
-         (SELECT min(d.day) FROM daily_words d WHERE d.day > $1::date AND d.day <= $2::date) AS "nextDay"`,
+         CASE WHEN $1::date < $2::date THEN COALESCE(
+           (SELECT min(d.day) FROM daily_words d WHERE d.day > $1::date AND d.day <= $2::date),
+           $2::date
+         ) END AS "nextDay"`,
       [day, current],
     );
     res.json({
