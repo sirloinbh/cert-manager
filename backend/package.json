@@ -12,6 +12,10 @@
     "lyrics:import": "tsx --env-file-if-exists=../.env src/import-lyrics.ts",
     "translations:export": "tsx --env-file-if-exists=../.env src/export-translations.ts",
     "translations:import": "tsx --env-file-if-exists=../.env src/import-translations.ts",
+    "words:import": "tsx --env-file-if-exists=../.env src/import-word-list.ts",
+    "words:etymology": "tsx --env-file-if-exists=../.env src/import-etymology.ts",
+    "words:export": "tsx --env-file-if-exists=../.env src/export-words.ts",
+    "words:fill": "tsx --env-file-if-exists=../.env src/import-words.ts",
     "typecheck": "tsc -p tsconfig.check.json"
   },
   "dependencies": {

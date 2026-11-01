@@ -62,9 +62,9 @@ test('menu areas without features yet show the empty notice', async () => {
   health({ today: '2026-10-26' });
   render(<App />);
   const menu = screen.getByRole('navigation', { name: '주 메뉴' });
-  fireEvent.click(within(menu).getByRole('link', { name: '단어장' }));
-  expect(window.location.pathname).toBe('/words');
-  expect(await screen.findByRole('heading', { level: 1, name: '단어장' })).toBeInTheDocument();
+  fireEvent.click(within(menu).getByRole('link', { name: '설정' }));
+  expect(window.location.pathname).toBe('/settings');
+  expect(await screen.findByRole('heading', { level: 1, name: '설정' })).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: '아직 기능이 없습니다' })).toBeInTheDocument();
 });
 

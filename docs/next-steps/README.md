@@ -8,16 +8,16 @@
 
 우선순위 규칙(std-backlog 5장): 선행 조건이 끝난 이슈 중 우선순위 숫자가 작은 것, 같으면 번호가 작은 것부터 한다.
 
-| 순서 | 할 일                                   | 우선순위 | 상태      | 다음 행동                                                        |
-| ---- | --------------------------------------- | -------- | --------- | ---------------------------------------------------------------- |
-| 1    | #36 영어 단어장과 어원 분석             | P2       | 착수 가능 | NGSL·Wiktionary(kaikki.org). `import_sources`는 #35에서 만들었다 |
-| 2    | #37 오늘의 영어 단어                    | P3       | #36 다음  | 대시보드 카드                                                    |
-| 3    | #22 모바일 빈 화면 안내 줄바꿈          | P4       | 착수 가능 | 호출부 `frontend/src/app.tsx`에서 `break-keep`                   |
-| 4    | #38 자격증 후보 목록과 추천 로드맵 문서 | P4       | 착수 가능 | AWS 라인업 포함                                                  |
+| 순서 | 할 일                                   | 우선순위 | 상태      | 다음 행동                                        |
+| ---- | --------------------------------------- | -------- | --------- | ------------------------------------------------ |
+| 1    | #37 오늘의 영어 단어                    | P3       | 착수 가능 | 대시보드 카드                                    |
+| 2    | #70 단어 뜻·예문·어원 채우기            | P3       | 착수 가능 | `words:export`로 내보내 세션에서 채운다. 빈도 순 |
+| 3    | #22 모바일 빈 화면 안내 줄바꿈          | P4       | 착수 가능 | 호출부 `frontend/src/app.tsx`에서 `break-keep`   |
+| 4    | #38 자격증 후보 목록과 추천 로드맵 문서 | P4       | 착수 가능 | AWS 라인업 포함                                  |
 
 ## 함께 볼 것
 
-- PR #15(`zod` 3 → 4)는 처리하지 않고 그대로 둔다. 2026-10-28 사용자가 project-standards#307에서 후보 A를 골라 zod는 3.25.76에 머문다(project-standards `docs/research/zod4.md` 결정 절). `backend/package.json`의 zod 버전은 중앙 관리 값이다. 이 권고의 공격 경로는 길이 제한 없는 `z.array`이며, 지금 `backend/src`의 `z.array`는 #64 스크립트 두 곳(외부 API 응답, 번역 파일)뿐이고 `.max()`가 붙어 있으며 오류 메시지 개수는 중앙 `backend/src/standard/http.ts`가 제한한다. 새 배열 스키마에는 `.max()`를 붙인다. `npm audit`의 zod high 1건과 Dependabot 알림은 이 결정 때문에 남아 있다.
+- PR #15(`zod` 3 → 4)는 처리하지 않고 그대로 둔다. 2026-10-28 사용자가 project-standards#307에서 후보 A를 골라 zod는 3.25.76에 머문다(project-standards `docs/research/zod4.md` 결정 절). `backend/package.json`의 zod 버전은 중앙 관리 값이다. 이 권고의 공격 경로는 길이 제한 없는 `z.array`이며, 지금 `backend/src`의 `z.array`는 스크립트 세 곳(#64 외부 API 응답과 번역 파일, #36 단어 파일)뿐이고 `.max()`가 붙어 있으며 오류 메시지 개수는 중앙 `backend/src/standard/http.ts`가 제한한다. 새 배열 스키마에는 `.max()`를 붙인다. `npm audit`의 zod high 1건과 Dependabot 알림은 이 결정 때문에 남아 있다.
 - 요청 횟수 제한: `frontend/nginx.conf`의 `limit_req`와 그 뒤의 `backend/src/rate-limit.ts`(`express-rate-limit`) 두 겹이다(#49). 중앙 결정 project-standards#291은 nginx만 쓰는 것이고, 이 앱만 사용자 결정으로 다르다. CodeQL은 필수 검사가 아니다(필수: `ci / verify`, `ci / docker-build`).
 - 이 PC에는 Docker가 없어 설치된 PostgreSQL 17(포트 5432)의 `cert`, `cert_test` DB를 쓴다. 새 마이그레이션은 두 DB에 모두 적용한다. 사용자 환경변수 `TEST_DATABASE_URL`은 study-log용이므로 바꾸지 말고, 다른 터미널에서는 그 세션에서만 `cert_test` 주소로 지정한다.
 - 브라우저 확인은 임시 Postgres 컨테이너 + `node node_modules/tsx/dist/cli.mjs src/server.ts`(백엔드) + `npm run dev -w frontend`로 했다. `npx`는 프로젝트 훅이 막는다.

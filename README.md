@@ -30,6 +30,8 @@ Vite http://localhost:5206, API http://localhost:3106/api/health, 호스트 DB �
 
 가사는 `npm run lyrics:import -w backend`로 LRCLIB에서 받아 그 DB에만 넣습니다. 번역은 `npm run translations:export -w backend`로 `.local/translations/`에 파일을 만들어 채운 뒤 `npm run translations:import -w backend`로 넣습니다. 저장한 파일은 `imported/`로 옮겨집니다. 가사와 번역은 커밋하지 않습니다.
 
+단어는 `npm run words:import -w backend`로 목록을, `npm run words:etymology -w backend`로 어원을 받습니다. 뜻과 어원 요소는 `npm run words:export -w backend -- 50`으로 `.local/word-batches/`에 내보내 채운 뒤 `npm run words:fill -w backend`로 넣습니다. 사용 순서는 [변경 기록](docs/changes/36-word-list.md)에 있습니다.
+
 ## 검증
 
 - `npm run check`: 포맷, lint, 타입, 테스트, 스킬 동기화 검사, 빌드.
