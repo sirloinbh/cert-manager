@@ -1,6 +1,6 @@
 # 다음 작업
 
-최종 갱신일: **2026-11-01 (Asia/Seoul)**.
+최종 갱신일: **2026-11-02 (Asia/Seoul)**.
 
 공부 계획은 [`docs/plans/`](../plans/README.md)에 있다. 2027년 시험 일정이 공고되면 잠정 날짜를 문서와 앱에서 고친다. 정보처리기사 실기는 2027년 3회가 기한이므로 접수 기간을 놓치지 않는다. 앱의 목표 등급은 다음에 노리는 등급이다.
 
@@ -8,13 +8,12 @@
 
 우선순위 규칙(std-backlog 5장): 선행 조건이 끝난 이슈 중 우선순위 숫자가 작은 것, 같으면 번호가 작은 것부터 한다.
 
-| 순서 | 할 일                       | 우선순위 | 상태             | 다음 행동                                                            |
-| ---- | --------------------------- | -------- | ---------------- | -------------------------------------------------------------------- |
-| 1    | #80 전체 테스트의 시간 초과 | P2       | 사용자 결정 대기 | 중앙 vitest 설정의 `testTimeout`을 올릴지 정한다. 진단은 이슈에 있다 |
+#80이 닫히면 열린 이슈가 없다. 새 요구 사항이 들어오면 이슈로 등록한다.
 
 ## 함께 볼 것
 
-- PR #15(`zod` 3 → 4)는 처리하지 않고 그대로 둔다. 2026-11-01 사용자가 project-standards#307의 zod 3 유지 결정을 바꿔, project-standards#386에서 앱 8개를 4.6.7로 올린다. 이 앱의 코드는 [#73](https://github.com/sirloinbh/cert-manager/issues/73)에서 `zod/v4` 문법으로 옮겼다. `backend/package.json`의 zod 버전은 중앙 관리 값이라 중앙 동기화 PR로 올라가고, `npm audit`의 zod high 1건과 Dependabot 알림은 그때 닫힌다. 그때까지 `backend/src`의 `z.array`는 스크립트 세 곳(#64 외부 API 응답과 번역 파일, #36 단어 파일)뿐이고 `.max()`가 붙어 있으며, 오류 메시지 개수는 중앙 `backend/src/standard/http.ts`가 제한한다. 새 배열 스키마에는 `.max()`를 붙인다.
+- zod는 4.6.7이다(PR #75). 이 앱의 코드는 [#73](https://github.com/sirloinbh/cert-manager/issues/73)에서 `zod/v4` 문법으로 옮겼다. `backend/package.json`의 zod 버전은 중앙 관리 값이다. 새 코드는 `zod/v4`의 `{ error }`를 쓰고, 새 배열 스키마에는 `.max()`를 붙인다.
+- `npm audit`(2026-11-02): 전체 moderate 16건, high 이상 없음. `--omit=dev`는 0건이라 운영 의존성에는 없다. ESLint 계열 개발 도구와 `minimatch`이고 자동 수정이 없다. Dependabot 열린 알림은 `minimatch` 1건이다. `npm audit fix --force`는 쓰지 않는다.
 - 요청 횟수 제한: `frontend/nginx.conf`의 `limit_req`와 그 뒤의 `backend/src/rate-limit.ts`(`express-rate-limit`) 두 겹이다(#49). 중앙 결정 project-standards#291은 nginx만 쓰는 것이고, 이 앱만 사용자 결정으로 다르다. CodeQL은 필수 검사가 아니다(필수: `ci / verify`, `ci / docker-build`).
 - 이 PC에는 Docker가 없어 설치된 PostgreSQL 17(포트 5432)의 `cert`, `cert_test` DB를 쓴다. 새 마이그레이션은 두 DB에 모두 적용한다. 사용자 환경변수 `TEST_DATABASE_URL`은 study-log용이므로 바꾸지 말고, 다른 터미널에서는 그 세션에서만 `cert_test` 주소로 지정한다.
 - 브라우저 확인은 임시 Postgres 컨테이너 + `node node_modules/tsx/dist/cli.mjs src/server.ts`(백엔드) + `npm run dev -w frontend`로 했다. `npx`는 프로젝트 훅이 막는다.
