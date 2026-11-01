@@ -128,7 +128,9 @@ function fakeApi(
         stages = stages.map((row) =>
           row.id === stageId ? { ...row, ...(body as Partial<StudyStage>) } : row,
         );
-        return reply(200, { stage: stages.find((row) => row.id === stageId) });
+        // The server answers a stage without its tasks.
+        const { tasks: _tasks, ...saved } = stages.find((row) => row.id === stageId) as StudyStage;
+        return reply(200, { stage: saved });
       }
       const taskId = Number(/^\/api\/study-tasks\/(\d+)/.exec(path)?.[1]);
       if (path.endsWith('/completion')) {
@@ -505,6 +507,7 @@ test('an edited task shows even if reloading the plan fails', async () => {
   fireEvent.click(saveButton());
   expect(await screen.findByRole('checkbox', { name: '기출 2회' })).toBeInTheDocument();
   expect(await screen.findByText('다시 읽지 못했습니다')).toBeInTheDocument();
+  expect(screen.getByRole('checkbox', { name: '기출 2회' })).toBeInTheDocument();
 });
 
 test('an edited stage shows and keeps its tasks even if reloading the plan fails', async () => {
@@ -514,6 +517,7 @@ test('an edited stage shows and keeps its tasks even if reloading the plan fails
   fireEvent.click(saveButton());
   expect(await screen.findByRole('heading', { level: 3, name: '마무리' })).toBeInTheDocument();
   expect(await screen.findByText('다시 읽지 못했습니다')).toBeInTheDocument();
+  expect(screen.getByRole('heading', { level: 3, name: '마무리' })).toBeInTheDocument();
   expect(screen.getByRole('checkbox', { name: '기출 풀기' })).toBeInTheDocument();
 });
 
