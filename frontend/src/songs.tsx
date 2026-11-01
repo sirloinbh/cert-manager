@@ -84,6 +84,7 @@ export function SongList({ paths }: { paths: SongPaths }) {
       ) : null}
       {loaded.state === 'ok' && albums.length === 0 ? (
         <EmptyState
+          className="break-keep"
           icon={<Music />}
           title="아직 곡 목록이 없습니다"
           description="곡 목록을 받는 스크립트를 실행하면 앨범별로 보입니다."
@@ -348,6 +349,7 @@ function SongPage({ id, paths }: { id: string; paths: SongPaths }) {
       </div>
       {!hasLyrics ? (
         <EmptyState
+          className="break-keep"
           icon={<Music />}
           title="아직 가사가 없습니다"
           description="가사를 붙여 넣으면 줄 단위로 보입니다. 가사는 이 PC의 앱에만 저장됩니다."

@@ -108,6 +108,7 @@ function Page({
       </header>
       {children ?? (
         <EmptyState
+          className="break-keep"
           title="아직 기능이 없습니다"
           description="기능은 GitHub 이슈 카드로 등록한 뒤 하나씩 추가합니다."
         />
