@@ -8,6 +8,7 @@ import { registerExamAttemptRoutes } from './routes/exam-attempts.js';
 import { registerSongRoutes } from './routes/songs.js';
 import { registerStudyPlanRoutes } from './routes/study-plans.js';
 import { registerUserActionRoutes } from './routes/user-actions.js';
+import { registerWordRoutes } from './routes/words.js';
 import { errorHandler, notFound, serviceDate } from './standard/http.js';
 
 // DATE columns stay YYYY-MM-DD strings so the service time zone never shifts them.
@@ -32,6 +33,7 @@ export function createApp(
   registerStudyPlanRoutes(app, pool, today);
   registerUserActionRoutes(app, pool, today);
   registerSongRoutes(app, pool);
+  registerWordRoutes(app, pool);
   app.use('/api', notFound);
   app.use(errorHandler);
   return app;

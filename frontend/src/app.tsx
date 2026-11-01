@@ -19,6 +19,8 @@ import type { SongPaths } from './song-data';
 import { SongDetail, SongList } from './songs';
 import { TodayTasks } from './study-plan';
 import { UserActionAlerts } from './user-actions';
+import type { WordPaths } from './word-data';
+import { WordDetail, WordList } from './words';
 
 // Every page URL lives here (central docs/directory-rules.md, docs/design/scope-and-data-model.md section 3).
 const pages = {
@@ -30,6 +32,7 @@ const pages = {
   songs: '/songs',
   song: '/songs/:id',
   words: '/words',
+  word: '/words/:id',
   settings: '/settings',
 } as const;
 
@@ -43,6 +46,11 @@ const certificationPaths: CertificationPaths = {
 const songPaths: SongPaths = {
   list: pages.songs,
   detail: (id) => generatePath(pages.song, { id: String(id) }),
+};
+
+const wordPaths: WordPaths = {
+  list: pages.words,
+  detail: (id) => generatePath(pages.word, { id: String(id) }),
 };
 
 // Main menu (LNB) items, in display order.
@@ -148,16 +156,8 @@ export function App() {
           />
           <Route path={pages.songs} element={<SongList paths={songPaths} />} />
           <Route path={pages.song} element={<SongDetail paths={songPaths} />} />
-          <Route
-            path={pages.words}
-            element={
-              <Page
-                title="단어장"
-                description="가사에 자주 나오는 단어와 어원을 봅니다."
-                health={health}
-              />
-            }
-          />
+          <Route path={pages.words} element={<WordList paths={wordPaths} />} />
+          <Route path={pages.word} element={<WordDetail paths={wordPaths} />} />
           <Route
             path={pages.settings}
             element={<Page title="설정" description="앱 환경과 데이터 관리" health={health} />}

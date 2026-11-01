@@ -136,6 +136,24 @@ test('a 429 without Retry-After waits a minute, and repeated ones give up', asyn
   assert.equal(calls, 3);
 });
 
+test('a 503 is waited out like a 429', async () => {
+  let calls = 0;
+  let accept: string | undefined;
+  await withLrclib(
+    (_url, res, req) => {
+      calls += 1;
+      accept = req.headers.accept;
+      if (calls === 1) json(res, 503, {}, { 'Retry-After': '5' });
+      else json(res, 200, item({}));
+    },
+    async (source, waits) => {
+      assert.ok(await requestLyrics(query, source));
+      assert.ok(waits.includes(5000));
+    },
+  );
+  assert.equal(accept, 'application/json');
+});
+
 test('a very long wait is not waited for', async () => {
   await withLrclib(
     (_url, res) => json(res, 429, {}, { 'Retry-After': '3600' }),

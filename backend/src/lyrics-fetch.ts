@@ -2,23 +2,21 @@ import type { Pool } from 'pg';
 import { z } from 'zod';
 
 import { inTransaction, lockSong, toLines } from './lyrics-store.js';
+import {
+  mostFailuresInARow,
+  politeGet,
+  type PoliteSource,
+  RateLimited,
+  ServiceError,
+} from './polite-fetch.js';
 import { songTitle } from './song-list.js';
 
 // Fills songs without lyrics from LRCLIB (#64). Rules: docs/research/english-content-sources.md section 1.
 // Prints titles and counts only, never the lyrics.
 
 export const lrclibUrl = 'https://lrclib.net';
-const userAgent = 'cert-manager/0.1 (https://github.com/sirloinbh/cert-manager)';
 // LRCLIB allows about 90 requests a minute with a User-Agent, so about one every 667ms.
 const requestGap = 700;
-const maxAttempts = 3;
-const requestTimeout = 30_000;
-// When a 429 does not say how long to wait.
-const defaultRetrySeconds = 60;
-// Asked to wait longer than this, the script stops and can be run again later.
-const longestWaitSeconds = 300;
-// This many songs failing in a row means the service or the network is down.
-const mostFailuresInARow = 5;
 // A track of the same song can differ by a few seconds between releases.
 const durationTolerance = 3;
 
@@ -32,11 +30,6 @@ const record = z.object({
 });
 type LrclibRecord = z.infer<typeof record>;
 
-type LyricsSource = {
-  baseUrl: string;
-  sleep: (ms: number) => Promise<void>;
-};
-
 type LyricsQuery = {
   title: string;
   artist: string;
@@ -44,29 +37,14 @@ type LyricsQuery = {
   durationSeconds: number | null;
 };
 
-// An answer whose text is safe to print. Parse errors can quote the response, so they are not printed.
-class LrclibError extends Error {}
-// LRCLIB wants us to stop. Asking about the next song would only make that worse.
-class RateLimited extends LrclibError {}
-
-/** One request. Null for a 404. Waits and tries again on a 429, as long as LRCLIB asks for a sensible wait. */
-async function getJson(url: string, source: LyricsSource): Promise<unknown> {
-  for (let attempt = 1; ; attempt += 1) {
-    const response = await fetch(url, {
-      headers: { 'User-Agent': userAgent, Accept: 'application/json' },
-      signal: AbortSignal.timeout(requestTimeout),
-    });
-    await source.sleep(requestGap);
-    if (response.status === 404) return null;
-    if (response.ok) return response.json();
-    if (response.status !== 429) throw new LrclibError(`LRCLIB ${response.status}`);
-    const asked = Number(response.headers.get('retry-after'));
-    const seconds = asked > 0 ? asked : defaultRetrySeconds;
-    if (attempt === maxAttempts || seconds > longestWaitSeconds) {
-      throw new RateLimited(`LRCLIB 429, 대기 ${seconds}초 요청`);
-    }
-    await source.sleep(seconds * 1000);
-  }
+async function getJson(url: string, source: PoliteSource): Promise<unknown> {
+  const response = await politeGet(url, {
+    name: 'LRCLIB',
+    gap: requestGap,
+    sleep: source.sleep,
+    accept: 'application/json',
+  });
+  return response ? response.json() : null;
 }
 
 // Plain lyrics when there are any, else the timed ones without their "[00:12.34]" marks.
@@ -112,7 +90,7 @@ function matches(found: LrclibRecord, query: LyricsQuery) {
 }
 
 /** The lyrics of one song, or null when LRCLIB has none. Titles there can carry version labels, so a miss is searched. */
-export async function requestLyrics(query: LyricsQuery, source: LyricsSource) {
+export async function requestLyrics(query: LyricsQuery, source: PoliteSource) {
   const params = new URLSearchParams({ track_name: query.title, artist_name: query.artist });
   const search = params.toString();
   if (query.album) params.set('album_name', query.album);
@@ -184,7 +162,7 @@ async function saveLyrics(pool: Pool, id: number, lines: string[], sourceUrl: st
  */
 export async function fetchMissingLyrics(
   pool: Pool,
-  source: LyricsSource,
+  source: PoliteSource,
   log: (message: string) => void = () => {},
 ) {
   const result = {
@@ -199,7 +177,7 @@ export async function fetchMissingLyrics(
     try {
       found = await requestLyrics(song, source);
     } catch (error) {
-      const reason = error instanceof LrclibError ? error.message : '연결 실패 또는 잘못된 응답';
+      const reason = error instanceof ServiceError ? error.message : '연결 실패 또는 잘못된 응답';
       result.failed.push(song.title);
       log(`실패: ${song.title} (${reason})`);
       failuresInARow += 1;

@@ -108,13 +108,13 @@ Genius·Musixmatch의 제한은 공식 약관이 아니라 개발자 글과 API 
 - 영어 학습자를 위한 일반·일상 영어 핵심 단어 2,809개다.
 - 라이선스는 CC BY-SA 4.0이다. 출처(Browne, Culligan, Phillips)를 표기해야 하고, 고친 목록을 배포하면 같은 라이선스를 따라야 한다.
 - 공식 사이트는 `newgeneralservicelist.com` 하나뿐이라고 밝힌다. 그곳에서만 받는다.
-- 빈도 통계가 있는 버전을 받아 빈도 순위를 저장한다.
+- 빈도 통계가 있는 버전(`NGSL_12_stats.csv`, 2026-11-01 확인 2,809단어)을 받아 빈도 순위를 저장한다. 스프레드시트를 거친 흔적으로 `TRUE`, `FALSE`가 대문자라 소문자로 고친다.
 - 한국어 뜻과 예문은 Claude Code 세션에서 만들어 저장하고(가사와 달리 저작권 있는 글을 옮기는 일이 아니다), AI가 만든 값이라고 표시한다. 빈도가 높은 단어부터 나눠 진행한다.
 
 ## 5. 어원
 
-- 근거 자료는 Wiktionary의 영어 어원 글이다. [kaikki.org](https://kaikki.org/)가 Wiktionary 덤프에서 뽑은 JSON 자료(wiktextract)를 받는다.
-- Wiktionary 글의 라이선스는 CC BY-SA다. 자료마다 3.0과 4.0 표기가 섞여 있어, 받을 때 kaikki.org의 표기를 기록한다.
+- 근거 자료는 Wiktionary의 영어 어원 글이다. [kaikki.org](https://kaikki.org/)가 Wiktionary 덤프에서 뽑은 JSON 자료(wiktextract)를 단어별 파일로 1초 간격에 하나씩 받는다(#36). 전체 파일은 3.2GB이고 폐기 예정으로 표시되어 있다.
+- Wiktionary 글의 라이선스는 CC BY-SA다. kaikki.org에는 라이선스 표기가 없어(2026-11-01 확인) Wiktionary 저작권 문서의 CC BY-SA 4.0을 기록한다.
 - Wiktionary 어원은 문장이라 접두사·어근·접미사로 나뉘어 있지 않다. Claude Code 세션에서 어원 글을 근거로 요소를 나누고 한국어로 설명한다. 근거 글이 없는 단어는 "어원 자료 없음"으로 두고 지어내지 않는다.
 - 화면에 출처(Wiktionary 링크)와 AI 정리 여부를 함께 보여 준다.
 
