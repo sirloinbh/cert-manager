@@ -3,7 +3,8 @@ import { test } from 'node:test';
 
 import type { Pool } from 'pg';
 
-import { carryTranslations, toLines } from '../src/routes/songs.js';
+import { toLines } from '../src/lyrics-store.js';
+import { carryTranslations } from '../src/routes/songs.js';
 import { withApi } from './helpers.js';
 
 type Query = { text: string; values: unknown[] };
