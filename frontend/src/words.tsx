@@ -70,7 +70,9 @@ export function WordList({ paths }: { paths: WordPaths }) {
   // In the URL, so coming back from a word finds the same search.
   const [params, setParams] = useSearchParams();
   const search = params.get('q') ?? '';
-  const [pages, setPages] = useState(1);
+  // Pages opened belong to one search, so any other search, however it changed, starts over.
+  const [paging, setPaging] = useState({ search, pages: 1 });
+  const pages = paging.search === search ? paging.pages : 1;
   const searchId = useId();
   const words = useMemo(() => (loaded.state === 'ok' ? loaded.data.words : []), [loaded]);
   const matching = useMemo(() => searchWords(words, search), [words, search]);
@@ -116,10 +118,9 @@ export function WordList({ paths }: { paths: WordPaths }) {
               type="search"
               className="pl-9"
               value={search}
-              onChange={(event) => {
-                setPages(1);
-                setParams(event.target.value ? { q: event.target.value } : {}, { replace: true });
-              }}
+              onChange={(event) =>
+                setParams(event.target.value ? { q: event.target.value } : {}, { replace: true })
+              }
               placeholder="영어 철자나 한국어 뜻"
             />
           </div>
@@ -157,7 +158,7 @@ export function WordList({ paths }: { paths: WordPaths }) {
         <Button
           variant="outline"
           className="w-fit self-center"
-          onClick={() => setPages((current) => current + 1)}
+          onClick={() => setPaging({ search, pages: pages + 1 })}
         >
           더 보기 ({matching.length - shown.length}단어 남음)
         </Button>
@@ -169,7 +170,17 @@ export function WordList({ paths }: { paths: WordPaths }) {
   );
 }
 
-function MorphemeWords({ morpheme, paths }: { morpheme: Morpheme; paths: WordPaths }) {
+type ListSearch = { listSearch?: string };
+
+function MorphemeWords({
+  morpheme,
+  paths,
+  state,
+}: {
+  morpheme: Morpheme;
+  paths: WordPaths;
+  state: ListSearch;
+}) {
   return (
     <section
       aria-label={`${morphemeForm(morpheme)}이(가) 들어간 단어`}
@@ -190,7 +201,7 @@ function MorphemeWords({ morpheme, paths }: { morpheme: Morpheme; paths: WordPat
         <ul className="flex flex-col gap-1">
           {morpheme.words.map((word) => (
             <li key={word.id} className="text-body-sm break-keep">
-              <Link to={paths.detail(word.id)} lang="en" className={linkClass}>
+              <Link to={paths.detail(word.id)} state={state} lang="en" className={linkClass}>
                 {word.lemma}
               </Link>
               {word.meaningKo ? (
@@ -204,7 +215,7 @@ function MorphemeWords({ morpheme, paths }: { morpheme: Morpheme; paths: WordPat
   );
 }
 
-function Etymology({ word, paths }: { word: Word; paths: WordPaths }) {
+function Etymology({ word, paths, state }: { word: Word; paths: WordPaths; state: ListSearch }) {
   const [selectedId, setSelectedId] = useState<number>();
   const selected = word.morphemes.find((morpheme) => morpheme.id === selectedId);
   const titleId = useId();
@@ -230,7 +241,7 @@ function Etymology({ word, paths }: { word: Word; paths: WordPaths }) {
             ))}
           </div>
           {selected ? (
-            <MorphemeWords morpheme={selected} paths={paths} />
+            <MorphemeWords morpheme={selected} paths={paths} state={state} />
           ) : (
             <p className="text-caption break-keep text-muted-foreground">
               요소를 누르면 그 요소가 들어간 다른 단어가 보입니다.
@@ -275,7 +286,7 @@ export function WordDetail({ paths }: { paths: WordPaths }) {
 
 function WordPage({ id, paths }: { id: string; paths: WordPaths }) {
   const loaded = useLoad(id, loadWord);
-  const { state } = useLocation() as { state: { listSearch?: string } | null };
+  const { state } = useLocation() as { state: ListSearch | null };
   const listSearch = state?.listSearch;
 
   const back = (
@@ -344,7 +355,7 @@ function WordPage({ id, paths }: { id: string; paths: WordPaths }) {
           ) : null}
         </section>
       )}
-      <Etymology word={word} paths={paths} />
+      <Etymology word={word} paths={paths} state={{ listSearch }} />
       <SourceNote sources={sources} />
     </section>
   );

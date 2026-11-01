@@ -184,6 +184,30 @@ test('pressing a word part shows the other words that have it', async () => {
   ).toBeInTheDocument();
 });
 
+test('a related word still leads back to the same search', async () => {
+  open('/words');
+  fireEvent.change(await screen.findByLabelText('단어 검색'), { target: { value: 'export' } });
+  fireEvent.click(screen.getByRole('link', { name: /export/ }));
+  fireEvent.click(await screen.findByRole('button', { name: /port 나르다/ }));
+  fireEvent.click(screen.getByRole('link', { name: 'transport' }));
+  await screen.findByRole('button', { name: /port 나르다/ });
+  expect(window.location.pathname).toBe('/words/3');
+  expect(screen.getByRole('link', { name: '단어 목록' })).toHaveAttribute(
+    'href',
+    '/words?q=export',
+  );
+});
+
+test('clearing the search from the menu goes back to the first page', async () => {
+  open('/words?q=word', { words: manyRows });
+  fireEvent.click(await screen.findByRole('button', { name: /더 보기/ }));
+  expect(wordItems()).toHaveLength(200);
+  const menu = screen.getByRole('navigation', { name: '주 메뉴' });
+  fireEvent.click(within(menu).getByRole('link', { name: '단어장' }));
+  expect(window.location.search).toBe('');
+  expect(wordItems()).toHaveLength(100);
+});
+
 test('moving to another word forgets the pressed part', async () => {
   open('/words/2');
   fireEvent.click(await screen.findByRole('button', { name: /port 나르다/ }));

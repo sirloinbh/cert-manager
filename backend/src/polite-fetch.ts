@@ -23,11 +23,11 @@ export type PoliteSource = {
 /** One request, then the gap. Null for a 404. Waits and tries again when asked to, within reason. */
 export async function politeGet(
   url: string,
-  options: { name: string; gap: number; sleep: PoliteSource['sleep'] },
+  options: { name: string; gap: number; sleep: PoliteSource['sleep']; accept?: string },
 ) {
   for (let attempt = 1; ; attempt += 1) {
     const response = await fetch(url, {
-      headers: { 'User-Agent': userAgent },
+      headers: { 'User-Agent': userAgent, ...(options.accept ? { Accept: options.accept } : {}) },
       signal: AbortSignal.timeout(requestTimeout),
     });
     await options.sleep(options.gap);

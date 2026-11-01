@@ -11,10 +11,12 @@ import { parseWordList } from '../src/word-list.js';
 const csv = (rows: string[]) =>
   ['Lemma,SFI Rank,SFI,Adjusted Frequency per Million (U)', ...rows].join('\r\n');
 
+// Different letters for each row, standing in for words.
 const fullList = (count: number) =>
   Array.from(
     { length: count },
-    (_, index) => `w${'a'.repeat(0)}${String.fromCharCode(97 + (index % 26))},${index + 1},50.1,7`,
+    (_, index) =>
+      `w${index.toString(26).replace(/\d/g, (digit) => 'qrstuvwxyz'[Number(digit)] ?? '')},${index + 1},50.1,7`,
   );
 
 test('the list keeps rank order and undoes the spreadsheet capitals', () => {
@@ -36,25 +38,44 @@ test('an unexpected file is refused', () => {
   assert.throws(() => parseWordList(csv(['the,1,87,6'])), /1 words, expected 2809/);
   assert.throws(() => parseWordList(csv(['two words,1,87,6'])), /unexpected row/);
   assert.throws(() => parseWordList(csv(['the,x,87,6'])), /unexpected row/);
+  const repeated = fullList(2809);
+  repeated[1] = repeated[0]?.replace(',1,', ',2,') ?? '';
+  assert.throws(() => parseWordList(csv(repeated)), /repeats a word/);
+  const gap = fullList(2809);
+  gap[1] = gap[1]?.replace(',2,', ',3000,') ?? '';
+  assert.throws(() => parseWordList(csv(gap)), /gaps in its ranks/);
 });
 
 test('entries live under the first one and two letters', () => {
   assert.equal(entryUrl('http://x', 'transport'), 'http://x/t/tr/transport.jsonl');
   assert.equal(entryUrl('http://x', 'a'), 'http://x/a/a/a.jsonl');
-  assert.equal(entryUrl('http://x', 'I'), 'http://x/i/i/I.jsonl');
+  assert.equal(entryUrl('http://x', 'I'), 'http://x/I/I/I.jsonl');
 });
 
 const entry = (text?: string) => JSON.stringify({ word: 'x', etymology_text: text });
 
 test('etymology text loses the generated tree and repeats', () => {
   const tree =
-    'Etymology tree\nProto-Italic *portā\nLatin portō\nFrom Latin portō (“to carry”), with a made-up note.';
+    'Etymology tree\nProto-Italic *portā\nMiddle English wel, wal, wol, wele\nEnglish port\nProbably from a.\nMade-up second line.';
   assert.equal(
     etymologyText(`${entry(tree)}\n${entry(tree)}\n${entry('From Old English bar.')}\n`),
-    'From Latin portō (“to carry”), with a made-up note.\n\nFrom Old English bar.',
+    'Probably from a.\nMade-up second line.\n\nFrom Old English bar.',
   );
   assert.equal(etymologyText(`${entry()}\n`), '');
-  assert.equal(etymologyText(entry('Etymology tree\nLatin a\nLatin b')), 'Latin b');
+});
+
+test('a tree with no sentences after it, or no end, is no source at all', () => {
+  assert.equal(etymologyText(entry('Etymology tree\nLatin a\nEnglish a')), '');
+  assert.equal(etymologyText(entry('Etymology tree\nLatin a\nLatin b')), '');
+});
+
+test('branches of a tree all come off, and a sentence opening with English stays', () => {
+  assert.equal(
+    etymologyText(
+      entry('Etymology tree\nEnglish a\nLatin b\nEnglish c\nEnglish speakers made this up.'),
+    ),
+    'English speakers made this up.',
+  );
 });
 
 const fakePool = (lemmas: string[], fail = false) => {

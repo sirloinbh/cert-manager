@@ -121,9 +121,15 @@ function batchProblem(batch: Batch, found: Map<string, WordRow>) {
     }
     for (const part of word.morphemes) {
       const name = `${part.kind}:${part.form}`;
-      if (part.key !== name && !part.key.startsWith(`${name}:`)) {
+      if (
+        part.key !== name &&
+        !(part.key.startsWith(`${name}:`) && part.key.length > name.length + 1)
+      ) {
         return `어원 요소 이름이 규칙과 다릅니다: ${part.key}`;
       }
+    }
+    if (new Set(word.morphemes.map((part) => part.key)).size !== word.morphemes.length) {
+      return `한 단어에 같은 어원 요소가 두 번 있습니다: ${word.lemma}`;
     }
   }
   return new Set(batch.words.map((word) => word.lemma)).size === batch.words.length
@@ -172,11 +178,23 @@ export async function importWordBatches(pool: Pool, dir: string) {
           }
         }
       });
+    } catch (error) {
+      // A value the database refuses is the file's fault; a lost connection is not.
+      const refused = /^2[23]/.test((error as { code?: string }).code ?? '');
+      if (!(error instanceof RejectedBatch || refused)) throw error;
+      const reason = refused ? '데이터베이스가 받지 않는 값이 있습니다' : (error as Error).message;
+      result.rejected.push({ file: name, reason });
+      continue;
+    }
+    try {
       await rename(join(dir, name), join(doneDir, name));
       result.saved.push(name);
-    } catch (error) {
-      if (!(error instanceof RejectedBatch)) throw error;
-      result.rejected.push({ file: name, reason: error.message });
+    } catch {
+      // OneDrive can hold a file for a moment. The words are in, and a rerun would only be refused.
+      result.rejected.push({
+        file: name,
+        reason: '저장했지만 파일을 옮기지 못했습니다. 이 파일은 지워 주세요',
+      });
     }
   }
   return result;

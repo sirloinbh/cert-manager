@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS morphemes (
   origin text,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT morphemes_key_format CHECK (key = kind || ':' || form OR left(key, length(kind || ':' || form || ':')) = kind || ':' || form || ':')
+  CONSTRAINT morphemes_key_format CHECK (key = kind || ':' || form OR (left(key, length(kind || ':' || form || ':')) = kind || ':' || form || ':' AND length(key) > length(kind || ':' || form || ':')))
 );
 
 CREATE TABLE IF NOT EXISTS word_morphemes (

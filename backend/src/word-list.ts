@@ -29,12 +29,30 @@ export function parseWordList(csv: string): ListedWord[] {
   if (words.length !== ngslSize) {
     throw new Error(`NGSL file has ${words.length} words, expected ${ngslSize}`);
   }
+  if (new Set(words.map((word) => word.lemma)).size !== words.length) {
+    throw new Error('NGSL file repeats a word');
+  }
+  if ([...words].sort((a, b) => a.rank - b.rank).some((word, index) => word.rank !== index + 1)) {
+    throw new Error('NGSL file has gaps in its ranks');
+  }
   return words;
 }
 
-/** Saves the list in one transaction. Meanings and word parts already filled in stay. */
+/**
+ * Saves the list in one transaction. Meanings and word parts already filled in stay.
+ * A list with other ranks is refused: nothing here decides what happens to the words it changes.
+ */
 export async function saveWordList(pool: Pool, words: ListedWord[], url: string) {
   await inTransaction(pool, async (client) => {
+    const { rows: changed } = await client.query<{ lemma: string }>(
+      `SELECT w.lemma FROM words w
+       JOIN unnest($1::text[], $2::int[]) AS v(l, r) ON (w.lemma = v.l) <> (w.frequency_rank = v.r)
+       LIMIT 1`,
+      [words.map((word) => word.lemma), words.map((word) => word.rank)],
+    );
+    if (changed[0]) {
+      throw new Error(`Word ranks changed, nothing saved. First: ${changed[0].lemma}`);
+    }
     const { rows } = await client.query<{ id: string }>(
       `INSERT INTO import_sources (kind, url, license, fetched_at)
        VALUES ('ngsl', $1, $2, now()) RETURNING id`,

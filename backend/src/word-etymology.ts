@@ -16,24 +16,26 @@ const wiktionaryLicense = 'CC BY-SA 4.0';
 // One large file at a time from a volunteer-run site.
 const requestGap = 1000;
 
-// The site's folders are the word's first one and two letters.
+// The site's folders are the word's first one and two letters, capitals kept (checked: I/I/I.jsonl).
 export function entryUrl(baseUrl: string, lemma: string) {
-  const first = lemma.slice(0, 1).toLowerCase();
-  const two = lemma.slice(0, 2).toLowerCase();
-  return `${baseUrl}/${first}/${two}/${encodeURIComponent(lemma)}.jsonl`;
+  return `${baseUrl}/${lemma.slice(0, 1)}/${lemma.slice(0, 2)}/${encodeURIComponent(lemma)}.jsonl`;
 }
 
-const looksLikeProse = (line: string) =>
-  /^(?:From|Inherited|Borrowed|Learned|Derived|Compound|Clipping|Blend|Back-formation|Uncertain|Unknown|Origin|See|Of)\b/.test(
-    line,
-  ) || line.split(/\s+/).length >= 6;
-
-// The text can start with a generated tree of ancestor words, one to a line, before the sentences.
+// The text can start with a generated tree of ancestor words, one to a line, which ends at
+// "English <word>". Without such a line there is no telling tree from sentences, so nothing is kept:
+// no text means "no source", which is better than a made-up one.
 function withoutTree(text: string) {
   if (!text.startsWith('Etymology tree\n')) return text.trim();
-  const lines = text.split('\n').slice(1);
-  const start = lines.findIndex(looksLikeProse);
-  return (start === -1 ? lines.slice(-1) : lines.slice(start)).join('\n').trim();
+  const lines = text.split('\n');
+  const end = lines
+    .map((line) => /^English \S/.test(line) && line.split(/\s+/).length <= 4)
+    .lastIndexOf(true);
+  return end === -1
+    ? ''
+    : lines
+        .slice(end + 1)
+        .join('\n')
+        .trim();
 }
 
 /** The etymology of one word from its entries, once for each different text. Empty when there is none. */

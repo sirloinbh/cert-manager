@@ -38,7 +38,12 @@ type LyricsQuery = {
 };
 
 async function getJson(url: string, source: PoliteSource): Promise<unknown> {
-  const response = await politeGet(url, { name: 'LRCLIB', gap: requestGap, sleep: source.sleep });
+  const response = await politeGet(url, {
+    name: 'LRCLIB',
+    gap: requestGap,
+    sleep: source.sleep,
+    accept: 'application/json',
+  });
   return response ? response.json() : null;
 }
 

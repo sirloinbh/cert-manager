@@ -60,9 +60,23 @@ test(
       await pool.end();
     });
 
+    // The lookup below covers every word without an etymology, so real words must not be here.
+    const others = await pool.query('SELECT 1 FROM words WHERE lemma <> ALL($1::text[]) LIMIT 1', [
+      lemmas,
+    ]);
+    assert.equal(others.rowCount, 0, 'this test needs a test database with no other words');
+
     const words = lemmas.map((lemma, index) => ({ lemma, rank: 900_001 + index }));
     await saveWordList(pool, words, listUrl);
     await saveWordList(pool, words, listUrl);
+    await assert.rejects(
+      saveWordList(pool, [{ lemma: 'zzcarry', rank: 900_999 }], listUrl),
+      /Word ranks changed, nothing saved. First: zzcarry/,
+    );
+    await assert.rejects(
+      saveWordList(pool, [{ lemma: 'zzother', rank: 900_001 }], listUrl),
+      /Word ranks changed/,
+    );
     const listed = await pool.query('SELECT 1 FROM words WHERE lemma = ANY($1::text[])', [lemmas]);
     assert.equal(listed.rowCount, 4, 'running the list again adds nothing');
 
@@ -136,6 +150,12 @@ test(
       [{ words: [fill('zzcarry'), fill('zzcarry')] }, /같은 단어가 두 번 있습니다/],
       [{ words: [fill('zznone', [port])] }, /어원 자료가 없는 단어에는/],
       [{ words: [fill('zzcarry', [{ ...port, key: 'root:other' }])] }, /이름이 규칙과 다릅니다/],
+      [{ words: [fill('zzcarry', [{ ...port, key: 'root:zzport:' }])] }, /이름이 규칙과 다릅니다/],
+      [{ words: [fill('zzcarry', [port, port])] }, /같은 어원 요소가 두 번/],
+      [
+        { words: [fill('zzcarry', [], { meaningKo: '끝\u0000' })] },
+        /데이터베이스가 받지 않는 값이 있습니다/,
+      ],
       [{ words: [fill('zzcarry', [{ ...port, form: 'Zz-Port' }])] }, /파일 형식이 맞지 않습니다/],
     ];
     for (const [content, reason] of refused) {
@@ -248,6 +268,12 @@ test(
       code: '23503',
     });
     // The key rule also holds in the table itself.
+    await assert.rejects(
+      pool.query(
+        "INSERT INTO morphemes (key, form, kind, meaning_ko) VALUES ('root:zzport:', 'zzport', 'root', '뜻')",
+      ),
+      { code: '23514' },
+    );
     await assert.rejects(
       pool.query(
         "INSERT INTO morphemes (key, form, kind, meaning_ko) VALUES ('root:zzother', 'zzport', 'root', '뜻')",
