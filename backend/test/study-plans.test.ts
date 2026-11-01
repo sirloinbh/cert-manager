@@ -129,6 +129,19 @@ test('new stages and tasks trim the title and default their dates to null', asyn
   assert.deepEqual(queries[1]?.values, [4, '기출 풀기', null, '2026-10-30']);
 });
 
+test('an array in place of the title answers one message, not one per check', async () => {
+  const { pool, queries } = fakePool(() => ({ rows: [] }));
+  await withApi(pool, async (call) => {
+    const { status, data } = await call('/api/certifications/7/stages', {
+      method: 'POST',
+      body: { title: [] },
+    });
+    assert.equal(status, 400);
+    assert.deepEqual(data, { error: '단계 이름을 입력해 주세요' });
+  });
+  assert.equal(queries.length, 0);
+});
+
 test('invalid input is a Korean 400 and never reaches the database', async () => {
   const { pool, queries } = fakePool(() => ({ rows: [] }));
   const cases: [string, unknown, string][] = [

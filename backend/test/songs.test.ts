@@ -138,6 +138,22 @@ test('invalid lyrics and translations are a Korean 400 and change nothing', asyn
   assert.equal(queries.length, 0);
 });
 
+test('an array in place of lyrics or a translation answers one message', async () => {
+  const { pool, queries } = fakePool(() => ({ rows: [] }));
+  const cases: [string, unknown, string][] = [
+    ['lyrics', { original: [] }, '가사를 입력해 주세요'],
+    ['translation', { translation: [] }, '번역을 입력해 주세요'],
+  ];
+  await withApi(pool, async (call) => {
+    for (const [kind, body, error] of cases) {
+      const { status, data } = await call(`/api/songs/3/${kind}`, { method: 'PUT', body });
+      assert.equal(status, 400);
+      assert.deepEqual(data, { error });
+    }
+  });
+  assert.equal(queries.length, 0);
+});
+
 test('a translation with the wrong line count says both counts and saves nothing', async () => {
   const { pool, queries } = fakePool(({ text }) =>
     text.includes('SELECT line_number')
