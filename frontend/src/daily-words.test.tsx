@@ -238,3 +238,31 @@ test('the arrow at the first day keeps its focus and does nothing', async () => 
   expect(previous).toHaveFocus();
   expect(fetch).toHaveBeenCalledTimes(1);
 });
+
+test('after a failed move, the new day still brings today and not the day that failed', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-11-02T14:59:00Z'));
+    const fetcher = vi.fn((path: string) =>
+      path.includes('2026-11-01')
+        ? json({ error: '잠시 연결할 수 없습니다' }, 503)
+        : json(todayAnswer),
+    );
+    vi.stubGlobal('fetch', fetcher);
+    render(
+      <MemoryRouter>
+        <DailyWords paths={paths} />
+      </MemoryRouter>,
+    );
+    await screen.findByRole('link', { name: 'export' });
+    fireEvent.click(screen.getByRole('button', { name: '이전 날의 단어' }));
+    await screen.findByText('잠시 연결할 수 없습니다');
+    vi.setSystemTime(new Date('2026-11-02T15:00:00Z'));
+    fireEvent.focus(window);
+    await waitFor(() =>
+      expect(fetcher).toHaveBeenLastCalledWith('/api/daily-words', expect.anything()),
+    );
+  } finally {
+    vi.useRealTimers();
+  }
+});

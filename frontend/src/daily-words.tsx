@@ -93,10 +93,14 @@ export function DailyWords({ paths }: { paths: WordPaths }) {
 
   // A page left open overnight must not keep showing yesterday's words as today's.
   const shownToday = shown?.today;
+  const showingToday = shown?.day === shownToday;
   useEffect(() => {
     const check = () => {
       if (document.visibilityState !== 'visible' || !shownToday) return;
-      if (serviceToday() !== shownToday) setAttempt((current) => current + 1);
+      if (serviceToday() === shownToday) return;
+      // A move that failed can leave another day chosen behind today's words.
+      if (showingToday) setDay(undefined);
+      setAttempt((current) => current + 1);
     };
     window.addEventListener('focus', check);
     document.addEventListener('visibilitychange', check);
@@ -104,7 +108,7 @@ export function DailyWords({ paths }: { paths: WordPaths }) {
       window.removeEventListener('focus', check);
       document.removeEventListener('visibilitychange', check);
     };
-  }, [shownToday]);
+  }, [shownToday, showingToday]);
 
   const toggle = async (word: DailyWord, learned: boolean) => {
     setSaving((current) => [...current, word.id]);
