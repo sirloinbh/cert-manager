@@ -225,6 +225,9 @@ test('saving a pass asks before changing the goal, and the answer is respected',
   );
   // The page shows the new status without leaving; 합격 also labels the attempt itself.
   await waitFor(() => expect(screen.getAllByText('합격')).toHaveLength(2));
+  await waitFor(() =>
+    expect(screen.getByRole('heading', { name: '응시·취득 기록' })).toHaveFocus(),
+  );
 });
 
 test('declining the question leaves the goal alone', async () => {
@@ -239,6 +242,10 @@ test('declining the question leaves the goal alone', async () => {
   expect(
     api.sent.some((item) => item.path === '/api/certifications/1' && item.method === 'PUT'),
   ).toBe(false);
+  // With no button that opened it, focus would otherwise fall back to the start of the page.
+  await waitFor(() =>
+    expect(screen.getByRole('heading', { name: '응시·취득 기록' })).toHaveFocus(),
+  );
 });
 
 test('editing an attempt that is already a pass does not ask again', async () => {
