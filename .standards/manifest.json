@@ -1,5 +1,5 @@
 {
-  "centralSha": "3f3bf8d44a5f0321c46a93ddd7d375daa96d104f",
+  "centralSha": "10baedfb001c54137e02a1c87484219519dffdac",
   "profile": "app",
   "project": "cert-manager",
   "files": {
@@ -328,7 +328,7 @@
     },
     "frontend/nginx.conf": {
       "mode": "full",
-      "sha256": "c7a171b05fce41e79cfca73f7d1083f9460320d7132be02902bd594399599dd4",
+      "sha256": "7d33faa97392354df409d22f4bbe8b38e5aa95082f47d5f039fcef09d4e0977e",
       "source": "templates/app/frontend/nginx.conf.tmpl"
     },
     "frontend/package.json": {
@@ -359,7 +359,7 @@
         "devDependencies.jsdom": "30.1.2",
         "devDependencies.tailwindcss": "4.3.3",
         "devDependencies.typescript": "5.9.3",
-        "devDependencies.vite": "6.4.4",
+        "devDependencies.vite": "6.4.5",
         "devDependencies.vitest": "5.0.3"
       },
       "source": "templates/index.json"
@@ -372,7 +372,7 @@
     "frontend/public/offline.html": {
       "mode": "full",
       "sha256": "853395d8ba8060ba0d94116c352f23d29bf8f7d3e793041cd5130c7d6cac174c",
-      "source": "templates/app/frontend/public/offline.html"
+      "source": "templates/app/frontend/public/offline.html.tmpl"
     },
     "frontend/public/sw.js": {
       "mode": "full",
