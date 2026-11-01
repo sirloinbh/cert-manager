@@ -1,5 +1,5 @@
 import type { Pool } from 'pg';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 import { inTransaction, lockSong, toLines } from './lyrics-store.js';
 import {

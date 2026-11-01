@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { Pool } from 'pg';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 import { inTransaction } from './lyrics-store.js';
 

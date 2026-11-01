@@ -1,26 +1,26 @@
 import type { Express } from 'express';
 import type { Pool } from 'pg';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 import { HttpError, parseId } from '../standard/http.js';
 import { body, calendarDate, toId } from '../validation.js';
 
 // Things the user must do outside the app, shown as alerts (#60). Columns: docs/design/scope-and-data-model.md section 5.
 
-const objectMessage = { message: '요청 본문은 JSON 객체여야 합니다' };
+const objectMessage = { error: '요청 본문은 JSON 객체여야 합니다' };
 
 const actionInput = z
   .object(
     {
       title: z
-        .string({ message: '할 일을 입력해 주세요' })
+        .string({ error: '할 일을 입력해 주세요' })
         .trim()
-        .min(1, '할 일을 입력해 주세요')
-        .max(200, '할 일은 200자 이하로 입력해 주세요'),
-      note: z.string({ message: '설명은 문자열이어야 합니다' }).default(''),
+        .refine((value) => value.length >= 1, '할 일을 입력해 주세요')
+        .refine((value) => value.length <= 200, '할 일은 200자 이하로 입력해 주세요'),
+      note: z.string({ error: '설명은 문자열이어야 합니다' }).default(''),
       // The link becomes an href, so only web addresses are accepted.
       linkUrl: z
-        .string({ message: '링크는 문자열이어야 합니다' })
+        .string({ error: '링크는 문자열이어야 합니다' })
         .regex(/^(https?:\/\/\S+)?$/i, '링크는 http 또는 https 주소여야 합니다')
         .default(''),
       remindFrom: calendarDate('알림 시작일'),
@@ -39,7 +39,7 @@ const actionInput = z
   });
 
 const completionInput = z.object(
-  { completed: z.boolean({ message: '완료 여부는 true나 false여야 합니다' }) },
+  { completed: z.boolean({ error: '완료 여부는 true나 false여야 합니다' }) },
   objectMessage,
 );
 
