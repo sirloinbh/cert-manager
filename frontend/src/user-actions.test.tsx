@@ -93,7 +93,7 @@ function fakeApi(
         actions = actions.filter((item) => item.id !== id);
         return reply(200, { action: { ...done, completedAt: '2027-03-08T00:00:00Z' } });
       }
-      return reply(200, { today, certifications: [], attempts: [], tasks: [] });
+      return reply(200, { today, certifications: [], attempts: [], tasks: [], words: [] });
     }),
   );
   return { sent };

@@ -13,7 +13,14 @@ const health = (body: object, status = 200) =>
     vi.fn((path: string) =>
       path === '/api/health'
         ? json(body, status)
-        : json({ today: '2026-10-26', certifications: [], attempts: [], tasks: [], actions: [] }),
+        : json({
+            today: '2026-10-26',
+            certifications: [],
+            attempts: [],
+            tasks: [],
+            actions: [],
+            words: [],
+          }),
     ),
   );
 
