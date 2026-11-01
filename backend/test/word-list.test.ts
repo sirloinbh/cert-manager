@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import { createServer, type ServerResponse } from 'node:http';
-import type { AddressInfo } from 'node:net';
 import { test } from 'node:test';
 
 import type { Pool } from 'pg';
 
 import { entryUrl, etymologyText, fetchMissingEtymology } from '../src/word-etymology.js';
 import { parseWordList } from '../src/word-list.js';
+import { listenLocally } from './helpers.js';
 
 const csv = (rows: string[]) =>
   ['Lemma,SFI Rank,SFI,Adjusted Frequency per Million (U)', ...rows].join('\r\n');
@@ -105,9 +105,9 @@ async function withKaikki(
   run: (baseUrl: string) => Promise<void>,
 ) {
   const server = createServer((req, res) => handler(req.url ?? '/', res));
-  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const port = await listenLocally(server);
   try {
-    await run(`http://127.0.0.1:${(server.address() as AddressInfo).port}`);
+    await run(`http://127.0.0.1:${port}`);
   } finally {
     server.close();
   }

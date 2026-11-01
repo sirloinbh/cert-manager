@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
-import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -11,7 +10,7 @@ import { Pool } from 'pg';
 import { fetchMissingEtymology } from '../src/word-etymology.js';
 import { exportWordBatch, importWordBatches } from '../src/word-files.js';
 import { saveWordList } from '../src/word-list.js';
-import { withApi } from './helpers.js';
+import { listenLocally, withApi } from './helpers.js';
 
 const url = process.env.TEST_DATABASE_URL;
 
@@ -47,8 +46,7 @@ test(
         res.end();
       }
     });
-    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-    const baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+    const baseUrl = `http://127.0.0.1:${await listenLocally(server)}`;
     t.after(async () => {
       server.close();
       await rm(dir, { recursive: true, force: true });
