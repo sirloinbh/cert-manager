@@ -145,6 +145,7 @@ export function CertificationList({ paths }: { paths: CertificationPaths }) {
       ) : null}
       {loaded.state === 'ok' && loaded.data.certifications.length === 0 ? (
         <EmptyState
+          className="break-keep"
           icon={<Award />}
           title="아직 목표 자격증이 없습니다"
           description="따고 싶은 자격증을 추가하면 분류별로 묶어 목표 시험일 순으로 보여 줍니다."

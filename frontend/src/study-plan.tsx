@@ -305,6 +305,7 @@ export function StudyPlan({ certification }: { certification: Certification }) {
       ) : null}
       {data && stages.length === 0 ? (
         <EmptyState
+          className="break-keep"
           icon={<ListChecks />}
           title="아직 공부 계획이 없습니다"
           description="주차나 과목처럼 단계를 나누고 할 일을 적으면 진행률을 함께 볼 수 있습니다."

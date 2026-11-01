@@ -10,9 +10,8 @@
 
 | 순서 | 할 일                                   | 우선순위 | 상태      | 다음 행동                                        |
 | ---- | --------------------------------------- | -------- | --------- | ------------------------------------------------ |
-| 1    | #70 단어 뜻·예문·어원 채우기            | P3       | 착수 가능 | `words:export`로 내보내 세션에서 채운다. 빈도 순 |
-| 2    | #22 모바일 빈 화면 안내 줄바꿈          | P4       | 착수 가능 | 호출부 `frontend/src/app.tsx`에서 `break-keep`   |
-| 3    | #38 자격증 후보 목록과 추천 로드맵 문서 | P4       | 착수 가능 | AWS 라인업 포함                                  |
+| 1    | #70 단어 뜻·예문·어원 채우기            | P3       | 착수 가능 | 1~50위를 채움. 사용자 품질 확인 후 이어서 채운다 |
+| 2    | #38 자격증 후보 목록과 추천 로드맵 문서 | P4       | 착수 가능 | AWS 라인업 포함                                  |
 
 ## 함께 볼 것
 
@@ -21,7 +20,6 @@
 - 이 PC에는 Docker가 없어 설치된 PostgreSQL 17(포트 5432)의 `cert`, `cert_test` DB를 쓴다. 새 마이그레이션은 두 DB에 모두 적용한다. 사용자 환경변수 `TEST_DATABASE_URL`은 study-log용이므로 바꾸지 말고, 다른 터미널에서는 그 세션에서만 `cert_test` 주소로 지정한다.
 - 브라우저 확인은 임시 Postgres 컨테이너 + `node node_modules/tsx/dist/cli.mjs src/server.ts`(백엔드) + `npm run dev -w frontend`로 했다. `npx`는 프로젝트 훅이 막는다.
 - `npm run knip`: 결과 없음(#30에서 `backend/src/standard/http.ts`를 쓰기 시작했다). CI는 `knip-strict`로 실패 단계를 쓴다.
-- 모바일 빈 화면 안내 문구가 단어 중간에서 줄바꿈된다. 호출부 `frontend/src/app.tsx`에서 고치는 [#22](https://github.com/sirloinbh/cert-manager/issues/22)로 분리했다.
 - 이 PC의 Volta 기본 Node(24.22.1)가 프로젝트 고정 버전(24.21.0)과 달라 `npm install`·`npm ci`가 엔진 검사에서 막힌다. 설치할 때는 `volta run --node 24.21.0 --npm 11.19.0 npm ...`을 쓴다.
 
 ## 실행 경계

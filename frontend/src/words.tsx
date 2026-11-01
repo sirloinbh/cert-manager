@@ -100,6 +100,7 @@ export function WordList({ paths }: { paths: WordPaths }) {
       ) : null}
       {loaded.state === 'ok' && words.length === 0 ? (
         <EmptyState
+          className="break-keep"
           icon={<BookOpenText />}
           title="아직 단어가 없습니다"
           description="단어 목록을 받는 스크립트를 실행하면 빈도 순으로 보입니다."

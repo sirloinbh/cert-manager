@@ -72,7 +72,9 @@ test('menu areas without features yet show the empty notice', async () => {
   fireEvent.click(within(menu).getByRole('link', { name: '설정' }));
   expect(window.location.pathname).toBe('/settings');
   expect(await screen.findByRole('heading', { level: 1, name: '설정' })).toBeInTheDocument();
-  expect(screen.getByRole('heading', { name: '아직 기능이 없습니다' })).toBeInTheDocument();
+  const notice = screen.getByRole('heading', { name: '아직 기능이 없습니다' });
+  // Korean words stay whole when the notice wraps on a phone.
+  expect(notice.closest('[data-slot="empty-state"]')).toHaveClass('break-keep');
 });
 
 test('an unknown address falls back to the overview', async () => {
