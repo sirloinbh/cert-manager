@@ -498,6 +498,8 @@ test('a new stage and its first task show even if reloading the plan fails', asy
   change('할 일', '모의고사');
   fireEvent.click(saveButton());
   expect(await screen.findByRole('checkbox', { name: '모의고사' })).toBeInTheDocument();
+  expect(await screen.findByText('다시 읽지 못했습니다')).toBeInTheDocument();
+  expect(screen.getByRole('checkbox', { name: '모의고사' })).toBeInTheDocument();
 });
 
 test('an edited task shows even if reloading the plan fails', async () => {
