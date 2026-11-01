@@ -433,6 +433,7 @@ export function ExamAttempts({
       ) : null}
       {data && attempts.length === 0 ? (
         <EmptyState
+          className="break-keep"
           icon={<ClipboardList />}
           title="아직 응시 기록이 없습니다"
           description="시험을 보면 점수와 결과를 적어 두세요. 유효기간이 있는 자격증은 만료일을 함께 챙겨 드립니다."

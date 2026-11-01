@@ -31,7 +31,7 @@ const linkClass =
   'text-primary underline underline-offset-4 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50';
 
 // The license of both sources asks for this wherever their material is shown.
-function SourceNote({ sources }: { sources: WordSource[] }) {
+export function SourceNote({ sources }: { sources: WordSource[] }) {
   const license = (kind: WordSource['kind']) =>
     sources.find((source) => source.kind === kind)?.license ?? 'CC BY-SA 4.0';
   return (
@@ -100,6 +100,7 @@ export function WordList({ paths }: { paths: WordPaths }) {
       ) : null}
       {loaded.state === 'ok' && words.length === 0 ? (
         <EmptyState
+          className="break-keep"
           icon={<BookOpenText />}
           title="아직 단어가 없습니다"
           description="단어 목록을 받는 스크립트를 실행하면 빈도 순으로 보입니다."

@@ -9,7 +9,7 @@ import { toId } from '../validation.js';
 type SourceRow = { kind: string; url: string; license: string | null; fetchedAt: string };
 
 // The latest record of each source, for the attribution on the screens.
-async function readSources(pool: Pool) {
+export async function readWordSources(pool: Pool) {
   const { rows } = await pool.query<SourceRow>(
     `SELECT DISTINCT ON (kind) kind, url, license, fetched_at AS "fetchedAt" FROM import_sources
      WHERE kind IN ('ngsl', 'wiktionary') ORDER BY kind, fetched_at DESC, id DESC`,
@@ -33,7 +33,7 @@ export function registerWordRoutes(app: Express, pool: Pool) {
     );
     res.json({
       words: rows.map((row) => ({ ...row, id: toId(row.id) })),
-      sources: await readSources(pool),
+      sources: await readWordSources(pool),
     });
   });
 
@@ -83,7 +83,7 @@ export function registerWordRoutes(app: Express, pool: Pool) {
             })),
         })),
       },
-      sources: await readSources(pool),
+      sources: await readWordSources(pool),
     });
   });
 }

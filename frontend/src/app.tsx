@@ -13,6 +13,7 @@ import {
 import { AppShell, type NavItem } from './components/layout/app-shell';
 import { EmptyState } from './components/ui/empty-state';
 import { Toaster } from './components/ui/sonner';
+import { DailyWords } from './daily-words';
 import { ExpiringCertifications } from './exam-attempts';
 import { type Health, healthText } from './health';
 import type { SongPaths } from './song-data';
@@ -107,6 +108,7 @@ function Page({
       </header>
       {children ?? (
         <EmptyState
+          className="break-keep"
           title="아직 기능이 없습니다"
           description="기능은 GitHub 이슈 카드로 등록한 뒤 하나씩 추가합니다."
         />
@@ -134,6 +136,7 @@ export function App() {
                   <UpcomingExams paths={certificationPaths} />
                   <TodayTasks paths={certificationPaths} />
                   <ExpiringCertifications paths={certificationPaths} />
+                  <DailyWords paths={wordPaths} />
                 </div>
               </Page>
             }

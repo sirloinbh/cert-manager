@@ -82,6 +82,7 @@ function fakeApi(
       if (path === '/api/health') return reply(200, { ok: true, today });
       if (path === '/api/grade-scales') return reply(200, { scales: [] });
       if (path === '/api/user-actions') return reply(200, { today, actions: [] });
+      if (path === '/api/daily-words') return reply(200, { today, day: today, words: [] });
       if (path === '/api/exam-attempts/latest') return reply(200, { today, attempts: [] });
       if (path === '/api/study-tasks/today')
         return reply(200, { today, tasks: options.todayTasks ?? [] });
@@ -127,7 +128,9 @@ function fakeApi(
         stages = stages.map((row) =>
           row.id === stageId ? { ...row, ...(body as Partial<StudyStage>) } : row,
         );
-        return reply(200, { stage: stages.find((row) => row.id === stageId) });
+        // The server answers a stage without its tasks.
+        const { tasks: _tasks, ...saved } = stages.find((row) => row.id === stageId) as StudyStage;
+        return reply(200, { stage: saved });
       }
       const taskId = Number(/^\/api\/study-tasks\/(\d+)/.exec(path)?.[1]);
       if (path.endsWith('/completion')) {
@@ -482,7 +485,8 @@ test('a failed check takes the progress back', async () => {
   expect(screen.getByText('전체 진행률 1/2 · 50%')).toBeInTheDocument();
 });
 
-test('what was saved shows even if reloading the plan fails', async () => {
+// Finding by role takes most of the time in these tests, so each one opens the form as few times as it can.
+test('a new stage and its first task show even if reloading the plan fails', async () => {
   await openDetail({ stages: [week()], reloadFails: true });
   fireEvent.click(await screen.findByRole('button', { name: '단계 추가' }));
   change('단계 이름', '2주차');
@@ -494,17 +498,29 @@ test('what was saved shows even if reloading the plan fails', async () => {
   change('할 일', '모의고사');
   fireEvent.click(saveButton());
   expect(await screen.findByRole('checkbox', { name: '모의고사' })).toBeInTheDocument();
+  expect(await screen.findByText('다시 읽지 못했습니다')).toBeInTheDocument();
+  expect(screen.getByRole('checkbox', { name: '모의고사' })).toBeInTheDocument();
+});
 
-  fireEvent.click(screen.getByRole('button', { name: '모의고사 수정' }));
-  change('할 일', '모의고사 2회');
+test('an edited task shows even if reloading the plan fails', async () => {
+  await openDetail({ stages: [week()], reloadFails: true });
+  fireEvent.click(await screen.findByRole('button', { name: '기출 풀기 수정' }));
+  change('할 일', '기출 2회');
   fireEvent.click(saveButton());
-  expect(await screen.findByRole('checkbox', { name: '모의고사 2회' })).toBeInTheDocument();
+  expect(await screen.findByRole('checkbox', { name: '기출 2회' })).toBeInTheDocument();
+  expect(await screen.findByText('다시 읽지 못했습니다')).toBeInTheDocument();
+  expect(screen.getByRole('checkbox', { name: '기출 2회' })).toBeInTheDocument();
+});
 
-  fireEvent.click(screen.getByRole('button', { name: '2주차 단계 수정' }));
+test('an edited stage shows and keeps its tasks even if reloading the plan fails', async () => {
+  await openDetail({ stages: [week()], reloadFails: true });
+  fireEvent.click(await screen.findByRole('button', { name: '1주차 단계 수정' }));
   change('단계 이름', '마무리');
   fireEvent.click(saveButton());
   expect(await screen.findByRole('heading', { level: 3, name: '마무리' })).toBeInTheDocument();
-  expect(screen.getByRole('checkbox', { name: '모의고사 2회' })).toBeInTheDocument();
+  expect(await screen.findByText('다시 읽지 못했습니다')).toBeInTheDocument();
+  expect(screen.getByRole('heading', { level: 3, name: '마무리' })).toBeInTheDocument();
+  expect(screen.getByRole('checkbox', { name: '기출 풀기' })).toBeInTheDocument();
 });
 
 test('deleting the last stage still offers adding one when reloading fails', async () => {

@@ -22,6 +22,9 @@ export const shortText = (label: string) =>
     .trim()
     .refine((value) => value.length <= 200, `${label}은 200자 이하로 입력해 주세요`);
 
+// ?day=YYYY-MM-DD, optional.
+export const dayQuery = z.object({ day: calendarDate('조회일').optional() });
+
 // Express leaves req.body undefined without a JSON body; parse {} so field messages stay Korean.
 export const body = (value: unknown) => value ?? {};
 
