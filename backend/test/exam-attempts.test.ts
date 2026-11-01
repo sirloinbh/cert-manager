@@ -146,8 +146,9 @@ test('each invalid attempt answers exactly these messages', async () => {
     [{ examDate, score: 1.5 }, '점수는 정수여야 합니다'],
     [{ examDate, score: 900 }, '결과 전에는 점수와 등급을 비워 주세요'],
     [{ examDate: 'abc' }, '시험일은 YYYY-MM-DD 형식이어야 합니다, 시험일이 실제 날짜가 아닙니다'],
-    // After the exam date on purpose. Before it, zod 3.25.76 and 4.6.7 disagree on adding "시험일 이후여야".
-    [{ examDate: '2026-02-01', expiresOn: '2026-02-30' }, '만료일이 실제 날짜가 아닙니다'],
+    // After the exam date, so the rule across fields stays out of it: whether that rule runs after
+    // this failure differs between zod 3.25.76 and 4.6.7.
+    [{ examDate, expiresOn: '2026-04-31' }, '만료일이 실제 날짜가 아닙니다'],
     [
       { examDate, grade: 'x'.repeat(201) },
       '등급은 200자 이하로 입력해 주세요, 결과 전에는 점수와 등급을 비워 주세요',
