@@ -279,3 +279,133 @@ test(
     );
   },
 );
+
+type DayAnswer = {
+  day: string;
+  previousDay: string | null;
+  nextDay: string | null;
+  words: { id: number; lemma: string; learnedAt: string | null }[];
+};
+
+// Same reason for being here as above: choosing words looks at every word in the table.
+test(
+  'the same words all day, new ones the next day, and learned ones never again',
+  { skip: !url },
+  async (t) => {
+    const pool = new Pool({ connectionString: url });
+    const listUrl = 'https://example.test/37-list';
+    const lemmas = Array.from({ length: 12 }, (_, index) => `zzday${index + 1}`);
+    t.after(async () => {
+      await pool.query('DELETE FROM words WHERE lemma = ANY($1::text[])', [lemmas]);
+      await pool.query('DELETE FROM import_sources WHERE url = $1', [listUrl]);
+      await pool.end();
+    });
+    await saveWordList(
+      pool,
+      lemmas.map((lemma, index) => ({ lemma, rank: 900_101 + index })),
+      listUrl,
+    );
+
+    let current = '2026-11-01';
+    const open = async (call: Parameters<Parameters<typeof withApi>[1]>[0], day?: string) => {
+      const { status, data } = await call(`/api/daily-words${day ? `?day=${day}` : ''}`);
+      assert.equal(status, 200);
+      return data as unknown as DayAnswer;
+    };
+    const names = (answer: DayAnswer) => answer.words.map((word) => word.lemma);
+
+    await withApi(
+      pool,
+      async (call) => {
+        // Before anything is chosen, an earlier day stays empty and chooses nothing.
+        assert.deepEqual(names(await open(call, '2026-10-31')), []);
+
+        // Requests at the same moment choose once.
+        const [first, second] = await Promise.all([open(call), open(call)]);
+        assert.deepEqual(names(first as DayAnswer), lemmas.slice(0, 5));
+        assert.deepEqual(names(second as DayAnswer), lemmas.slice(0, 5));
+        assert.deepEqual(names(await open(call)), lemmas.slice(0, 5), 'the same words all day');
+
+        // Learned today: still in today's list, and marked.
+        const learned = (first as DayAnswer).words[1];
+        assert.ok(learned);
+        const marked = await call(`/api/words/${learned.id}/learned`, {
+          method: 'PUT',
+          body: { learned: true },
+        });
+        assert.equal(marked.status, 200);
+        const stamp = (marked.data.word as { learnedAt: string }).learnedAt;
+        assert.ok(stamp);
+        const again = await call(`/api/words/${learned.id}/learned`, {
+          method: 'PUT',
+          body: { learned: true },
+        });
+        assert.equal(
+          (again.data.word as { learnedAt: string }).learnedAt,
+          stamp,
+          'keeps the first time',
+        );
+        const same = await open(call);
+        assert.deepEqual(names(same), lemmas.slice(0, 5));
+        assert.equal(same.words[1]?.learnedAt, stamp);
+
+        // A new day brings words not shown yet, and among those a word with a meaning comes first.
+        await pool.query("UPDATE words SET meaning_ko = '뜻' WHERE lemma = $1", [lemmas[7]]);
+        current = '2026-11-02';
+        const notChosenYet = await open(call, '2026-11-01');
+        assert.equal(notChosenYet.nextDay, '2026-11-02', 'today is reachable before it is chosen');
+        const next = await open(call);
+        assert.equal(next.day, '2026-11-02');
+        assert.deepEqual(names(next), [lemmas[7], lemmas[5], lemmas[6], lemmas[8], lemmas[9]]);
+        assert.equal(next.previousDay, '2026-11-01');
+        assert.equal(next.nextDay, null);
+
+        // Going back shows that day's words, without choosing anything.
+        const past = await open(call, '2026-11-01');
+        assert.deepEqual(names(past), lemmas.slice(0, 5));
+        assert.equal(past.previousDay, null);
+        assert.equal(past.nextDay, '2026-11-02');
+
+        // When every word has been shown, the ones not shown for longest come back, never the learned one.
+        current = '2026-11-03';
+        assert.deepEqual(names(await open(call)), [
+          ...lemmas.slice(10),
+          lemmas[0],
+          lemmas[2],
+          lemmas[3],
+        ]);
+
+        // Undoing makes a word eligible again, and a word with a meaning does not repeat ahead of older ones.
+        const undone = await call(`/api/words/${learned.id}/learned`, {
+          method: 'PUT',
+          body: { learned: false },
+        });
+        assert.equal((undone.data.word as { learnedAt: string | null }).learnedAt, null);
+        await pool.query("UPDATE words SET meaning_ko = '뜻' WHERE lemma = $1", [lemmas[11]]);
+        current = '2026-11-04';
+        assert.deepEqual(names(await open(call)), [
+          lemmas[1],
+          lemmas[4],
+          lemmas[7],
+          lemmas[5],
+          lemmas[6],
+        ]);
+
+        // With every word learned, today has nothing new to show.
+        await pool.query('UPDATE words SET learned_at = now() WHERE lemma = ANY($1::text[])', [
+          lemmas,
+        ]);
+        current = '2026-11-05';
+        const empty = await open(call);
+        assert.deepEqual(names(empty), []);
+        assert.equal(empty.previousDay, '2026-11-04');
+        assert.equal(
+          (await open(call, '2026-11-04')).nextDay,
+          '2026-11-05',
+          'back to the empty day',
+        );
+      },
+      { today: () => current },
+    );
+  },
+);

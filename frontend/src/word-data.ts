@@ -36,6 +36,18 @@ export type Word = WordRow & {
   morphemes: Morpheme[];
 };
 
+/** One of a day's words on the dashboard (#37). */
+export type DailyWord = Omit<Word, 'morphemes'> & { learnedAt: string | null };
+
+export type DailyWordsDay = {
+  today: string;
+  day: string;
+  previousDay: string | null;
+  nextDay: string | null;
+  words: DailyWord[];
+  sources: WordSource[];
+};
+
 export type WordPaths = {
   list: string;
   detail: (id: number) => string;
@@ -62,9 +74,34 @@ export function searchWords(words: WordRow[], search: string) {
   );
 }
 
+/** Whether a word is learned, with what was changed on the screen since it loaded. */
+export function isLearned(
+  word: Pick<DailyWord, 'id' | 'learnedAt'>,
+  changed: Record<number, boolean>,
+) {
+  return changed[word.id] ?? word.learnedAt !== null;
+}
+
+/** Today in the service's time zone, to notice that the day on screen has ended. */
+export function serviceToday(now = new Date()) {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now);
+}
+
 const base = '/api/words';
 
 export const wordApi = {
   list: () => requestJson<{ words: WordRow[]; sources: WordSource[] }>(base),
   get: (id: number) => requestJson<{ word: Word; sources: WordSource[] }>(`${base}/${id}`),
+};
+
+export const dailyWordApi = {
+  get: (day?: string) =>
+    requestJson<DailyWordsDay>(day ? `/api/daily-words?day=${day}` : '/api/daily-words'),
+  setLearned: (id: number, learned: boolean) =>
+    requestJson(`${base}/${id}/learned`, { method: 'PUT', body: { learned } }),
 };

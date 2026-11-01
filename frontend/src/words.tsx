@@ -31,7 +31,7 @@ const linkClass =
   'text-primary underline underline-offset-4 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50';
 
 // The license of both sources asks for this wherever their material is shown.
-function SourceNote({ sources }: { sources: WordSource[] }) {
+export function SourceNote({ sources }: { sources: WordSource[] }) {
   const license = (kind: WordSource['kind']) =>
     sources.find((source) => source.kind === kind)?.license ?? 'CC BY-SA 4.0';
   return (
