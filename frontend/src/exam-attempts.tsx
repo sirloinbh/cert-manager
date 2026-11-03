@@ -536,6 +536,7 @@ export function ExamAttempts({
         cancelLabel="그대로 두기"
         destructive={false}
         onConfirm={onMarkPassed}
+        returnFocusRef={focus.heading}
       />
     </section>
   );
