@@ -62,7 +62,7 @@
 
 리뷰가 임시 스크립트로 503×3 뒤 429가 이어지면 끝나지 않음을 재현했다. 수정 후 섞인 경우 테스트에서 요청 수가 6번, 7번으로 끝남을 확인했다.
 
-- `node ../node_modules/tsx/dist/cli.mjs --test test/lyrics-fetch.test.ts test/word-list.test.ts`(backend): 35개 통과. `npm run check` 통과(백엔드 123개, 프런트엔드 240개 통과·2개 건너뜀, 스킬 4개), knip·표준 검사·비밀 검사 통과.
+- `node ../node_modules/tsx/dist/cli.mjs --test test/lyrics-fetch.test.ts test/word-list.test.ts`(backend): 35개 통과.
 - `TEST_DATABASE_URL=… npm run check`: 통과(exit 0). 백엔드 123개 통과, 프런트엔드 240개 통과·2개 건너뜀, 스킬 4개 통과. `npm run knip`, `node .standards/check.mjs`, `node .standards/secret-scan.mjs`: 통과.
 
 ## 2차 코드 리뷰 반영 — 2026-11-03
