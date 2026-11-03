@@ -2,8 +2,12 @@
 
 const userAgent = 'cert-manager/0.1 (https://github.com/sirloinbh/cert-manager)';
 const maxAttempts = 3;
+// A busy LRCLIB search answers 503 with "Retry-After: 1" about half the time (#89),
+// so a 503 gets more tries, each waiting longer than the last.
+const busyAttempts = 5;
+const busyFirstWaitSeconds = 5;
 const requestTimeout = 30_000;
-// When a 429 or 503 does not say how long to wait.
+// When a 429 does not say how long to wait. A 503 without it waits the backoff.
 const defaultRetrySeconds = 60;
 // Asked to wait longer than this, the script stops and can be run again later.
 const longestWaitSeconds = 300;
@@ -25,7 +29,10 @@ export async function politeGet(
   url: string,
   options: { name: string; gap: number; sleep: PoliteSource['sleep']; accept?: string },
 ) {
-  for (let attempt = 1; ; attempt += 1) {
+  // Counted apart, so a mix of 429s and 503s still ends (#89 review).
+  let limitedTries = 0;
+  let busyTries = 0;
+  for (;;) {
     const response = await fetch(url, {
       headers: { 'User-Agent': userAgent, ...(options.accept ? { Accept: options.accept } : {}) },
       signal: AbortSignal.timeout(requestTimeout),
@@ -37,10 +44,25 @@ export async function politeGet(
       throw new ServiceError(`${options.name} ${response.status}`);
     }
     const asked = Number(response.headers.get('retry-after'));
-    const seconds = asked > 0 ? asked : defaultRetrySeconds;
-    if (attempt === maxAttempts || seconds > longestWaitSeconds) {
-      throw new RateLimited(`${options.name} ${response.status}, 대기 ${seconds}초 요청`);
+    if (response.status === 429) {
+      limitedTries += 1;
+      const seconds = asked > 0 ? asked : defaultRetrySeconds;
+      if (seconds > longestWaitSeconds || limitedTries >= maxAttempts) {
+        throw new RateLimited(`${options.name} 429, 대기 ${seconds}초 요청`);
+      }
+      await options.sleep(seconds * 1000);
+      continue;
     }
-    await options.sleep(seconds * 1000);
+    // A 503 is a busy server, not a limit: wait what it asks or longer, never past longestWaitSeconds.
+    if (asked > longestWaitSeconds) {
+      throw new RateLimited(`${options.name} 503, 대기 ${asked}초 요청`);
+    }
+    busyTries += 1;
+    // Still busy after every try: that item fails, and the caller moves on to the next one.
+    if (busyTries >= busyAttempts) {
+      throw new ServiceError(`${options.name} 503, ${busyAttempts}번 시도`);
+    }
+    const backoff = busyFirstWaitSeconds * 2 ** (busyTries - 1);
+    await options.sleep(Math.max(asked > 0 ? asked : 0, backoff) * 1000);
   }
 }

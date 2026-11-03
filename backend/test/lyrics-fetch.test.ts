@@ -135,22 +135,112 @@ test('a 429 without Retry-After waits a minute, and repeated ones give up', asyn
   assert.equal(calls, 3);
 });
 
-test('a 503 is waited out like a 429', async () => {
+test('a 503 waits as long as asked when that is longer than the backoff', async () => {
   let calls = 0;
   let accept: string | undefined;
   await withLrclib(
     (_url, res, req) => {
       calls += 1;
       accept = req.headers.accept;
-      if (calls === 1) json(res, 503, {}, { 'Retry-After': '5' });
+      if (calls === 1) json(res, 503, {}, { 'Retry-After': '30' });
       else json(res, 200, item({}));
     },
     async (source, waits) => {
       assert.ok(await requestLyrics(query, source));
-      assert.ok(waits.includes(5000));
+      assert.deepEqual(waits, [700, 30_000, 700]);
     },
   );
   assert.equal(accept, 'application/json');
+});
+
+test('a 503 without Retry-After waits the backoff, not a minute', async () => {
+  await withLrclib(
+    (_url, res) => json(res, 503, {}),
+    async (source, waits) => {
+      await assert.rejects(requestLyrics(query, source), /LRCLIB 503, 5번 시도/);
+      assert.deepEqual(waits, [700, 5000, 700, 10_000, 700, 20_000, 700, 40_000, 700]);
+    },
+  );
+});
+
+test('a 503 asking for a very long wait stops the run', async () => {
+  let calls = 0;
+  await withLrclib(
+    (_url, res) => {
+      calls += 1;
+      json(res, 503, {}, { 'Retry-After': '3600' });
+    },
+    async (source) => {
+      const result = await fetchMissingLyrics(fakePool(3), source);
+      assert.deepEqual(result.failed, ['곡 1']);
+      assert.equal(result.stopped, 'LRCLIB 503, 대기 3600초 요청');
+    },
+  );
+  assert.equal(calls, 1);
+});
+
+// A shared count once looped forever here, so a timeout turns that into a failure, not a stuck run.
+test('503s and 429s mixed still end, counted apart', { timeout: 10_000 }, async () => {
+  const cases = [
+    { statuses: [503, 503, 503], then: 429, error: /LRCLIB 429/, calls: 6 },
+    { statuses: [503, 503, 503, 503], then: 429, error: /LRCLIB 429/, calls: 7 },
+    { statuses: [429, 429], then: 503, error: /LRCLIB 503, 5번 시도/, calls: 7 },
+    { statuses: [503, 429, 503, 429], then: 503, error: /LRCLIB 503, 5번 시도/, calls: 7 },
+  ];
+  for (const { statuses, then, error, calls: expected } of cases) {
+    let calls = 0;
+    await withLrclib(
+      (_url, res) => {
+        calls += 1;
+        json(res, statuses[calls - 1] ?? then, {}, { 'Retry-After': '1' });
+      },
+      async (source) => {
+        await assert.rejects(requestLyrics(query, source), error);
+      },
+    );
+    assert.equal(calls, expected, `${statuses.join(',')} then ${then}`);
+  }
+});
+
+test('a busy 503 waits longer each time, and after five tries fails that song', async () => {
+  let calls = 0;
+  await withLrclib(
+    (_url, res) => {
+      calls += 1;
+      json(res, 503, {}, { 'Retry-After': '1' });
+    },
+    async (source, waits) => {
+      await assert.rejects(requestLyrics(query, source), (error: Error) => {
+        assert.equal(error.message, 'LRCLIB 503, 5번 시도');
+        assert.equal(
+          error.constructor.name,
+          'ServiceError',
+          'not a rate limit, so the run goes on',
+        );
+        return true;
+      });
+      assert.deepEqual(waits, [700, 5000, 700, 10_000, 700, 20_000, 700, 40_000, 700]);
+    },
+  );
+  assert.equal(calls, 5);
+});
+
+test('a song that stays busy fails alone, and the run goes on', async () => {
+  const logged: string[] = [];
+  await withLrclib(
+    (url, res) => {
+      if (url.searchParams.get('track_name') === '곡 1') json(res, 503, {}, { 'Retry-After': '1' });
+      else if (url.pathname === '/api/get') json(res, 404, {});
+      else json(res, 200, []);
+    },
+    async (source) => {
+      const result = await fetchMissingLyrics(fakePool(2), source, (line) => logged.push(line));
+      assert.deepEqual(result.failed, ['곡 1']);
+      assert.deepEqual(result.missing, ['곡 2']);
+      assert.equal(result.stopped, null);
+    },
+  );
+  assert.deepEqual(logged, ['실패: 곡 1 (LRCLIB 503, 5번 시도)', '없음: 곡 2']);
 });
 
 test('a very long wait is not waited for', async () => {
