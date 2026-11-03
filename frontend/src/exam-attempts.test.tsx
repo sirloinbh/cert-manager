@@ -248,6 +248,23 @@ test('declining the question leaves the goal alone', async () => {
   );
 });
 
+test('closing the question with Escape leaves the goal alone and returns focus', async () => {
+  const api = await openDetail();
+  fireEvent.click(await screen.findByRole('button', { name: '기록 추가' }));
+  change('시험일', '2026-03-15');
+  change('결과', 'passed');
+  fireEvent.click(screen.getByRole('button', { name: '저장' }));
+  const dialog = await screen.findByRole('dialog', { name: '목표 상태를 합격으로 바꿀까요?' });
+  fireEvent.keyDown(dialog, { key: 'Escape' });
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  expect(
+    api.sent.some((item) => item.path === '/api/certifications/1' && item.method === 'PUT'),
+  ).toBe(false);
+  await waitFor(() =>
+    expect(screen.getByRole('heading', { name: '응시·취득 기록' })).toHaveFocus(),
+  );
+});
+
 test('editing an attempt that is already a pass does not ask again', async () => {
   await openDetail({
     attempts: [
