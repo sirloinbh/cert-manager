@@ -153,6 +153,47 @@ test('a 503 is waited out like a 429', async () => {
   assert.equal(accept, 'application/json');
 });
 
+test('a busy 503 waits longer each time, and after five tries fails that song', async () => {
+  let calls = 0;
+  await withLrclib(
+    (_url, res) => {
+      calls += 1;
+      json(res, 503, {}, { 'Retry-After': '1' });
+    },
+    async (source, waits) => {
+      await assert.rejects(requestLyrics(query, source), (error: Error) => {
+        assert.equal(error.message, 'LRCLIB 503, 5번 시도');
+        assert.equal(
+          error.constructor.name,
+          'ServiceError',
+          'not a rate limit, so the run goes on',
+        );
+        return true;
+      });
+      assert.deepEqual(waits, [700, 5000, 700, 10_000, 700, 20_000, 700, 40_000, 700]);
+    },
+  );
+  assert.equal(calls, 5);
+});
+
+test('a song that stays busy fails alone, and the run goes on', async () => {
+  const logged: string[] = [];
+  await withLrclib(
+    (url, res) => {
+      if (url.searchParams.get('track_name') === '곡 1') json(res, 503, {}, { 'Retry-After': '1' });
+      else if (url.pathname === '/api/get') json(res, 404, {});
+      else json(res, 200, []);
+    },
+    async (source) => {
+      const result = await fetchMissingLyrics(fakePool(2), source, (line) => logged.push(line));
+      assert.deepEqual(result.failed, ['곡 1']);
+      assert.deepEqual(result.missing, ['곡 2']);
+      assert.equal(result.stopped, null);
+    },
+  );
+  assert.deepEqual(logged, ['실패: 곡 1 (LRCLIB 503, 5번 시도)', '없음: 곡 2']);
+});
+
 test('a very long wait is not waited for', async () => {
   await withLrclib(
     (_url, res) => json(res, 429, {}, { 'Retry-After': '3600' }),

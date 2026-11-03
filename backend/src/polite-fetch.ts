@@ -2,6 +2,10 @@
 
 const userAgent = 'cert-manager/0.1 (https://github.com/sirloinbh/cert-manager)';
 const maxAttempts = 3;
+// A busy LRCLIB search answers 503 with "Retry-After: 1" about half the time (#89),
+// so a 503 gets more tries, each waiting longer than the last.
+const busyAttempts = 5;
+const busyFirstWaitSeconds = 5;
 const requestTimeout = 30_000;
 // When a 429 or 503 does not say how long to wait.
 const defaultRetrySeconds = 60;
@@ -36,11 +40,17 @@ export async function politeGet(
     if (response.status !== 429 && response.status !== 503) {
       throw new ServiceError(`${options.name} ${response.status}`);
     }
+    const busy = response.status === 503;
     const asked = Number(response.headers.get('retry-after'));
     const seconds = asked > 0 ? asked : defaultRetrySeconds;
-    if (attempt === maxAttempts || seconds > longestWaitSeconds) {
+    if (seconds > longestWaitSeconds || (!busy && attempt === maxAttempts)) {
       throw new RateLimited(`${options.name} ${response.status}, 대기 ${seconds}초 요청`);
     }
-    await options.sleep(seconds * 1000);
+    // Still busy after every try: that item fails, and the caller moves on to the next one.
+    if (busy && attempt === busyAttempts) {
+      throw new ServiceError(`${options.name} 503, ${busyAttempts}번 시도`);
+    }
+    const wait = busy ? Math.max(seconds, busyFirstWaitSeconds * 2 ** (attempt - 1)) : seconds;
+    await options.sleep(wait * 1000);
   }
 }
