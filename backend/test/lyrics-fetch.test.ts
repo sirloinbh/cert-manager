@@ -179,19 +179,26 @@ test('a 503 asking for a very long wait stops the run', async () => {
   assert.equal(calls, 1);
 });
 
-test('503s and 429s mixed still end, counted apart', async () => {
-  for (const busyFirst of [3, 4]) {
+// A shared count once looped forever here, so a timeout turns that into a failure, not a stuck run.
+test('503s and 429s mixed still end, counted apart', { timeout: 10_000 }, async () => {
+  const cases = [
+    { statuses: [503, 503, 503], then: 429, error: /LRCLIB 429/, calls: 6 },
+    { statuses: [503, 503, 503, 503], then: 429, error: /LRCLIB 429/, calls: 7 },
+    { statuses: [429, 429], then: 503, error: /LRCLIB 503, 5번 시도/, calls: 7 },
+    { statuses: [503, 429, 503, 429], then: 503, error: /LRCLIB 503, 5번 시도/, calls: 7 },
+  ];
+  for (const { statuses, then, error, calls: expected } of cases) {
     let calls = 0;
     await withLrclib(
       (_url, res) => {
         calls += 1;
-        json(res, calls <= busyFirst ? 503 : 429, {}, { 'Retry-After': '1' });
+        json(res, statuses[calls - 1] ?? then, {}, { 'Retry-After': '1' });
       },
       async (source) => {
-        await assert.rejects(requestLyrics(query, source), /LRCLIB 429/);
+        await assert.rejects(requestLyrics(query, source), error);
       },
     );
-    assert.equal(calls, busyFirst + 3, `${busyFirst} busy answers, then three 429s`);
+    assert.equal(calls, expected, `${statuses.join(',')} then ${then}`);
   }
 });
 
