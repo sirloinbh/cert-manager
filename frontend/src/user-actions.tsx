@@ -15,6 +15,7 @@ import {
 import { SkeletonList } from './components/ui/skeleton';
 import { toast } from './components/ui/sonner';
 import { errorText } from './lib/use-notice';
+import { cn } from './lib/utils';
 import { useReloading } from './use-load';
 import { alertCount, type UserAction, userActionApi } from './user-action-data';
 
@@ -41,8 +42,7 @@ function ActionItem({
         </p>
       ) : null}
       {action.dueDate !== null && action.daysUntilDue !== null ? (
-        // Not cn(): tailwind-merge takes text-caption for a color and drops it (project-standards#357).
-        <p className={`text-caption ${overdue ? 'font-semibold text-destructive' : ''}`}>
+        <p className={cn('text-caption', overdue && 'font-semibold text-destructive')}>
           <time dateTime={action.dueDate}>{action.dueDate}</time>
           {' · '}
           {deadlineCountdown(action.daysUntilDue)}
