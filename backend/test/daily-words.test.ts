@@ -31,10 +31,10 @@ test('a day that is not a real date, or has not come yet, is refused before any 
     async (call) => {
       const bad = await call('/api/daily-words?day=2026-02-30');
       assert.equal(bad.status, 400);
-      assert.deepEqual(bad.data, { error: '조회일이 실제 날짜가 아닙니다' });
+      assert.deepEqual(bad.data, { error: 'Date is not a real date' });
       const late = await call('/api/daily-words?day=2026-11-02');
       assert.equal(late.status, 400);
-      assert.deepEqual(late.data, { error: '아직 오지 않은 날짜의 단어는 볼 수 없습니다' });
+      assert.deepEqual(late.data, { error: 'Words for a future date are not available' });
     },
     { today },
   );
@@ -63,17 +63,17 @@ test('learning a word needs a yes or no and an existing word', async () => {
   await withApi(pool, async (call) => {
     const missing = await call('/api/words/1/learned', { method: 'PUT' });
     assert.equal(missing.status, 400);
-    assert.deepEqual(missing.data, { error: '외웠는지는 true나 false여야 합니다' });
+    assert.deepEqual(missing.data, { error: 'Learned must be true or false' });
     const notBoolean = await call('/api/words/1/learned', {
       method: 'PUT',
       body: { learned: 'yes' },
     });
     assert.equal(notBoolean.status, 400);
     const badId = await call('/api/words/x/learned', { method: 'PUT', body: { learned: true } });
-    assert.deepEqual(badId.data, { error: 'Invalid 단어 ID' });
+    assert.deepEqual(badId.data, { error: 'Invalid word ID' });
     assert.deepEqual(queries, []);
     const gone = await call('/api/words/1/learned', { method: 'PUT', body: { learned: true } });
     assert.equal(gone.status, 404);
-    assert.deepEqual(gone.data, { error: '단어를 찾을 수 없습니다' });
+    assert.deepEqual(gone.data, { error: 'Word not found' });
   });
 });

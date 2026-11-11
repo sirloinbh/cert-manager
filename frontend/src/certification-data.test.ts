@@ -27,16 +27,16 @@ const goal = (fields: Partial<Certification>): Certification => ({
 });
 
 test('the countdown reads as days left, the exam day, days passed or no date', () => {
-  expect(examCountdown(44)).toBe('44일 남음');
-  expect(examCountdown(0)).toBe('오늘 시험');
-  expect(examCountdown(-5)).toBe('5일 지남');
-  expect(examCountdown(null)).toBe('시험일 미정');
+  expect(examCountdown(44)).toBe('44 days left');
+  expect(examCountdown(0)).toBe('Exam today');
+  expect(examCountdown(-5)).toBe('5 days ago');
+  expect(examCountdown(null)).toBe('Exam date not set');
 });
 
 test('validity shows months, never expires or unknown', () => {
-  expect(validityText({ validityKind: 'months', validityMonths: 24 })).toBe('24개월');
-  expect(validityText({ validityKind: 'none', validityMonths: null })).toBe('만료 없음');
-  expect(validityText({ validityKind: 'unknown', validityMonths: null })).toBe('모름');
+  expect(validityText({ validityKind: 'months', validityMonths: 24 })).toBe('24 months');
+  expect(validityText({ validityKind: 'none', validityMonths: null })).toBe('No expiry');
+  expect(validityText({ validityKind: 'unknown', validityMonths: null })).toBe('Unknown');
 });
 
 test('groups follow the menu order of categories, keep item order and skip empty ones', () => {

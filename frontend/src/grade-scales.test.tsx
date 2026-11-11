@@ -11,7 +11,7 @@ const today = '2026-10-31';
 const scales: GradeScale[] = [
   {
     key: 'toeic',
-    label: '토익 (CEFR 기준)',
+    label: 'TOEIC (CEFR mapping)',
     note: 'CEFR 안내',
     sourceUrl: 'https://example.com/toeic',
     ranked: true,
@@ -22,7 +22,7 @@ const scales: GradeScale[] = [
   },
   {
     key: 'toeic_speaking',
-    label: '토익 스피킹',
+    label: 'TOEIC Speaking',
     note: 'IM 안내',
     sourceUrl: 'https://example.com/speaking',
     ranked: true,
@@ -94,7 +94,7 @@ function fakeApi(
       if (path === '/api/grade-scales')
         return Promise.resolve(options.scalesHold).then(() =>
           options.scalesFail
-            ? reply(500, { error: '서버 오류가 발생했습니다' })
+            ? reply(500, { error: 'A server error occurred' })
             : reply(200, { scales }),
         );
       if (path === '/api/certifications' && method === 'POST') {
@@ -125,7 +125,7 @@ const openDetail = async (options?: Parameters<typeof fakeApi>[0]) => {
   const api = fakeApi(options);
   window.history.pushState({}, '', '/certifications/1');
   render(<App />);
-  await screen.findByRole('heading', { level: 3, name: /등급$/ });
+  await screen.findByRole('heading', { level: 3, name: /grades$/ });
   return api;
 };
 
@@ -133,9 +133,9 @@ const change = (label: string, value: string) =>
   fireEvent.change(screen.getByLabelText(label), { target: { value } });
 
 const addRecord = async () => {
-  fireEvent.click(await screen.findByRole('button', { name: '기록 추가' }));
-  change('시험일', '2026-03-15');
-  change('결과', 'scored');
+  fireEvent.click(await screen.findByRole('button', { name: 'Add attempt' }));
+  change('Exam date', '2026-03-15');
+  change('Result', 'scored');
 };
 
 const sentAttempt = (api: { sent: Sent[] }) =>
@@ -143,40 +143,40 @@ const sentAttempt = (api: { sent: Sent[] }) =>
 
 test('the detail page shows the scale from the top with the target and its source', async () => {
   await openDetail();
-  const ladder = screen.getByRole('heading', { level: 3, name: '토익 (CEFR 기준) 등급' })
+  const ladder = screen.getByRole('heading', { level: 3, name: 'TOEIC (CEFR mapping) grades' })
     .parentElement as HTMLElement;
   const rows = within(ladder).getAllByRole('listitem');
   expect(rows[0]).toHaveTextContent('B2');
-  expect(rows[0]).toHaveTextContent('목표');
-  expect(rows[0]).toHaveTextContent('785~944점');
+  expect(rows[0]).toHaveTextContent('Target');
+  expect(rows[0]).toHaveTextContent('785-944');
   expect(rows[1]).toHaveTextContent('B1');
-  expect(within(ladder).getByRole('link', { name: '출처 보기' })).toHaveAttribute(
+  expect(within(ladder).getByRole('link', { name: 'View source' })).toHaveAttribute(
     'href',
     'https://example.com/toeic',
   );
-  expect(screen.getByText('목표 등급')).toBeInTheDocument();
+  expect(screen.getByText('Target grade')).toBeInTheDocument();
 });
 
 test('a score fills its grade, and the saved record reaches the target', async () => {
   const api = await openDetail();
   await addRecord();
-  change('점수', '800');
-  expect(screen.getByLabelText('등급')).toHaveValue('B2');
-  expect(screen.getByText('800점의 기준 등급은 B2입니다.')).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: '저장' }));
-  expect(await screen.findByText('목표 달성')).toBeInTheDocument();
+  change('Score', '800');
+  expect(screen.getByLabelText('Grade')).toHaveValue('B2');
+  expect(screen.getByText('The standard grade for a score of 800 is B2.')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  expect(await screen.findByText('Goal reached')).toBeInTheDocument();
   expect(sentAttempt(api)).toMatchObject({ score: 800, grade: 'B2' });
-  expect(await screen.findByText('최근 결과')).toBeInTheDocument();
+  expect(await screen.findByText('Latest result')).toBeInTheDocument();
 });
 
 test('a score below the target does not reach it', async () => {
   await openDetail();
   await addRecord();
-  change('점수', '600');
-  expect(screen.getByLabelText('등급')).toHaveValue('B1');
-  fireEvent.click(screen.getByRole('button', { name: '저장' }));
-  expect(await screen.findByText('600점 · B1')).toBeInTheDocument();
-  expect(screen.queryByText('목표 달성')).not.toBeInTheDocument();
+  change('Score', '600');
+  expect(screen.getByLabelText('Grade')).toHaveValue('B1');
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  expect(await screen.findByText('600 · B1')).toBeInTheDocument();
+  expect(screen.queryByText('Goal reached')).not.toBeInTheDocument();
 });
 
 test('a score shared by several levels asks the user to choose', async () => {
@@ -184,36 +184,36 @@ test('a score shared by several levels asks the user to choose', async () => {
     goal: goal({ gradeScale: 'toeic_speaking', targetGrade: 'IM2' }),
   });
   await addRecord();
-  change('점수', '120');
-  expect(screen.getByLabelText('등급')).toHaveValue('');
-  expect(screen.getByText(/IM1, IM2, IM3 중 하나입니다/)).toBeInTheDocument();
-  change('등급', 'IM3');
-  fireEvent.click(screen.getByRole('button', { name: '저장' }));
-  expect(await screen.findByText('목표 달성')).toBeInTheDocument();
+  change('Score', '120');
+  expect(screen.getByLabelText('Grade')).toHaveValue('');
+  expect(screen.getByText(/is one of IM1, IM2, IM3/)).toBeInTheDocument();
+  change('Grade', 'IM3');
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  expect(await screen.findByText('Goal reached')).toBeInTheDocument();
   expect(sentAttempt(api)).toMatchObject({ grade: 'IM3' });
 });
 
 test('a chosen grade stays when the score changes afterwards', async () => {
   await openDetail();
   await addRecord();
-  change('점수', '800');
-  change('등급', 'B1');
-  change('점수', '900');
-  expect(screen.getByLabelText('등급')).toHaveValue('B1');
+  change('Score', '800');
+  change('Grade', 'B1');
+  change('Score', '900');
+  expect(screen.getByLabelText('Grade')).toHaveValue('B1');
 });
 
 test('a saved grade from an older format stays selectable', async () => {
   await openDetail({ attempts: [attempt({ score: 170, grade: 'Level 7' })] });
-  fireEvent.click(await screen.findByRole('button', { name: '2026-03-15 기록 수정' }));
-  expect(screen.getByLabelText('등급')).toHaveValue('Level 7');
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit attempt on March 15, 2026' }));
+  expect(screen.getByLabelText('Grade')).toHaveValue('Level 7');
 });
 
 test('a failed attempt names a level but does not reach it', async () => {
   await openDetail({
     attempts: [attempt({ outcome: 'failed', score: 800, grade: 'B2' })],
   });
-  expect(await screen.findByText('800점 · B2')).toBeInTheDocument();
-  expect(screen.queryByText('목표 달성')).not.toBeInTheDocument();
+  expect(await screen.findByText('800 · B2')).toBeInTheDocument();
+  expect(screen.queryByText('Goal reached')).not.toBeInTheDocument();
 });
 
 test('a goal with both targets needs both', async () => {
@@ -221,18 +221,18 @@ test('a goal with both targets needs both', async () => {
     goal: goal({ targetScore: 900 }),
     attempts: [attempt({ score: 800, grade: 'B2' })],
   });
-  expect(await screen.findByText('800점 · B2')).toBeInTheDocument();
-  expect(screen.queryByText('목표 달성')).not.toBeInTheDocument();
+  expect(await screen.findByText('800 · B2')).toBeInTheDocument();
+  expect(screen.queryByText('Goal reached')).not.toBeInTheDocument();
 });
 
 test('a waiting attempt fills its grade once the result and score are in', async () => {
   await openDetail({ attempts: [attempt({ outcome: 'waiting', grade: null })] });
-  fireEvent.click(await screen.findByRole('button', { name: '2026-03-15 기록 수정' }));
-  change('결과', 'scored');
-  change('점수', '800');
-  expect(screen.getByLabelText('등급')).toHaveValue('B2');
-  change('점수', '');
-  expect(screen.getByLabelText('등급')).toHaveValue('');
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit attempt on March 15, 2026' }));
+  change('Result', 'scored');
+  change('Score', '800');
+  expect(screen.getByLabelText('Grade')).toHaveValue('B2');
+  change('Score', '');
+  expect(screen.getByLabelText('Grade')).toHaveValue('');
 });
 
 test('a saved grade stays when the score changes, and an empty one follows the score', async () => {
@@ -242,14 +242,14 @@ test('a saved grade stays when the score changes, and an empty one follows the s
       attempt({ id: 6, examDate: '2026-01-10', score: 800, grade: '' }),
     ],
   });
-  fireEvent.click(await screen.findByRole('button', { name: '2026-03-15 기록 수정' }));
-  change('점수', '900');
-  expect(screen.getByLabelText('등급')).toHaveValue('B1');
-  fireEvent.click(screen.getByRole('button', { name: '취소' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit attempt on March 15, 2026' }));
+  change('Score', '900');
+  expect(screen.getByLabelText('Grade')).toHaveValue('B1');
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 
-  fireEvent.click(screen.getByRole('button', { name: '2026-01-10 기록 수정' }));
-  expect(screen.getByLabelText('등급')).toHaveValue('B2');
+  fireEvent.click(screen.getByRole('button', { name: 'Edit attempt on January 10, 2026' }));
+  expect(screen.getByLabelText('Grade')).toHaveValue('B2');
 });
 
 test('a grade typed before the list arrives stays afterwards', async () => {
@@ -260,22 +260,22 @@ test('a grade typed before the list arrives stays afterwards', async () => {
   fakeApi({ scalesHold });
   window.history.pushState({}, '', '/certifications/1');
   render(<App />);
-  fireEvent.click(await screen.findByRole('button', { name: '기록 추가' }));
-  change('결과', 'scored');
-  change('등급', 'B1');
+  fireEvent.click(await screen.findByRole('button', { name: 'Add attempt' }));
+  change('Result', 'scored');
+  change('Grade', 'B1');
   release();
-  await waitFor(() => expect(screen.getByLabelText('등급').tagName).toBe('SELECT'));
-  expect(screen.getByLabelText('등급')).toHaveValue('B1');
+  await waitFor(() => expect(screen.getByLabelText('Grade').tagName).toBe('SELECT'));
+  expect(screen.getByLabelText('Grade')).toHaveValue('B1');
 });
 
 test('marking the goal passed keeps its scale and target', async () => {
   const api = await openDetail();
   await addRecord();
-  change('결과', 'passed');
-  change('등급', 'B2');
-  fireEvent.click(screen.getByRole('button', { name: '저장' }));
-  const dialog = await screen.findByRole('dialog', { name: '목표 상태를 합격으로 바꿀까요?' });
-  fireEvent.click(within(dialog).getByRole('button', { name: '바꾸기' }));
+  change('Result', 'passed');
+  change('Grade', 'B2');
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  const dialog = await screen.findByRole('dialog', { name: 'Change the goal status to Passed?' });
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Change' }));
   await waitFor(() =>
     expect(
       api.sent.find((item) => item.path === '/api/certifications/1' && item.method === 'PUT')?.body,
@@ -287,35 +287,37 @@ test('the detail page says so when the list cannot load', async () => {
   fakeApi({ scalesFail: true });
   window.history.pushState({}, '', '/certifications/1');
   render(<App />);
-  expect(await screen.findByText(/등급표를 보여 줄 수 없습니다/)).toBeInTheDocument();
-  expect(screen.getByText('목표 등급')).toBeInTheDocument();
+  expect(await screen.findByText(/grade table cannot be shown/)).toBeInTheDocument();
+  expect(screen.getByText('Target grade')).toBeInTheDocument();
 });
 
 test('a goal without a scale keeps the free text field and no ladder', async () => {
   fakeApi({ goal: goal({ gradeScale: 'none', targetGrade: null }) });
   window.history.pushState({}, '', '/certifications/1');
   render(<App />);
-  fireEvent.click(await screen.findByRole('button', { name: '기록 추가' }));
-  change('결과', 'scored');
-  expect(screen.getByLabelText('등급').tagName).toBe('INPUT');
-  expect(screen.queryByText(/ 등급$/, { selector: 'h3' })).not.toBeInTheDocument();
+  fireEvent.click(await screen.findByRole('button', { name: 'Add attempt' }));
+  change('Result', 'scored');
+  expect(screen.getByLabelText('Grade').tagName).toBe('INPUT');
+  expect(screen.queryByText(/ grades$/, { selector: 'h3' })).not.toBeInTheDocument();
 });
 
 test('the goal form picks a scale and target, and a new scale clears the target', async () => {
   const api = fakeApi({ goal: goal({ gradeScale: 'none', targetGrade: null }) });
   window.history.pushState({}, '', '/certifications/new');
   render(<App />);
-  fireEvent.change(await screen.findByLabelText('자격증 이름'), { target: { value: '토익' } });
-  await waitFor(() => expect(screen.getByLabelText('등급 체계')).toBeEnabled());
-  expect(screen.queryByLabelText('목표 등급')).not.toBeInTheDocument();
+  fireEvent.change(await screen.findByLabelText('Certification name'), {
+    target: { value: '토익' },
+  });
+  await waitFor(() => expect(screen.getByLabelText('Grade scale')).toBeEnabled());
+  expect(screen.queryByLabelText('Target grade')).not.toBeInTheDocument();
 
-  change('등급 체계', 'toeic');
-  change('목표 등급', 'B2');
-  change('등급 체계', 'toeic_speaking');
-  expect(screen.getByLabelText('목표 등급')).toHaveValue('');
-  change('목표 등급', 'IH');
+  change('Grade scale', 'toeic');
+  change('Target grade', 'B2');
+  change('Grade scale', 'toeic_speaking');
+  expect(screen.getByLabelText('Target grade')).toHaveValue('');
+  change('Target grade', 'IH');
 
-  fireEvent.click(screen.getByRole('button', { name: '추가' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Add' }));
   await waitFor(() =>
     expect(
       api.sent.find((item) => item.method === 'POST' && item.path === '/api/certifications')?.body,
@@ -327,9 +329,9 @@ test('the goal form keeps the saved scale when the list cannot load', async () =
   const api = fakeApi({ scalesFail: true });
   window.history.pushState({}, '', '/certifications/1/edit');
   render(<App />);
-  expect(await screen.findByText(/이미 고른 값은 그대로 저장됩니다/)).toBeInTheDocument();
-  expect(screen.getByLabelText('등급 체계')).toBeDisabled();
-  fireEvent.click(screen.getByRole('button', { name: '저장' }));
+  expect(await screen.findByText(/already chosen is saved as it is/)).toBeInTheDocument();
+  expect(screen.getByLabelText('Grade scale')).toBeDisabled();
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
   await waitFor(() =>
     expect(
       api.sent.find((item) => item.method === 'PUT' && item.path === '/api/certifications/1')?.body,
@@ -341,5 +343,5 @@ test('the goal list shows the target grade', async () => {
   fakeApi();
   window.history.pushState({}, '', '/certifications');
   render(<App />);
-  expect(await screen.findByText('목표 등급 B2')).toBeInTheDocument();
+  expect(await screen.findByText('Target grade B2')).toBeInTheDocument();
 });

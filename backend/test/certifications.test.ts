@@ -86,30 +86,36 @@ test('a new goal fills omitted optional fields with their defaults and answers 2
 test('invalid input is a Korean 400 and never reaches the database', async () => {
   const { pool, queries } = fakePool(() => ({ rows: [] }));
   const cases: [unknown, string][] = [
-    [undefined, '자격증 이름을 입력해 주세요'],
-    [{ name: '   ', category: 'dev' }, '자격증 이름을 입력해 주세요'],
-    [{ name: 'a'.repeat(201), category: 'dev' }, '자격증 이름은 200자 이하로 입력해 주세요'],
-    [{ name: '토익', category: 'music' }, '분류는 영어, 개발, 생활 중 하나여야 합니다'],
-    [{ name: '토익', category: 'english', status: 'done' }, '상태는'],
-    [{ name: '토익', category: 'english', targetScore: 1.5 }, '목표 점수는 정수여야 합니다'],
-    [{ name: '토익', category: 'english', targetScore: -1 }, '목표 점수는 0 이상이어야 합니다'],
-    [{ name: '토익', category: 'english', targetExamDate: '2026-02-30' }, '실제 날짜가 아닙니다'],
+    [undefined, 'Certification name is required'],
+    [{ name: '   ', category: 'dev' }, 'Certification name is required'],
+    [
+      { name: 'a'.repeat(201), category: 'dev' },
+      'Certification name must be 200 characters or fewer',
+    ],
+    [{ name: '토익', category: 'music' }, 'Category must be English, Development, or Life'],
+    [{ name: '토익', category: 'english', status: 'done' }, 'Status must be'],
+    [
+      { name: '토익', category: 'english', targetScore: 1.5 },
+      'Target score must be a whole number',
+    ],
+    [{ name: '토익', category: 'english', targetScore: -1 }, 'Target score must be 0 or more'],
+    [{ name: '토익', category: 'english', targetExamDate: '2026-02-30' }, 'is not a real date'],
     [{ name: '토익', category: 'english', targetExamDate: '2026/12/13' }, 'YYYY-MM-DD'],
     [
       { name: '토익', category: 'english', targetExamDate: '0000-01-01' },
-      '1900-01-01 이후여야 합니다',
+      'must be on or after 1900-01-01',
     ],
-    [[], '요청 본문은 JSON 객체여야 합니다'],
+    [[], 'Request body must be a JSON object'],
     // A bare JSON string never reaches the route: express.json() (strict) rejects it first.
     ['토익', 'Request body is not valid JSON'],
-    [{ name: '토익', category: 'english', validityKind: 'months' }, '개월 수를 입력해 주세요'],
+    [{ name: '토익', category: 'english', validityKind: 'months' }, 'Enter the validity months'],
     [
       { name: '토익', category: 'english', validityKind: 'none', validityMonths: 24 },
-      '개월 수를 비워 주세요',
+      'Leave the validity months empty',
     ],
     [
       { name: '토익', category: 'english', validityKind: 'months', validityMonths: 0 },
-      '유효기간 개월 수는 1 이상이어야 합니다',
+      'Validity months must be 1 or more',
     ],
   ];
   await withApi(pool, async (call) => {
@@ -125,9 +131,9 @@ test('invalid input is a Korean 400 and never reaches the database', async () =>
 test('an array sent as text answers only the type message', async () => {
   const { pool } = fakePool(() => ({ rows: [] }));
   const cases: [unknown, string][] = [
-    [{ name: [], category: 'dev' }, '자격증 이름을 입력해 주세요'],
-    [{ name: Array(201).fill(0), category: 'dev' }, '자격증 이름을 입력해 주세요'],
-    [{ name: 'n', category: 'dev', issuer: Array(201).fill(0) }, '주관 기관은 문자열이어야 합니다'],
+    [{ name: [], category: 'dev' }, 'Certification name is required'],
+    [{ name: Array(201).fill(0), category: 'dev' }, 'Certification name is required'],
+    [{ name: 'n', category: 'dev', issuer: Array(201).fill(0) }, 'Issuer must be text'],
   ];
   await withApi(pool, async (call) => {
     for (const [body, message] of cases) {
@@ -145,7 +151,7 @@ test('a missing goal is a Korean 404 for read, update and delete', async () => {
     for (const init of [{}, { method: 'PUT', body }, { method: 'DELETE' }]) {
       const { status, data } = await call('/api/certifications/99', init);
       assert.equal(status, 404);
-      assert.equal(data.error, '자격증 목표를 찾을 수 없습니다');
+      assert.equal(data.error, 'Certification goal not found');
     }
   });
 });
@@ -156,7 +162,7 @@ test('a malformed id is a Korean 400', async () => {
     for (const id of ['abc', '0', '01', '1e3']) {
       const { status, data } = await call(`/api/certifications/${id}`, { method: 'DELETE' });
       assert.equal(status, 400);
-      assert.equal(data.error, 'Invalid 자격증 목표 ID');
+      assert.equal(data.error, 'Invalid certification goal ID');
     }
   });
   assert.equal(queries.length, 0);

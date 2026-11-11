@@ -169,7 +169,7 @@ test('five failures in a row stop the run, and an unreadable answer is not print
       assert.equal(result.failed.length, 5);
     },
   );
-  assert.equal(logged[0], '실패: a (연결 실패 또는 잘못된 응답)');
+  assert.equal(logged[0], 'Failed: a (connection failed or invalid response)');
 });
 
 test('a database error stops the run', async () => {

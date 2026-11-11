@@ -12,7 +12,7 @@ import {
 const task = (fields: Partial<StudyTask> = {}): StudyTask => ({
   id: 1,
   stageId: 1,
-  title: '할 일',
+  title: 'Task',
   position: 1,
   dueDate: null,
   daysUntilDue: null,
@@ -44,10 +44,10 @@ test.each([
 
 test('the period names whichever dates are set', () => {
   expect(periodText({ startDate: '2026-11-01', endDate: '2026-11-07' })).toBe(
-    '2026-11-01 ~ 2026-11-07',
+    'November 1, 2026 ~ November 7, 2026',
   );
-  expect(periodText({ startDate: '2026-11-01', endDate: null })).toBe('2026-11-01부터');
-  expect(periodText({ startDate: null, endDate: '2026-11-07' })).toBe('2026-11-07까지');
+  expect(periodText({ startDate: '2026-11-01', endDate: null })).toBe('From November 1, 2026');
+  expect(periodText({ startDate: null, endDate: '2026-11-07' })).toBe('Until November 7, 2026');
   expect(periodText({ startDate: null, endDate: null })).toBe('');
 });
 

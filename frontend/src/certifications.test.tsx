@@ -72,21 +72,21 @@ function fakeApi(initial: Certification[] = [], options: { deleteFails?: boolean
       }
       if (path === '/api/certifications' && method === 'POST') {
         if (!String(body?.name ?? '').trim())
-          return reply(400, { error: '자격증 이름을 입력해 주세요' });
+          return reply(400, { error: 'Certification name is required' });
         const created = save(nextId++, body ?? {});
         store.push(created);
         return reply(201, { certification: created });
       }
       const id = Number(/^\/api\/certifications\/(\d+)$/.exec(path)?.[1]);
       const found = store.find((item) => item.id === id);
-      if (!found) return reply(404, { error: '자격증 목표를 찾을 수 없습니다' });
+      if (!found) return reply(404, { error: 'Certification goal not found' });
       if (method === 'GET') return reply(200, { today, certification: found });
       if (method === 'PUT') {
         const updated = save(id, body ?? {});
         store = store.map((item) => (item.id === id ? updated : item));
         return reply(200, { certification: updated });
       }
-      if (options.deleteFails) return reply(500, { error: '서버 오류가 발생했습니다' });
+      if (options.deleteFails) return reply(500, { error: 'A server error occurred' });
       store = store.filter((item) => item.id !== id);
       return reply(204);
     }),
@@ -130,18 +130,22 @@ test('the list groups goals by category with counts, nearest exam first and days
   fakeApi([license, engineer, awsCp, toeic]);
   open('/certifications');
   const groups = await screen.findAllByRole('heading', { level: 2 });
-  expect(groups.map((heading) => heading.textContent)).toEqual(['영어1개', '개발2개', '생활1개']);
-  const dev = screen.getByRole('heading', { level: 2, name: /개발/ }).closest('section')!;
+  expect(groups.map((heading) => heading.textContent)).toEqual([
+    'English1',
+    'Development2',
+    'Life1',
+  ]);
+  const dev = screen.getByRole('heading', { level: 2, name: /Development/ }).closest('section')!;
   const items = within(dev).getAllByRole('listitem');
   expect(items.map((item) => within(item).getByRole('heading', { level: 3 }).textContent)).toEqual([
     'AWS Cloud Practitioner',
     '정보처리기사',
   ]);
-  expect(items[0]).toHaveTextContent('2026-11-20 · 21일 남음');
-  expect(items[0]).toHaveTextContent('공부 중');
-  expect(items[1]).toHaveTextContent('시험일 미정');
+  expect(items[0]).toHaveTextContent('November 20, 2026 · 21 days left');
+  expect(items[0]).toHaveTextContent('Studying');
+  expect(items[1]).toHaveTextContent('Exam date not set');
   expect(screen.getByRole('link', { name: '운전면허' }).closest('li')).toHaveTextContent(
-    '5일 지남',
+    '5 days ago',
   );
   expect(screen.getByRole('link', { name: '토익' }).closest('li')).toHaveTextContent(
     'YBM · 900점 이상',
@@ -152,26 +156,26 @@ test('with no goals the list offers to add the first one', async () => {
   fakeApi();
   open('/certifications');
   expect(
-    await screen.findByRole('heading', { name: '아직 목표 자격증이 없습니다' }),
+    await screen.findByRole('heading', { name: 'No certification goals yet' }),
   ).toBeInTheDocument();
-  fireEvent.click(screen.getAllByRole('link', { name: '목표 추가' })[0]);
+  fireEvent.click(screen.getAllByRole('link', { name: 'Add goal' })[0]);
   expect(window.location.pathname).toBe('/certifications/new');
 });
 
 test('a new goal is saved with typed values, opens its detail and appears in the list', async () => {
   const { sent } = fakeApi([toeic]);
   open('/certifications/new');
-  fireEvent.change(await screen.findByLabelText('자격증 이름'), {
+  fireEvent.change(await screen.findByLabelText('Certification name'), {
     target: { value: 'AWS Solutions Architect – Associate' },
   });
-  fireEvent.change(screen.getByLabelText('분류'), { target: { value: 'dev' } });
-  fireEvent.change(screen.getByLabelText('주관 기관'), { target: { value: 'AWS' } });
-  fireEvent.change(screen.getByLabelText('목표 점수'), { target: { value: '720' } });
-  fireEvent.change(screen.getByLabelText('목표 시험일'), { target: { value: '2027-03-01' } });
-  expect(screen.queryByLabelText('유효기간 개월 수')).toBeNull();
-  fireEvent.change(screen.getByLabelText('유효기간'), { target: { value: 'months' } });
-  fireEvent.change(screen.getByLabelText('유효기간 개월 수'), { target: { value: '36' } });
-  fireEvent.click(screen.getByRole('button', { name: '추가' }));
+  fireEvent.change(screen.getByLabelText('Category'), { target: { value: 'dev' } });
+  fireEvent.change(screen.getByLabelText('Issuer'), { target: { value: 'AWS' } });
+  fireEvent.change(screen.getByLabelText('Target score'), { target: { value: '720' } });
+  fireEvent.change(screen.getByLabelText('Target exam date'), { target: { value: '2027-03-01' } });
+  expect(screen.queryByLabelText('Validity months')).toBeNull();
+  fireEvent.change(screen.getByLabelText('Validity'), { target: { value: 'months' } });
+  fireEvent.change(screen.getByLabelText('Validity months'), { target: { value: '36' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Add' }));
 
   expect(
     await screen.findByRole('heading', { level: 1, name: 'AWS Solutions Architect – Associate' }),
@@ -191,10 +195,10 @@ test('a new goal is saved with typed values, opens its detail and appears in the
     gradeScale: 'none',
     targetGrade: null,
   });
-  expect(screen.getByText('36개월')).toBeInTheDocument();
-  expect(screen.getByText('122일 남음')).toBeInTheDocument();
+  expect(screen.getByText('36 months')).toBeInTheDocument();
+  expect(screen.getByText('122 days left')).toBeInTheDocument();
 
-  fireEvent.click(screen.getByRole('link', { name: '자격증 목록' }));
+  fireEvent.click(screen.getByRole('link', { name: 'Certification list' }));
   expect(
     await screen.findByRole('link', { name: 'AWS Solutions Architect – Associate' }),
   ).toBeInTheDocument();
@@ -204,11 +208,13 @@ test('empty optional fields are sent as not decided, and a server error keeps th
   const { sent } = fakeApi();
   open('/certifications/new');
   // The browser blocks an empty required name; whitespace reaches the server, which answers 400.
-  fireEvent.change(await screen.findByLabelText('자격증 이름'), { target: { value: '   ' } });
-  fireEvent.click(screen.getByRole('button', { name: '추가' }));
-  expect(await screen.findByRole('alert')).toHaveTextContent('자격증 이름을 입력해 주세요');
+  fireEvent.change(await screen.findByLabelText('Certification name'), {
+    target: { value: '   ' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('Certification name is required');
   expect(window.location.pathname).toBe('/certifications/new');
-  expect(screen.getByRole('button', { name: '추가' })).toBeEnabled();
+  expect(screen.getByRole('button', { name: 'Add' })).toBeEnabled();
   expect(sent.find((call) => call.method === 'POST')?.body).toMatchObject({
     targetScore: null,
     targetExamDate: null,
@@ -220,13 +226,13 @@ test('empty optional fields are sent as not decided, and a server error keeps th
 test('editing replaces the goal and the detail shows the new values', async () => {
   const { sent } = fakeApi([toeic]);
   open('/certifications/1');
-  fireEvent.click(await screen.findByRole('link', { name: '수정' }));
-  expect(await screen.findByRole('heading', { level: 1, name: '목표 수정' })).toBeInTheDocument();
-  expect(screen.getByLabelText('자격증 이름')).toHaveValue('토익');
-  expect(screen.getByLabelText('유효기간 개월 수')).toHaveValue(24);
-  fireEvent.change(screen.getByLabelText('상태'), { target: { value: 'registered' } });
-  fireEvent.change(screen.getByLabelText('유효기간'), { target: { value: 'none' } });
-  fireEvent.click(screen.getByRole('button', { name: '저장' }));
+  fireEvent.click(await screen.findByRole('link', { name: 'Edit' }));
+  expect(await screen.findByRole('heading', { level: 1, name: 'Edit goal' })).toBeInTheDocument();
+  expect(screen.getByLabelText('Certification name')).toHaveValue('토익');
+  expect(screen.getByLabelText('Validity months')).toHaveValue(24);
+  fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'registered' } });
+  fireEvent.change(screen.getByLabelText('Validity'), { target: { value: 'none' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
   expect(await screen.findByRole('heading', { level: 1, name: '토익' })).toBeInTheDocument();
   expect(window.location.pathname).toBe('/certifications/1');
@@ -234,20 +240,20 @@ test('editing replaces the goal and the detail shows the new values', async () =
     path: '/api/certifications/1',
     body: { status: 'registered', validityKind: 'none', validityMonths: null, targetScore: 900 },
   });
-  const details = screen.getByText('만료 없음').closest('dl')!;
-  expect(details).toHaveTextContent('접수');
+  const details = screen.getByText('No expiry').closest('dl')!;
+  expect(details).toHaveTextContent('Registered');
 });
 
 test('deleting asks first, says what goes with it, and the goal leaves the list', async () => {
   const { sent } = fakeApi([toeic, awsCp]);
   open('/certifications/1');
-  fireEvent.click(await screen.findByRole('button', { name: '삭제' }));
-  const dialog = screen.getByRole('dialog', { name: '목표를 지울까요?' });
-  expect(dialog).toHaveTextContent('응시 기록과 공부 계획도 함께 지워지고 되돌릴 수 없습니다');
+  fireEvent.click(await screen.findByRole('button', { name: 'Delete' }));
+  const dialog = screen.getByRole('dialog', { name: 'Delete this goal?' });
+  expect(dialog).toHaveTextContent('Its exam attempts and study plan are deleted too');
   fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
   expect(sent.some((call) => call.method === 'DELETE')).toBe(false);
 
-  fireEvent.click(screen.getByRole('button', { name: '삭제' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
   fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }));
   await waitFor(() => expect(window.location.pathname).toBe('/certifications'));
   expect(await screen.findByRole('link', { name: 'AWS Cloud Practitioner' })).toBeInTheDocument();
@@ -258,10 +264,10 @@ test('deleting asks first, says what goes with it, and the goal leaves the list'
 test('a failed delete keeps the dialog open and says why above it', async () => {
   fakeApi([toeic], { deleteFails: true });
   open('/certifications/1');
-  fireEvent.click(await screen.findByRole('button', { name: '삭제' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Delete' }));
   fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }));
-  expect(await screen.findByText('서버 오류가 발생했습니다')).toBeInTheDocument();
-  expect(screen.getByRole('dialog', { name: '목표를 지울까요?' })).toBeInTheDocument();
+  expect(await screen.findByText('A server error occurred')).toBeInTheDocument();
+  expect(screen.getByRole('dialog', { name: 'Delete this goal?' })).toBeInTheDocument();
   await waitFor(() =>
     expect(
       within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }),
@@ -274,20 +280,20 @@ test('a goal that no longer exists says so instead of an empty page', async () =
   fakeApi();
   open('/certifications/9');
   expect(await screen.findByRole('alert')).toHaveTextContent(
-    '자격증 목표를 찾을 수 없습니다. 이미 지웠을 수 있습니다.',
+    'Certification goal not found. It may have been deleted already.',
   );
 });
 
 test('the dashboard card lists the nearest exams still ahead and links to each goal', async () => {
   fakeApi([license, engineer, awsCp, toeic]);
   open('/');
-  const card = (await screen.findByRole('heading', { level: 2, name: '가까운 시험' })).closest(
+  const card = (await screen.findByRole('heading', { level: 2, name: 'Upcoming exams' })).closest(
     '[data-slot="card"]',
   )!;
   const rows = await within(card as HTMLElement).findAllByRole('listitem');
   expect(rows.map((row) => row.textContent)).toEqual([
-    'AWS Cloud Practitioner2026-11-2021일 남음',
-    '토익2026-12-1344일 남음',
+    'AWS Cloud PractitionerNovember 20, 202621 days left',
+    '토익December 13, 202644 days left',
   ]);
   fireEvent.click(within(card as HTMLElement).getByRole('link', { name: '토익' }));
   expect(window.location.pathname).toBe('/certifications/1');

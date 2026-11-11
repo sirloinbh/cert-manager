@@ -151,17 +151,23 @@ test('lyrics arrive, go out to a file and come back translated', { skip: !url },
     assert.ok((await lines(fetched)).every((line) => line.translation === null));
 
   for (const [content, reason] of [
-    ['{ 깨진 파일', 'JSON으로 읽을 수 없습니다'],
-    [{ songId: fetched }, '파일 형식이 내보낸 형식과 다릅니다'],
-    [{ ...file, songId: fetched + 1 }, '파일 이름과 곡 ID가 다릅니다'],
-    [{ ...file, songId: 1.5 }, '파일 형식이 내보낸 형식과 다릅니다'],
-    [translation('Clouds go', 'Birds\u0000fly'), '번역에 쓸 수 없는 문자가 있습니다'],
-    [{ ...file, lines: file.lines.slice(0, 1) }, '번역 줄 수(1줄)가 원문 줄 수(2줄)와 다릅니다'],
-    [translation('Clouds go', '  '), '번역이 비어 있는 줄이 1개 있습니다'],
-    [translation('Clouds go', 'Birds\nfly'), '번역 한 칸에는 한 줄만 쓸 수 있습니다'],
+    ['{ 깨진 파일', 'Cannot be read as JSON'],
+    [{ songId: fetched }, 'The file format differs from the exported format'],
+    [{ ...file, songId: fetched + 1 }, 'The file name and song ID do not match'],
+    [{ ...file, songId: 1.5 }, 'The file format differs from the exported format'],
+    [
+      translation('Clouds go', 'Birds\u0000fly'),
+      'The translation contains characters that are not allowed',
+    ],
+    [
+      { ...file, lines: file.lines.slice(0, 1) },
+      'The translation has 1 lines but the original has 2',
+    ],
+    [translation('Clouds go', '  '), '1 translation lines are empty'],
+    [translation('Clouds go', 'Birds\nfly'), 'Each translation cell can hold only one line'],
     [
       { ...file, lines: [{ ...file.lines[0], original: '바뀐 원문' }, file.lines[1]] },
-      '원문이 DB와 다릅니다. 파일을 지우고 다시 내보내 주세요',
+      'The original differs from the database. Delete the file and export again',
     ],
   ] as const) {
     const rejected = await importing(content);
@@ -201,7 +207,10 @@ test('lyrics arrive, go out to a file and come back translated', { skip: !url },
   // Nor can a file written before that edit, unless nothing was typed in it.
   const stale = await importing(translation('Clouds go', 'Birds fly'));
   assert.deepEqual(stale.rejected, [
-    { file: fileName, reason: '내보낸 뒤 번역이 바뀌었습니다. 파일을 지우고 다시 내보내 주세요' },
+    {
+      file: fileName,
+      reason: 'The translation changed after export. Delete the file and export again',
+    },
   ]);
   assert.equal((await lines(fetched))[0]?.translation, '화면에서 고친 번역');
   assert.deepEqual(await importing(file), { saved: [], skipped: [fileName], rejected: [] });
@@ -210,7 +219,7 @@ test('lyrics arrive, go out to a file and come back translated', { skip: !url },
   // A song that is gone is named, not fatal.
   await pool.query('DELETE FROM songs WHERE id = $1', [fetched]);
   const gone = await importing(translation('Clouds go', 'Birds fly'));
-  assert.deepEqual(gone.rejected, [{ file: fileName, reason: '곡을 찾을 수 없습니다' }]);
+  assert.deepEqual(gone.rejected, [{ file: fileName, reason: 'Song not found' }]);
 });
 
 test('the work folder is the ignored one at the top of the repository', () => {

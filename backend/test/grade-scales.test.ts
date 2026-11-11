@@ -63,11 +63,11 @@ test('a scale without a target is allowed: the target is not decided yet', async
 test('an unknown scale or a target outside the scale is a Korean 400', async () => {
   const { pool, queries } = fakePool();
   const cases: [object, string][] = [
-    [{ ...toeicGoal, gradeScale: 'jlpt' }, '등급 체계는 목록에 있는 값이어야 합니다'],
-    [{ ...toeicGoal, targetGrade: 'AL' }, '목표 등급은 고른 등급 체계에 있는 값이어야 합니다'],
+    [{ ...toeicGoal, gradeScale: 'jlpt' }, 'Grade scale must be one of the listed values'],
+    [{ ...toeicGoal, targetGrade: 'AL' }, 'Target grade must be a level of the chosen grade scale'],
     [
       { name: '토익', category: 'english', targetGrade: 'B2' },
-      '목표 등급은 고른 등급 체계에 있는 값이어야 합니다',
+      'Target grade must be a level of the chosen grade scale',
     ],
   ];
   await withApi(pool, async (call) => {

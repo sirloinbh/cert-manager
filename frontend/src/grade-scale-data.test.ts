@@ -108,7 +108,7 @@ test('an attempt meets every target the goal has', () => {
 });
 
 test('score ranges read as one number when the level has one score', () => {
-  expect(scoreRange({ value: 'AH', minScore: 200, maxScore: 200 })).toBe('200점');
-  expect(scoreRange({ value: 'B2', minScore: 785, maxScore: 944 })).toBe('785~944점');
+  expect(scoreRange({ value: 'AH', minScore: 200, maxScore: 200 })).toBe('200');
+  expect(scoreRange({ value: 'B2', minScore: 785, maxScore: 944 })).toBe('785-944');
   expect(scoreRange({ value: '기사', minScore: null, maxScore: null })).toBe('');
 });

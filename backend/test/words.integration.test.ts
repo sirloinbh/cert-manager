@@ -142,16 +142,19 @@ test(
     };
 
     const refused: [object | string, RegExp][] = [
-      ['{ 깨진 파일', /JSON으로 읽을 수 없습니다/],
+      ['{ 깨진 파일', /Cannot be read as JSON/],
       [{ words: [fill('zzcarry', [], { meaningKo: '  ' })] }, /words\.0\.meaningKo/],
-      [{ words: [fill('zzmissing')] }, /목록에 없는 단어입니다: zzmissing/],
-      [{ words: [fill('zzcarry'), fill('zzcarry')] }, /같은 단어가 두 번 있습니다/],
-      [{ words: [fill('zznone', [port])] }, /어원 자료가 없는 단어에는/],
-      [{ words: [fill('zzcarry', [{ ...port, key: 'root:other' }])] }, /이름이 규칙과 다릅니다/],
-      [{ words: [fill('zzcarry', [{ ...port, key: 'root:zzport:' }])] }, /이름이 규칙과 다릅니다/],
-      [{ words: [fill('zzcarry', [port, port])] }, /같은 어원 요소가 두 번/],
+      [{ words: [fill('zzmissing')] }, /Word is not in the list: zzmissing/],
+      [{ words: [fill('zzcarry'), fill('zzcarry')] }, /The same word appears twice/],
+      [{ words: [fill('zznone', [port])] }, /A word with no etymology data/],
+      [{ words: [fill('zzcarry', [{ ...port, key: 'root:other' }])] }, /does not follow the rule/],
+      [
+        { words: [fill('zzcarry', [{ ...port, key: 'root:zzport:' }])] },
+        /does not follow the rule/,
+      ],
+      [{ words: [fill('zzcarry', [port, port])] }, /The same etymology part appears twice/],
       [{ words: [fill('zzcarry', [], { meaningKo: '끝\u0000' })] }, /words\.0\.meaningKo/],
-      [{ words: [fill('zzcarry', [{ ...port, form: 'Zz-Port' }])] }, /파일 형식이 맞지 않습니다/],
+      [{ words: [fill('zzcarry', [{ ...port, form: 'Zz-Port' }])] }, /The file format is invalid/],
     ];
     for (const [content, reason] of refused) {
       const { saved, rejected } = await write(content);
@@ -200,7 +203,7 @@ test(
     );
     assert.deepEqual((await importWordBatches(pool, dir)).saved, ['second.json']);
     const again = await write({ words: [fill('zzcarry')] });
-    assert.match(again.rejected[0]?.reason ?? '', /이미 채운 단어입니다: zzcarry/);
+    assert.match(again.rejected[0]?.reason ?? '', /Word is already filled in: zzcarry/);
     await rm(join(dir, name));
 
     await withApi(pool, async (call) => {
@@ -253,7 +256,7 @@ test(
 
       const missing = await call('/api/words/999999999');
       assert.equal(missing.status, 404);
-      assert.deepEqual(missing.data, { error: '단어를 찾을 수 없습니다' });
+      assert.deepEqual(missing.data, { error: 'Word not found' });
       const bad = await call('/api/words/abc');
       assert.equal(bad.status, 400);
     });

@@ -38,7 +38,7 @@ test('a word file over 1000 words is refused', async () => {
     const { rejected, saved } = await importWordBatches(unused, dir);
     assert.deepEqual(saved, []);
     assert.deepEqual(rejected, [
-      { file: 'words.json', reason: '파일 형식이 맞지 않습니다: words' },
+      { file: 'words.json', reason: 'The file format is invalid: words' },
     ]);
   });
 });
@@ -49,16 +49,18 @@ test('a word with more than 12 parts is refused', async () => {
   await inFolder('words.json', content, async (dir) => {
     const { rejected } = await importWordBatches(unused, dir);
     assert.deepEqual(rejected, [
-      { file: 'words.json', reason: '파일 형식이 맞지 않습니다: words.0.morphemes' },
+      { file: 'words.json', reason: 'The file format is invalid: words.0.morphemes' },
     ]);
   });
 });
 
 test('a translation file over 5000 lines is refused', async () => {
   const line = { lineNumber: 1, original: 'a', atExport: null, translation: '가' };
-  const content = { songId: 1, title: '곡', lines: Array.from({ length: 5001 }, () => line) };
+  const content = { songId: 1, title: 'song', lines: Array.from({ length: 5001 }, () => line) };
   await inFolder('1.json', content, async (dir) => {
     const { rejected } = await importTranslations(unused, dir);
-    assert.deepEqual(rejected, [{ file: '1.json', reason: '파일 형식이 내보낸 형식과 다릅니다' }]);
+    assert.deepEqual(rejected, [
+      { file: '1.json', reason: 'The file format differs from the exported format' },
+    ]);
   });
 });

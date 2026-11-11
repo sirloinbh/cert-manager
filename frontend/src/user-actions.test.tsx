@@ -78,7 +78,7 @@ function fakeApi(
           (options.reloadFails && listed > 1) ||
           listed <= (options.listFailures ?? 0)
         )
-          return reply(500, { error: '알림 서버 오류' });
+          return reply(500, { error: 'Alert server error' });
         return reply(200, { today, actions });
       }
       const id = Number(/\/user-actions\/(\d+)\/completion$/.exec(path)?.[1]);
@@ -86,9 +86,9 @@ function fakeApi(
         await options.completeHold;
         if (options.completeGone) {
           actions = actions.filter((item) => item.id !== id);
-          return reply(404, { error: '직접 할 일을 찾을 수 없습니다' });
+          return reply(404, { error: 'Custom task not found' });
         }
-        if (options.completeFails) return reply(500, { error: '저장 서버 오류' });
+        if (options.completeFails) return reply(500, { error: 'Save server error' });
         const done = actions.find((item) => item.id === id);
         actions = actions.filter((item) => item.id !== id);
         return reply(200, { action: { ...done, completedAt: '2027-03-08T00:00:00Z' } });
@@ -108,48 +108,48 @@ const openApp = (options?: Parameters<typeof fakeApi>[0]) => {
 
 const openPanel = async (name: RegExp | string) => {
   fireEvent.click(await screen.findByRole('button', { name }));
-  return screen.findByRole('dialog', { name: '직접 할 일' });
+  return screen.findByRole('dialog', { name: 'Manual tasks' });
 };
 
 test('the bell counts what is waiting, and the panel shows the details', async () => {
   openApp({ actions: [register, open] });
-  const panel = await openPanel('직접 할 일 알림 2건');
+  const panel = await openPanel('2 manual task alerts');
   const items = within(panel).getAllByRole('listitem');
   expect(items).toHaveLength(2);
   expect(items[0]).toHaveTextContent('실기 1회 접수');
   expect(items[0]).toHaveTextContent('응시일은 4월 안의 날로 고릅니다');
-  expect(items[0]).toHaveTextContent('2027-03-22 · 14일 남음');
+  expect(items[0]).toHaveTextContent('March 22, 2027 · 14 days left');
   expect(
-    within(items[0]).getByRole('link', { name: "'실기 1회 접수' 바로가기 (새 탭)" }),
+    within(items[0]).getByRole('link', { name: "Open the link for '실기 1회 접수' (new tab)" }),
   ).toHaveAttribute('href', 'https://www.q-net.or.kr/');
   // No deadline and no page: only the title and the button.
   expect(within(items[1]).queryByRole('link')).not.toBeInTheDocument();
-  expect(items[1]).not.toHaveTextContent('남음');
+  expect(items[1]).not.toHaveTextContent('days left');
 });
 
 test('a passed deadline says so', async () => {
   openApp({ actions: [late] });
-  const panel = await openPanel('직접 할 일 알림 1건');
-  expect(within(panel).getByText(/7일 지남/)).toBeInTheDocument();
+  const panel = await openPanel('1 manual task alerts');
+  expect(within(panel).getByText(/7 days overdue/)).toBeInTheDocument();
 });
 
 test('waiting alerts are announced once when the app opens', async () => {
   openApp({ actions: [register, open] });
-  expect(await screen.findByText('직접 할 일이 2건 있습니다')).toBeInTheDocument();
+  expect(await screen.findByText('You have 2 manual tasks')).toBeInTheDocument();
 });
 
 test('with nothing waiting there is no count and no announcement', async () => {
   openApp();
-  const panel = await openPanel('직접 할 일 알림');
-  expect(within(panel).getByText('지금 직접 할 일이 없습니다.')).toBeInTheDocument();
+  const panel = await openPanel('Manual task alerts');
+  expect(within(panel).getByText('No manual tasks right now.')).toBeInTheDocument();
   await settle();
-  expect(screen.queryByText(/건 있습니다/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/You have \d+ manual tasks/)).not.toBeInTheDocument();
 });
 
 test('completing an alert lowers the count right away and moves focus to the title', async () => {
   const api = openApp({ actions: [register, open] });
-  const panel = await openPanel('직접 할 일 알림 2건');
-  fireEvent.click(within(panel).getByRole('button', { name: "'실기 1회 접수' 완료" }));
+  const panel = await openPanel('2 manual task alerts');
+  fireEvent.click(within(panel).getByRole('button', { name: "Complete '실기 1회 접수'" }));
   await waitFor(() => expect(within(panel).queryByText('실기 1회 접수')).not.toBeInTheDocument());
   expect(api.sent.find((item) => item.path === '/api/user-actions/1/completion')).toMatchObject({
     method: 'PUT',
@@ -157,17 +157,17 @@ test('completing an alert lowers the count right away and moves focus to the tit
   });
   expect(within(panel).getByText('기한 확인')).toBeInTheDocument();
   await waitFor(() =>
-    expect(within(panel).getByRole('heading', { name: '직접 할 일' })).toHaveFocus(),
+    expect(within(panel).getByRole('heading', { name: 'Manual tasks' })).toHaveFocus(),
   );
   fireEvent.keyDown(panel, { key: 'Escape' });
-  expect(await screen.findByRole('button', { name: '직접 할 일 알림 1건' })).toBeInTheDocument();
+  expect(await screen.findByRole('button', { name: '1 manual task alerts' })).toBeInTheDocument();
 });
 
 test('the last alert leaves the empty notice', async () => {
   openApp({ actions: [open] });
-  const panel = await openPanel('직접 할 일 알림 1건');
-  fireEvent.click(within(panel).getByRole('button', { name: "'기한 확인' 완료" }));
-  expect(await within(panel).findByText('지금 직접 할 일이 없습니다.')).toBeInTheDocument();
+  const panel = await openPanel('1 manual task alerts');
+  fireEvent.click(within(panel).getByRole('button', { name: "Complete '기한 확인'" }));
+  expect(await within(panel).findByText('No manual tasks right now.')).toBeInTheDocument();
 });
 
 test('a completion in progress cannot be sent twice', async () => {
@@ -176,41 +176,41 @@ test('a completion in progress cannot be sent twice', async () => {
     release = resolve;
   });
   const api = openApp({ actions: [open], completeHold });
-  const panel = await openPanel('직접 할 일 알림 1건');
-  const button = within(panel).getByRole('button', { name: "'기한 확인' 완료" });
+  const panel = await openPanel('1 manual task alerts');
+  const button = within(panel).getByRole('button', { name: "Complete '기한 확인'" });
   fireEvent.click(button);
   await waitFor(() => expect(button).toHaveAttribute('aria-disabled', 'true'));
   fireEvent.click(button);
   release();
-  await within(panel).findByText('지금 직접 할 일이 없습니다.');
+  await within(panel).findByText('No manual tasks right now.');
   expect(api.sent.filter((item) => item.path.endsWith('/completion'))).toHaveLength(1);
 });
 
 test('a failed completion keeps the alert and says why', async () => {
   openApp({ actions: [open], completeFails: true });
-  const panel = await openPanel('직접 할 일 알림 1건');
-  const button = within(panel).getByRole('button', { name: "'기한 확인' 완료" });
+  const panel = await openPanel('1 manual task alerts');
+  const button = within(panel).getByRole('button', { name: "Complete '기한 확인'" });
   fireEvent.click(button);
-  expect(await screen.findByText('저장 서버 오류')).toBeInTheDocument();
+  expect(await screen.findByText('Save server error')).toBeInTheDocument();
   expect(within(panel).getByText('기한 확인')).toBeInTheDocument();
   await waitFor(() => expect(button).not.toHaveAttribute('aria-disabled'));
 });
 
 test('a completed alert stays gone even if reloading the list fails', async () => {
   openApp({ actions: [register, open], reloadFails: true });
-  const panel = await openPanel('직접 할 일 알림 2건');
-  fireEvent.click(within(panel).getByRole('button', { name: "'기한 확인' 완료" }));
+  const panel = await openPanel('2 manual task alerts');
+  fireEvent.click(within(panel).getByRole('button', { name: "Complete '기한 확인'" }));
   await waitFor(() => expect(within(panel).queryByText('기한 확인')).not.toBeInTheDocument());
-  await within(panel).findByText('알림 서버 오류');
+  await within(panel).findByText('Alert server error');
   expect(within(panel).queryByText('기한 확인')).not.toBeInTheDocument();
   expect(within(panel).getByText('실기 1회 접수')).toBeInTheDocument();
 });
 
 test('a failed list says so in the panel, and the rest of the app still works', async () => {
   openApp({ listFails: true });
-  expect(await screen.findByRole('heading', { level: 1, name: '대시보드' })).toBeInTheDocument();
-  const panel = await openPanel('직접 할 일 알림을 불러오지 못했습니다');
-  await within(panel).findByText('알림 서버 오류');
+  expect(await screen.findByRole('heading', { level: 1, name: 'Dashboard' })).toBeInTheDocument();
+  const panel = await openPanel('Could not load the manual task alerts');
+  await within(panel).findByText('Alert server error');
 });
 
 test('large counts stay short on the badge', async () => {
@@ -221,69 +221,69 @@ test('large counts stay short on the badge', async () => {
     action({ id: index + 1, title: `일 ${index}` }),
   );
   openApp({ actions: many });
-  const bell = await screen.findByRole('button', { name: '직접 할 일 알림 100건' });
+  const bell = await screen.findByRole('button', { name: '100 manual task alerts' });
   expect(within(bell).getByText('99+')).toBeInTheDocument();
 });
 
 test('opening the panel and completing an alert do not announce again', async () => {
   openApp({ actions: [register, open] });
-  await screen.findByText('직접 할 일이 2건 있습니다');
-  const panel = await openPanel('직접 할 일 알림 2건');
+  await screen.findByText('You have 2 manual tasks');
+  const panel = await openPanel('2 manual task alerts');
   await settle();
-  fireEvent.click(within(panel).getByRole('button', { name: "'기한 확인' 완료" }));
-  await screen.findByText('완료로 표시했습니다');
+  fireEvent.click(within(panel).getByRole('button', { name: "Complete '기한 확인'" }));
+  await screen.findByText('Marked as done');
   await settle();
-  expect(screen.getAllByText(/건 있습니다/)).toHaveLength(1);
+  expect(screen.getAllByText(/You have \d+ manual tasks/)).toHaveLength(1);
 });
 
 test('a failed first load looks different from nothing to do, and a retry recovers', async () => {
   // The first load and the read when the panel opens both fail.
   openApp({ actions: [open], listFailures: 2 });
-  const panel = await openPanel('직접 할 일 알림을 불러오지 못했습니다');
-  await within(panel).findByText('알림 서버 오류');
-  expect(within(panel).queryByText('지금 직접 할 일이 없습니다.')).not.toBeInTheDocument();
+  const panel = await openPanel('Could not load the manual task alerts');
+  await within(panel).findByText('Alert server error');
+  expect(within(panel).queryByText('No manual tasks right now.')).not.toBeInTheDocument();
   await settle();
-  const retry = within(panel).getByRole('button', { name: '다시 불러오기' });
+  const retry = within(panel).getByRole('button', { name: 'Reload' });
   retry.focus();
   fireEvent.click(retry);
   expect(await within(panel).findByText('기한 확인')).toBeInTheDocument();
-  expect(within(panel).queryByText('알림 서버 오류')).not.toBeInTheDocument();
-  expect(within(panel).queryByRole('button', { name: '다시 불러오기' })).not.toBeInTheDocument();
+  expect(within(panel).queryByText('Alert server error')).not.toBeInTheDocument();
+  expect(within(panel).queryByRole('button', { name: 'Reload' })).not.toBeInTheDocument();
   expect(
-    await screen.findByRole('button', { name: '직접 할 일 알림 1건', hidden: true }),
+    await screen.findByRole('button', { name: '1 manual task alerts', hidden: true }),
   ).toBeInTheDocument();
 });
 
 test('the failure stays visible while reading again, and the retry button keeps its place', async () => {
   openApp({ listFails: true });
-  const panel = await openPanel('직접 할 일 알림을 불러오지 못했습니다');
-  await within(panel).findByText('알림 서버 오류');
+  const panel = await openPanel('Could not load the manual task alerts');
+  await within(panel).findByText('Alert server error');
   await settle();
-  const retry = within(panel).getByRole('button', { name: '다시 불러오기' });
+  const retry = within(panel).getByRole('button', { name: 'Reload' });
   retry.focus();
   fireEvent.click(retry);
   // Right after the click, before the answer.
-  expect(within(panel).getByText('알림 서버 오류')).toBeInTheDocument();
+  expect(within(panel).getByText('Alert server error')).toBeInTheDocument();
   expect(retry).toBeInTheDocument();
   expect(retry).toHaveFocus();
   await settle();
   expect(
-    screen.getByRole('button', { name: '직접 할 일 알림을 불러오지 못했습니다', hidden: true }),
+    screen.getByRole('button', { name: 'Could not load the manual task alerts', hidden: true }),
   ).toBeInTheDocument();
 });
 
 test('a failed read after an empty list does not say there is nothing to do', async () => {
   openApp({ reloadFails: true });
-  const panel = await openPanel('직접 할 일 알림');
-  await within(panel).findByText('알림 서버 오류');
-  expect(within(panel).queryByText('지금 직접 할 일이 없습니다.')).not.toBeInTheDocument();
+  const panel = await openPanel('Manual task alerts');
+  await within(panel).findByText('Alert server error');
+  expect(within(panel).queryByText('No manual tasks right now.')).not.toBeInTheDocument();
 });
 
 test('opening the panel reads the list again', async () => {
   const api = openApp({ actions: [open] });
-  await screen.findByRole('button', { name: '직접 할 일 알림 1건' });
+  await screen.findByRole('button', { name: '1 manual task alerts' });
   const before = api.sent.filter((item) => item.path === '/api/user-actions').length;
-  await openPanel('직접 할 일 알림 1건');
+  await openPanel('1 manual task alerts');
   await waitFor(() =>
     expect(api.sent.filter((item) => item.path === '/api/user-actions').length).toBe(before + 1),
   );
@@ -291,7 +291,7 @@ test('opening the panel reads the list again', async () => {
 
 test('coming back to the tab reads the list again', async () => {
   const api = openApp({ actions: [open] });
-  await screen.findByRole('button', { name: '직접 할 일 알림 1건' });
+  await screen.findByRole('button', { name: '1 manual task alerts' });
   const before = api.sent.filter((item) => item.path === '/api/user-actions').length;
   document.dispatchEvent(new Event('visibilitychange'));
   await waitFor(() =>
@@ -301,7 +301,7 @@ test('coming back to the tab reads the list again', async () => {
 
 test('leaving the tab does not read the list', async () => {
   const api = openApp({ actions: [open] });
-  await screen.findByRole('button', { name: '직접 할 일 알림 1건' });
+  await screen.findByRole('button', { name: '1 manual task alerts' });
   const before = api.sent.filter((item) => item.path === '/api/user-actions').length;
   const hidden = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
   document.dispatchEvent(new Event('visibilitychange'));
@@ -312,10 +312,10 @@ test('leaving the tab does not read the list', async () => {
 
 test('an alert removed elsewhere goes away after its completion fails', async () => {
   openApp({ actions: [open, register], completeGone: true });
-  const panel = await openPanel('직접 할 일 알림 2건');
+  const panel = await openPanel('2 manual task alerts');
   await settle();
-  fireEvent.click(within(panel).getByRole('button', { name: "'기한 확인' 완료" }));
-  await screen.findByText('직접 할 일을 찾을 수 없습니다');
+  fireEvent.click(within(panel).getByRole('button', { name: "Complete '기한 확인'" }));
+  await screen.findByText('Custom task not found');
   await waitFor(() => expect(within(panel).queryByText('기한 확인')).not.toBeInTheDocument());
   expect(within(panel).getByText('실기 1회 접수')).toBeInTheDocument();
 });
@@ -326,9 +326,9 @@ test('one completion at a time: other rows wait too', async () => {
     release = resolve;
   });
   const api = openApp({ actions: [register, open], completeHold });
-  const panel = await openPanel('직접 할 일 알림 2건');
-  fireEvent.click(within(panel).getByRole('button', { name: "'기한 확인' 완료" }));
-  const other = within(panel).getByRole('button', { name: "'실기 1회 접수' 완료" });
+  const panel = await openPanel('2 manual task alerts');
+  fireEvent.click(within(panel).getByRole('button', { name: "Complete '기한 확인'" }));
+  const other = within(panel).getByRole('button', { name: "Complete '실기 1회 접수'" });
   await waitFor(() => expect(other).toHaveAttribute('aria-disabled', 'true'));
   fireEvent.click(other);
   release();

@@ -77,7 +77,7 @@ test('the words show with the meaning folded, and each links to the word', async
   expect(link).toHaveAttribute('href', '/words/1');
   const details = link.closest('li')?.querySelector('details');
   expect(details).not.toHaveAttribute('open');
-  fireEvent.click(within(details as HTMLElement).getByText('뜻과 어원'));
+  fireEvent.click(within(details as HTMLElement).getByText('Meaning and etymology'));
   expect(details).toHaveAttribute('open');
   expect(within(details as HTMLElement).getByText('수출하다')).toBeInTheDocument();
   expect(within(details as HTMLElement).getByText('From a made-up source.')).toBeInTheDocument();
@@ -87,13 +87,13 @@ test('a word not filled in yet says so', async () => {
   serve();
   const link = await screen.findByRole('link', { name: 'transport' });
   const item = within(link.closest('li') as HTMLElement);
-  expect(item.getByText('아직 뜻과 예문을 채우지 않았습니다.')).toBeInTheDocument();
-  expect(item.getByText('어원 자료 없음')).toBeInTheDocument();
+  expect(item.getByText('The meaning and example are not filled in yet.')).toBeInTheDocument();
+  expect(item.getByText('No etymology data')).toBeInTheDocument();
 });
 
 test('marking a word learned saves it, and it can be undone', async () => {
   const fetcher = serve();
-  const button = await screen.findByRole('button', { name: 'export 외웠어요' });
+  const button = await screen.findByRole('button', { name: 'Mark export as learned' });
   expect(button).toHaveAttribute('aria-pressed', 'false');
   fireEvent.click(button);
   await waitFor(() => expect(button).toHaveAttribute('aria-pressed', 'true'));
@@ -108,36 +108,36 @@ test('marking a word learned saves it, and it can be undone', async () => {
 });
 
 test('a failed save says so and leaves the word as it was', async () => {
-  serve(() => json({ error: '데이터베이스 오류' }, 500));
-  const button = await screen.findByRole('button', { name: 'export 외웠어요' });
+  serve(() => json({ error: 'Database error' }, 500));
+  const button = await screen.findByRole('button', { name: 'Mark export as learned' });
   fireEvent.click(button);
-  expect(await screen.findByText('데이터베이스 오류')).toBeInTheDocument();
+  expect(await screen.findByText('Database error')).toBeInTheDocument();
   expect(button).toHaveAttribute('aria-pressed', 'false');
 });
 
 test('the arrows move through the earlier days and back to today', async () => {
   const fetcher = serve();
   await screen.findByRole('link', { name: 'export' });
-  expect(screen.getByRole('button', { name: '다음 날의 단어' })).toHaveAttribute(
+  expect(screen.getByRole('button', { name: 'Next day’s words' })).toHaveAttribute(
     'aria-disabled',
     'true',
   );
-  fireEvent.click(screen.getByRole('button', { name: '이전 날의 단어' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Previous day’s words' }));
   expect(await screen.findByRole('link', { name: 'carry' })).toBeInTheDocument();
   expect(fetcher).toHaveBeenCalledWith('/api/daily-words?day=2026-11-01', expect.anything());
-  expect(screen.getByRole('status')).toHaveTextContent('2026-11-01의 단어');
-  expect(screen.getByRole('button', { name: 'carry 외웠어요' })).toHaveAttribute(
+  expect(screen.getByRole('status')).toHaveTextContent('Words for November 1, 2026');
+  expect(screen.getByRole('button', { name: 'Mark carry as learned' })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
-  expect(screen.getByRole('button', { name: '이전 날의 단어' })).toHaveAttribute(
+  expect(screen.getByRole('button', { name: 'Previous day’s words' })).toHaveAttribute(
     'aria-disabled',
     'true',
   );
-  fireEvent.click(screen.getByRole('button', { name: '다음 날의 단어' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Next day’s words' }));
   expect(await screen.findByRole('link', { name: 'export' })).toBeInTheDocument();
   expect(fetcher).toHaveBeenLastCalledWith('/api/daily-words', expect.anything());
-  expect(screen.getByRole('status')).toHaveTextContent('2026-11-02');
+  expect(screen.getByRole('status')).toHaveTextContent('November 2, 2026');
 });
 
 test('no words gets a notice instead of an empty card', async () => {
@@ -150,20 +150,20 @@ test('no words gets a notice instead of an empty card', async () => {
       <DailyWords paths={paths} />
     </MemoryRouter>,
   );
-  expect(await screen.findByText(/보여 줄 단어가 없습니다/)).toBeInTheDocument();
+  expect(await screen.findByText(/No words to show/)).toBeInTheDocument();
 });
 
 test('a failed load says so', async () => {
   vi.stubGlobal(
     'fetch',
-    vi.fn(() => json({ error: '데이터베이스에 연결할 수 없습니다' }, 503)),
+    vi.fn(() => json({ error: 'Could not connect to the database' }, 503)),
   );
   render(
     <MemoryRouter>
       <DailyWords paths={paths} />
     </MemoryRouter>,
   );
-  expect(await screen.findByText('데이터베이스에 연결할 수 없습니다')).toBeInTheDocument();
+  expect(await screen.findByText('Could not connect to the database')).toBeInTheDocument();
 });
 
 test('a word not looked up yet is not called one without a source', async () => {
@@ -176,15 +176,15 @@ test('a word not looked up yet is not called one without a source', async () => 
       <DailyWords paths={paths} />
     </MemoryRouter>,
   );
-  expect(await screen.findByText('아직 어원을 찾아보지 않았습니다.')).toBeInTheDocument();
-  expect(screen.queryByText('어원 자료 없음')).not.toBeInTheDocument();
+  expect(await screen.findByText('The etymology has not been looked up yet.')).toBeInTheDocument();
+  expect(screen.queryByText('No etymology data')).not.toBeInTheDocument();
 });
 
 test('a failed move says so, keeps the words, and the same arrow tries again', async () => {
   let fail = true;
   const fetcher = vi.fn((path: string) => {
     if (!path.includes('2026-11-01')) return json(todayAnswer);
-    return fail ? json({ error: '잠시 연결할 수 없습니다' }, 503) : json(yesterday);
+    return fail ? json({ error: 'Temporarily unavailable' }, 503) : json(yesterday);
   });
   vi.stubGlobal('fetch', fetcher);
   render(
@@ -193,14 +193,14 @@ test('a failed move says so, keeps the words, and the same arrow tries again', a
     </MemoryRouter>,
   );
   await screen.findByRole('link', { name: 'export' });
-  const previous = screen.getByRole('button', { name: '이전 날의 단어' });
+  const previous = screen.getByRole('button', { name: 'Previous day’s words' });
   fireEvent.click(previous);
-  expect(await screen.findByText('잠시 연결할 수 없습니다')).toBeInTheDocument();
+  expect(await screen.findByText('Temporarily unavailable')).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'export' })).toBeInTheDocument();
   fail = false;
   fireEvent.click(previous);
   expect(await screen.findByRole('link', { name: 'carry' })).toBeInTheDocument();
-  expect(screen.queryByText('잠시 연결할 수 없습니다')).not.toBeInTheDocument();
+  expect(screen.queryByText('Temporarily unavailable')).not.toBeInTheDocument();
 });
 
 test('coming back after midnight in Seoul asks for the new day; the same day does not', async () => {
@@ -232,7 +232,7 @@ test('the arrow at the first day keeps its focus and does nothing', async () => 
     </MemoryRouter>,
   );
   await screen.findByRole('link', { name: 'export' });
-  const previous = screen.getByRole('button', { name: '이전 날의 단어' });
+  const previous = screen.getByRole('button', { name: 'Previous day’s words' });
   previous.focus();
   fireEvent.click(previous);
   expect(previous).toHaveFocus();
@@ -245,7 +245,7 @@ test('after a failed move, the new day still brings today and not the day that f
     vi.setSystemTime(new Date('2026-11-02T14:59:00Z'));
     const fetcher = vi.fn((path: string) =>
       path.includes('2026-11-01')
-        ? json({ error: '잠시 연결할 수 없습니다' }, 503)
+        ? json({ error: 'Temporarily unavailable' }, 503)
         : json(todayAnswer),
     );
     vi.stubGlobal('fetch', fetcher);
@@ -255,8 +255,8 @@ test('after a failed move, the new day still brings today and not the day that f
       </MemoryRouter>,
     );
     await screen.findByRole('link', { name: 'export' });
-    fireEvent.click(screen.getByRole('button', { name: '이전 날의 단어' }));
-    await screen.findByText('잠시 연결할 수 없습니다');
+    fireEvent.click(screen.getByRole('button', { name: 'Previous day’s words' }));
+    await screen.findByText('Temporarily unavailable');
     vi.setSystemTime(new Date('2026-11-02T15:00:00Z'));
     fireEvent.focus(window);
     await waitFor(() =>
