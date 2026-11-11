@@ -202,7 +202,7 @@ test('clearing the search from the menu goes back to the first page', async () =
   open('/words?q=word', { words: manyRows });
   fireEvent.click(await screen.findByRole('button', { name: /더 보기/ }));
   expect(wordItems()).toHaveLength(200);
-  const menu = screen.getByRole('navigation', { name: '주 메뉴' });
+  const menu = screen.getByRole('navigation', { name: 'Main menu' });
   fireEvent.click(within(menu).getByRole('link', { name: '단어장' }));
   expect(window.location.search).toBe('');
   expect(wordItems()).toHaveLength(100);

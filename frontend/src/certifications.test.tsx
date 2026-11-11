@@ -244,11 +244,11 @@ test('deleting asks first, says what goes with it, and the goal leaves the list'
   fireEvent.click(await screen.findByRole('button', { name: '삭제' }));
   const dialog = screen.getByRole('dialog', { name: '목표를 지울까요?' });
   expect(dialog).toHaveTextContent('응시 기록과 공부 계획도 함께 지워지고 되돌릴 수 없습니다');
-  fireEvent.click(within(dialog).getByRole('button', { name: '취소' }));
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
   expect(sent.some((call) => call.method === 'DELETE')).toBe(false);
 
   fireEvent.click(screen.getByRole('button', { name: '삭제' }));
-  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }));
+  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }));
   await waitFor(() => expect(window.location.pathname).toBe('/certifications'));
   expect(await screen.findByRole('link', { name: 'AWS Cloud Practitioner' })).toBeInTheDocument();
   expect(screen.queryByRole('link', { name: '토익' })).toBeNull();
@@ -259,11 +259,13 @@ test('a failed delete keeps the dialog open and says why above it', async () => 
   fakeApi([toeic], { deleteFails: true });
   open('/certifications/1');
   fireEvent.click(await screen.findByRole('button', { name: '삭제' }));
-  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }));
+  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }));
   expect(await screen.findByText('서버 오류가 발생했습니다')).toBeInTheDocument();
   expect(screen.getByRole('dialog', { name: '목표를 지울까요?' })).toBeInTheDocument();
   await waitFor(() =>
-    expect(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' })).toBeEnabled(),
+    expect(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }),
+    ).toBeEnabled(),
   );
   expect(window.location.pathname).toBe('/certifications/1');
 });

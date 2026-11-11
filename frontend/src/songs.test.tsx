@@ -300,7 +300,7 @@ test('nothing closes the form while it saves', async () => {
   await waitFor(() => expect(screen.getByRole('button', { name: '취소' })).toBeDisabled());
   expect(screen.getByLabelText('한국어 번역')).toHaveAttribute('readonly');
   fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
-  fireEvent.click(screen.getByRole('button', { name: '닫기' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Close' }));
   expect(screen.getByRole('dialog')).toBeInTheDocument();
   finish();
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
