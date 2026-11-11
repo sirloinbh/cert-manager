@@ -14,37 +14,37 @@ const outcomes = ['waiting', 'passed', 'failed', 'scored'] as const;
 const attemptInput = z
   .object(
     {
-      examDate: calendarDate('시험일'),
+      examDate: calendarDate('Exam date'),
       outcome: z
-        .enum(outcomes, { error: '결과는 결과 전, 합격, 불합격, 점수·등급 중 하나여야 합니다' })
+        .enum(outcomes, { error: 'Outcome must be Pending, Passed, Failed, or Score/grade' })
         .default('waiting'),
       score: z
-        .number({ error: '점수는 숫자여야 합니다' })
-        .int('점수는 정수여야 합니다')
-        .min(0, '점수는 0 이상이어야 합니다')
-        .max(100000, '점수는 100000 이하여야 합니다')
+        .number({ error: 'Score must be a number' })
+        .int('Score must be a whole number')
+        .min(0, 'Score must be 0 or more')
+        .max(100000, 'Score must be 100000 or less')
         .nullable()
         .default(null),
-      grade: shortText('등급').nullable().default(null),
-      expiresOn: calendarDate('만료일').nullable().optional(),
-      memo: z.string({ error: '메모는 문자열이어야 합니다' }).default(''),
+      grade: shortText('Grade').nullable().default(null),
+      expiresOn: calendarDate('Expiry date').nullable().optional(),
+      memo: z.string({ error: 'Memo must be text' }).default(''),
     },
-    // express.json() accepts an array or a bare value too; the message stays Korean.
-    { error: '요청 본문은 JSON 객체여야 합니다' },
+    // express.json() accepts an array or a bare value too; the message stays English.
+    { error: 'Request body must be a JSON object' },
   )
   .superRefine((input, ctx) => {
     if (input.outcome === 'waiting' && (input.score !== null || input.grade)) {
       ctx.addIssue({
         code: 'custom',
         path: ['outcome'],
-        message: '결과 전에는 점수와 등급을 비워 주세요',
+        message: 'Leave the score and grade empty while the outcome is Pending',
       });
     }
     if (input.expiresOn && input.expiresOn < input.examDate) {
       ctx.addIssue({
         code: 'custom',
         path: ['expiresOn'],
-        message: '만료일은 시험일 이후여야 합니다',
+        message: 'Expiry date must be after the exam date',
       });
     }
   });
@@ -80,8 +80,8 @@ const toAttempt = <T extends AttemptRow>(row: T) => ({
   certificationId: toId(row.certificationId),
 });
 
-const goalNotFound = '자격증 목표를 찾을 수 없습니다';
-const attemptNotFound = '응시 기록을 찾을 수 없습니다';
+const goalNotFound = 'Certification goal not found';
+const attemptNotFound = 'Exam attempt not found';
 
 export function registerExamAttemptRoutes(app: Express, pool: Pool, today: () => string) {
   // The newest passed or scored attempt of each goal, which decides that goal's expiry on the dashboard.
@@ -101,7 +101,7 @@ export function registerExamAttemptRoutes(app: Express, pool: Pool, today: () =>
 
   // Newest exam first.
   app.get('/api/certifications/:id/attempts', async (req, res) => {
-    const id = parseId(req.params.id, '자격증 목표');
+    const id = parseId(req.params.id, 'certification goal');
     const current = today();
     const goal = await pool.query('SELECT 1 FROM certifications WHERE id = $1', [id]);
     if (!goal.rowCount) throw new HttpError(404, goalNotFound);
@@ -115,7 +115,7 @@ export function registerExamAttemptRoutes(app: Express, pool: Pool, today: () =>
   });
 
   app.post('/api/certifications/:id/attempts', async (req, res) => {
-    const id = parseId(req.params.id, '자격증 목표');
+    const id = parseId(req.params.id, 'certification goal');
     const input = attemptInput.parse(body(req.body));
     const { rows } = await pool.query<AttemptRow>(
       `INSERT INTO exam_attempts AS a
@@ -130,8 +130,8 @@ export function registerExamAttemptRoutes(app: Express, pool: Pool, today: () =>
   });
 
   app.put('/api/certifications/:id/attempts/:attemptId', async (req, res) => {
-    const id = parseId(req.params.id, '자격증 목표');
-    const attemptId = parseId(req.params.attemptId, '응시 기록');
+    const id = parseId(req.params.id, 'certification goal');
+    const attemptId = parseId(req.params.attemptId, 'exam attempt');
     const input = attemptInput.parse(body(req.body));
     const { rows } = await pool.query<AttemptRow>(
       `UPDATE exam_attempts a SET exam_date = $2::date, outcome = $3::text, score = $4::integer,
@@ -146,8 +146,8 @@ export function registerExamAttemptRoutes(app: Express, pool: Pool, today: () =>
   });
 
   app.delete('/api/certifications/:id/attempts/:attemptId', async (req, res) => {
-    const id = parseId(req.params.id, '자격증 목표');
-    const attemptId = parseId(req.params.attemptId, '응시 기록');
+    const id = parseId(req.params.id, 'certification goal');
+    const attemptId = parseId(req.params.attemptId, 'exam attempt');
     const { rowCount } = await pool.query(
       'DELETE FROM exam_attempts WHERE id = $1 AND certification_id = $2',
       [attemptId, id],

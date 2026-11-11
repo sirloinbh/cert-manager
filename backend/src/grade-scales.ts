@@ -35,8 +35,8 @@ const scored = (value: string, minScore: number, maxScore: number): GradeLevel =
 export const gradeScales: GradeScale[] = [
   {
     key: 'toeic',
-    label: '토익 (CEFR 기준)',
-    note: '토익에는 공식 등급이 없어 ETS의 CEFR 대응 점수(듣기+읽기 합계)를 씁니다. ETS는 이 값을 엄격한 합격선으로 쓰지 말라고 안내합니다.',
+    label: 'TOEIC (CEFR mapping)',
+    note: 'TOEIC has no official grades, so this uses the ETS CEFR mapping of the combined Listening and Reading score. ETS advises against treating these values as strict pass marks.',
     sourceUrl: 'https://www.ets.org/pdfs/toeic/toeic-mapping-cefr-reference.pdf',
     ranked: true,
     levels: [
@@ -49,8 +49,8 @@ export const gradeScales: GradeScale[] = [
   },
   {
     key: 'toeic_speaking',
-    label: '토익 스피킹',
-    note: 'IM은 110~130점 안에서 IM1·IM2·IM3로 나뉩니다. 점수별 구간을 공식 자료에서 확인하지 못해 성적표의 등급을 직접 고릅니다.',
+    label: 'TOEIC Speaking',
+    note: 'IM is split into IM1, IM2, and IM3 within 110 to 130 points. The score ranges for each could not be confirmed from official sources, so pick the grade shown on your score report.',
     sourceUrl: 'https://www.toeicstory.co.kr/2607',
     ranked: true,
     levels: [
@@ -68,16 +68,16 @@ export const gradeScales: GradeScale[] = [
   },
   {
     key: 'information_processing',
-    label: '국가기술자격 (정보처리)',
-    note: '정보처리 분야에 있는 단계만 넣었습니다. 기능사는 2026년부터 프로그래밍기능사로 이름이 바뀌었습니다.',
+    label: 'National Technical Qualification (Information Processing)',
+    note: 'Only the levels that exist in the Information Processing field are included. Starting in 2026, the Gineungsa level is renamed Programming Gineungsa.',
     sourceUrl: 'https://www.q-net.or.kr/crf005.do?id=crf00503&jmCd=1320',
     ranked: true,
     levels: [named('기능사'), named('산업기사'), named('기사'), named('기술사')],
   },
   {
     key: 'aws',
-    label: 'AWS 자격증',
-    note: 'Specialty는 단계가 아니라 별도 분야입니다.',
+    label: 'AWS certifications',
+    note: 'Specialty is a separate field, not a level.',
     sourceUrl: 'https://aws.amazon.com/certification/',
     ranked: true,
     levels: [
@@ -89,8 +89,8 @@ export const gradeScales: GradeScale[] = [
   },
   {
     key: 'driver_license',
-    label: '운전면허 종류',
-    note: '단계가 아니라 면허 종류입니다. 1종 특수는 대형견인차·소형견인차·구난차로 나뉩니다.',
+    label: 'Driver license types',
+    note: 'These are license types, not levels. Class 1 Special covers large tow trucks, small tow trucks, and rescue vehicles.',
     sourceUrl: 'https://www.data.go.kr/biz/dcat/metadata/15160156.do',
     ranked: false,
     levels: [

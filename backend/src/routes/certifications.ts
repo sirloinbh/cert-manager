@@ -17,67 +17,70 @@ const certificationInput = z
   .object(
     {
       name: z
-        .string({ error: '자격증 이름을 입력해 주세요' })
+        .string({ error: 'Certification name is required' })
         .trim()
-        .refine((value) => value.length >= 1, '자격증 이름을 입력해 주세요')
-        .refine((value) => value.length <= 200, '자격증 이름은 200자 이하로 입력해 주세요'),
-      category: z.enum(categories, { error: '분류는 영어, 개발, 생활 중 하나여야 합니다' }),
-      issuer: shortText('주관 기관').default(''),
+        .refine((value) => value.length >= 1, 'Certification name is required')
+        .refine(
+          (value) => value.length <= 200,
+          'Certification name must be 200 characters or fewer',
+        ),
+      category: z.enum(categories, { error: 'Category must be English, Development, or Life' }),
+      issuer: shortText('Issuer').default(''),
       status: z
         .enum(statuses, {
-          error: '상태는 계획, 공부 중, 접수, 응시 완료, 합격, 불합격 중 하나여야 합니다',
+          error: 'Status must be Planned, Studying, Registered, Taken, Passed, or Failed',
         })
         .default('planned'),
-      goalText: shortText('목표 설명').default(''),
+      goalText: shortText('Goal description').default(''),
       targetScore: z
-        .number({ error: '목표 점수는 숫자여야 합니다' })
-        .int('목표 점수는 정수여야 합니다')
-        .min(0, '목표 점수는 0 이상이어야 합니다')
-        .max(100000, '목표 점수는 100000 이하여야 합니다')
+        .number({ error: 'Target score must be a number' })
+        .int('Target score must be a whole number')
+        .min(0, 'Target score must be 0 or more')
+        .max(100000, 'Target score must be 100000 or less')
         .nullable()
         .default(null),
-      targetExamDate: calendarDate('목표 시험일').nullable().default(null),
+      targetExamDate: calendarDate('Target exam date').nullable().default(null),
       validityKind: z
         .enum(validityKinds, {
-          error: '유효기간 종류는 개월 수, 만료 없음, 모름 중 하나여야 합니다',
+          error: 'Validity type must be Months, No expiry, or Unknown',
         })
         .default('unknown'),
       validityMonths: z
-        .number({ error: '유효기간 개월 수는 숫자여야 합니다' })
-        .int('유효기간 개월 수는 정수여야 합니다')
-        .min(1, '유효기간 개월 수는 1 이상이어야 합니다')
-        .max(1200, '유효기간 개월 수는 1200 이하여야 합니다')
+        .number({ error: 'Validity months must be a number' })
+        .int('Validity months must be a whole number')
+        .min(1, 'Validity months must be 1 or more')
+        .max(1200, 'Validity months must be 1200 or less')
         .nullable()
         .default(null),
-      memo: z.string({ error: '메모는 문자열이어야 합니다' }).default(''),
+      memo: z.string({ error: 'Memo must be text' }).default(''),
       gradeScale: z
-        .enum(gradeScaleKeys, { error: '등급 체계는 목록에 있는 값이어야 합니다' })
+        .enum(gradeScaleKeys, { error: 'Grade scale must be one of the listed values' })
         .default('none'),
-      targetGrade: shortText('목표 등급').nullable().default(null),
+      targetGrade: shortText('Target grade').nullable().default(null),
     },
-    // express.json() accepts an array or a bare value too; the message stays Korean.
-    { error: '요청 본문은 JSON 객체여야 합니다' },
+    // express.json() accepts an array or a bare value too; the message stays English.
+    { error: 'Request body must be a JSON object' },
   )
   .superRefine((input, ctx) => {
     if (input.validityKind === 'months' && input.validityMonths === null) {
       ctx.addIssue({
         code: 'custom',
         path: ['validityMonths'],
-        message: '유효기간 개월 수를 입력해 주세요',
+        message: 'Enter the validity months',
       });
     }
     if (input.validityKind !== 'months' && input.validityMonths !== null) {
       ctx.addIssue({
         code: 'custom',
         path: ['validityMonths'],
-        message: '유효기간이 개월 수가 아니면 개월 수를 비워 주세요',
+        message: 'Leave the validity months empty unless the validity type is Months',
       });
     }
     if (input.targetGrade !== null && !hasLevel(input.gradeScale, input.targetGrade)) {
       ctx.addIssue({
         code: 'custom',
         path: ['targetGrade'],
-        message: '목표 등급은 고른 등급 체계에 있는 값이어야 합니다',
+        message: 'Target grade must be a level of the chosen grade scale',
       });
     }
   });
@@ -108,7 +111,7 @@ const columns = `id::text AS id, name, category, issuer, status, goal_text AS "g
 
 const toCertification = (row: CertificationRow) => ({ ...row, id: toId(row.id) });
 
-const notFoundMessage = '자격증 목표를 찾을 수 없습니다';
+const notFoundMessage = 'Certification goal not found';
 
 export function registerCertificationRoutes(app: Express, pool: Pool, today: () => string) {
   app.get('/api/grade-scales', (_req, res) => {
@@ -128,7 +131,7 @@ export function registerCertificationRoutes(app: Express, pool: Pool, today: () 
   });
 
   app.get('/api/certifications/:id', async (req, res) => {
-    const id = parseId(req.params.id, '자격증 목표');
+    const id = parseId(req.params.id, 'certification goal');
     const current = today();
     const { rows } = await pool.query<CertificationRow>(
       `SELECT ${columns} FROM certifications WHERE id = $2`,
@@ -151,7 +154,7 @@ export function registerCertificationRoutes(app: Express, pool: Pool, today: () 
   });
 
   app.put('/api/certifications/:id', async (req, res) => {
-    const id = parseId(req.params.id, '자격증 목표');
+    const id = parseId(req.params.id, 'certification goal');
     const input = certificationInput.parse(body(req.body));
     // One statement, so a goal that stops expiring and its attempts' expiry dates change together.
     const { rows } = await pool.query<CertificationRow>(
@@ -172,7 +175,7 @@ export function registerCertificationRoutes(app: Express, pool: Pool, today: () 
 
   // Exam attempts (#32) and study plans (#33) go with the goal.
   app.delete('/api/certifications/:id', async (req, res) => {
-    const id = parseId(req.params.id, '자격증 목표');
+    const id = parseId(req.params.id, 'certification goal');
     const { rowCount } = await pool.query('DELETE FROM certifications WHERE id = $1', [id]);
     if (!rowCount) throw new HttpError(404, notFoundMessage);
     res.status(204).end();

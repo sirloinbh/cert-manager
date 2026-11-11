@@ -41,14 +41,14 @@ class RejectedFile extends Error {}
 /** Why these lines are not the song's lines, or null when they are. */
 function lineProblem(file: TranslationFile, originals: TextLine[]) {
   if (file.lines.length !== originals.length) {
-    return `번역 줄 수(${file.lines.length}줄)가 원문 줄 수(${originals.length}줄)와 다릅니다`;
+    return `The translation has ${file.lines.length} lines but the original has ${originals.length}`;
   }
   const moved = file.lines.some(
     (line, index) =>
       line.lineNumber !== originals[index]?.lineNumber ||
       line.original !== originals[index]?.original,
   );
-  return moved ? '원문이 DB와 다릅니다. 파일을 지우고 다시 내보내 주세요' : null;
+  return moved ? 'The original differs from the database. Delete the file and export again' : null;
 }
 
 const cell = (value: string | null | undefined) => (value ?? '').trim();
@@ -72,12 +72,12 @@ const changedSinceExport = (file: TranslationFile, originals: TextLine[]) =>
 /** Why these translations cannot be saved, or null. Saving is all or nothing. */
 function translationProblem(file: TranslationFile) {
   const empty = file.lines.filter((line) => !line.translation?.trim()).length;
-  if (empty > 0) return `번역이 비어 있는 줄이 ${empty}개 있습니다`;
+  if (empty > 0) return `${empty} translation lines are empty`;
   if (file.lines.some((line) => /[\r\n]/.test(line.translation ?? ''))) {
-    return '번역 한 칸에는 한 줄만 쓸 수 있습니다';
+    return 'Each translation cell can hold only one line';
   }
   if (file.lines.some((line) => line.translation?.includes('\u0000'))) {
-    return '번역에 쓸 수 없는 문자가 있습니다';
+    return 'The translation contains characters that are not allowed';
   }
   return null;
 }
@@ -129,12 +129,12 @@ function parseFile(name: string, text: string) {
     // Some Windows tools start a UTF-8 file with a byte order mark.
     value = JSON.parse(text.replace(/^\uFEFF/, ''));
   } catch {
-    throw new RejectedFile('JSON으로 읽을 수 없습니다');
+    throw new RejectedFile('Cannot be read as JSON');
   }
   const parsed = fileSchema.safeParse(value);
-  if (!parsed.success) throw new RejectedFile('파일 형식이 내보낸 형식과 다릅니다');
+  if (!parsed.success) throw new RejectedFile('The file format differs from the exported format');
   if (`${parsed.data.songId}.json` !== name) {
-    throw new RejectedFile('파일 이름과 곡 ID가 다릅니다');
+    throw new RejectedFile('The file name and song ID do not match');
   }
   return parsed.data;
 }
@@ -165,7 +165,9 @@ export async function importTranslations(pool: Pool, dir: string) {
         skip = nothingTyped(file);
         if (skip) return;
         if (changedSinceExport(file, originals)) {
-          throw new RejectedFile('내보낸 뒤 번역이 바뀌었습니다. 파일을 지우고 다시 내보내 주세요');
+          throw new RejectedFile(
+            'The translation changed after export. Delete the file and export again',
+          );
         }
         const problem = translationProblem(file);
         if (problem) throw new RejectedFile(problem);

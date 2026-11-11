@@ -80,9 +80,10 @@ export async function fetchMissingEtymology(
       });
       text = response ? etymologyText(await response.text(), word.lemma) : '';
     } catch (error) {
-      const reason = error instanceof ServiceError ? error.message : '연결 실패 또는 잘못된 응답';
+      const reason =
+        error instanceof ServiceError ? error.message : 'connection failed or invalid response';
       result.failed.push(word.lemma);
-      log(`실패: ${word.lemma} (${reason})`);
+      log(`Failed: ${word.lemma} (${reason})`);
       failuresInARow += 1;
       if (error instanceof RateLimited || failuresInARow === mostFailuresInARow) {
         result.stopped = reason;

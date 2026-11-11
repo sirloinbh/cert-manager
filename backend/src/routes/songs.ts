@@ -9,7 +9,7 @@ import { body, toId } from '../validation.js';
 // Songs and lyrics (#35). Columns and rules: docs/design/scope-and-data-model.md section 6.
 // Lyrics live only in the local database; nothing here copies them anywhere else.
 
-const objectMessage = { error: '요청 본문은 JSON 객체여야 합니다' };
+const objectMessage = { error: 'Request body must be a JSON object' };
 
 // Large enough for any song, small enough to keep one request cheap.
 const maxText = 50_000;
@@ -17,8 +17,8 @@ const maxText = 50_000;
 const lyricsInput = z.object(
   {
     original: z
-      .string({ error: '가사를 입력해 주세요' })
-      .refine((value) => value.length <= maxText, `가사는 ${maxText}자 이하로 입력해 주세요`),
+      .string({ error: 'Lyrics are required' })
+      .refine((value) => value.length <= maxText, `Lyrics must be ${maxText} characters or fewer`),
   },
   objectMessage,
 );
@@ -26,8 +26,11 @@ const lyricsInput = z.object(
 const translationInput = z.object(
   {
     translation: z
-      .string({ error: '번역을 입력해 주세요' })
-      .refine((value) => value.length <= maxText, `번역은 ${maxText}자 이하로 입력해 주세요`),
+      .string({ error: 'Translation is required' })
+      .refine(
+        (value) => value.length <= maxText,
+        `Translation must be ${maxText} characters or fewer`,
+      ),
   },
   objectMessage,
 );
@@ -45,7 +48,7 @@ export function carryTranslations(previous: PreviousLine[], lines: string[]) {
   return lines.map((line) => kept.get(line)?.shift() ?? null);
 }
 
-const notFoundMessage = '곡을 찾을 수 없습니다';
+const notFoundMessage = 'Song not found';
 
 // Listed before the first line with text; "no lyrics" also covers a song with only blank lines.
 const statusColumn = `CASE
@@ -159,17 +162,17 @@ export function registerSongRoutes(app: Express, pool: Pool) {
   });
 
   app.get('/api/songs/:id', async (req, res) => {
-    const id = parseId(req.params.id, '곡');
+    const id = parseId(req.params.id, 'song');
     res.json({ song: await readSong(pool, id) });
   });
 
   // Replaces the lyrics. A line whose text is still there keeps its translation, wherever it moved.
   // Saving the same text changes nothing, so a fetched song keeps its source.
   app.put('/api/songs/:id/lyrics', async (req, res) => {
-    const id = parseId(req.params.id, '곡');
+    const id = parseId(req.params.id, 'song');
     const input = lyricsInput.parse(body(req.body));
     const lines = toLines(input.original);
-    if (!lines.some((line) => line !== '')) throw new HttpError(400, '가사를 입력해 주세요');
+    if (!lines.some((line) => line !== '')) throw new HttpError(400, 'Lyrics are required');
     await inTransaction(pool, async (client) => {
       await lockSong(client, id);
       const previous = await client.query<PreviousLine>(
@@ -204,7 +207,7 @@ export function registerSongRoutes(app: Express, pool: Pool) {
   // Translation lines fill the lines with text in order, so blank lines may be left out when pasting.
   // All of them are saved or none. The song's lock keeps the lines from changing in between.
   app.put('/api/songs/:id/translation', async (req, res) => {
-    const id = parseId(req.params.id, '곡');
+    const id = parseId(req.params.id, 'song');
     const input = translationInput.parse(body(req.body));
     const translated = toLines(input.translation).filter((line) => line !== '');
     await inTransaction(pool, async (client) => {
@@ -214,11 +217,11 @@ export function registerSongRoutes(app: Express, pool: Pool) {
          WHERE song_id = $1 AND original <> '' ORDER BY line_number`,
         [id],
       );
-      if (originals.length === 0) throw new HttpError(400, '원문 가사를 먼저 넣어 주세요');
+      if (originals.length === 0) throw new HttpError(400, 'Add the original lyrics first');
       if (translated.length !== originals.length) {
         throw new HttpError(
           400,
-          `번역 줄 수(${translated.length}줄)가 원문 줄 수(${originals.length}줄)와 다릅니다. 빈 줄은 세지 않습니다`,
+          `The translation has ${translated.length} lines but the original has ${originals.length}. Blank lines are not counted`,
         );
       }
       await setTranslations(

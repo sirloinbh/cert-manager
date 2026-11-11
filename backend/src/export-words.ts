@@ -13,8 +13,9 @@ if (!Number.isInteger(size) || size < 1 || size > 1000) {
 const pool = new Pool({ connectionString: scriptDatabaseUrl() });
 try {
   const { file, written } = await exportWordBatch(pool, wordBatchesDir, size);
-  if (!file) console.log('채울 단어가 없습니다. 어원을 찾아본 단어만 내보냅니다.');
-  else console.log(`${written ? '새 파일' : '이미 있는 파일'}: ${wordBatchesDir}${file}`);
+  if (!file)
+    console.log('No words to fill in. Only words whose etymology was looked up are exported.');
+  else console.log(`${written ? 'New file' : 'Existing file'}: ${wordBatchesDir}${file}`);
 } finally {
   await pool.end();
 }

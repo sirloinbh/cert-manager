@@ -177,9 +177,10 @@ export async function fetchMissingLyrics(
     try {
       found = await requestLyrics(song, source);
     } catch (error) {
-      const reason = error instanceof ServiceError ? error.message : '연결 실패 또는 잘못된 응답';
+      const reason =
+        error instanceof ServiceError ? error.message : 'connection failed or invalid response';
       result.failed.push(song.title);
-      log(`실패: ${song.title} (${reason})`);
+      log(`Failed: ${song.title} (${reason})`);
       failuresInARow += 1;
       if (error instanceof RateLimited || failuresInARow === mostFailuresInARow) {
         result.stopped = reason;
@@ -190,10 +191,10 @@ export async function fetchMissingLyrics(
     failuresInARow = 0;
     if (!found) {
       result.missing.push(song.title);
-      log(`없음: ${song.title}`);
+      log(`Not found: ${song.title}`);
     } else if (await saveLyrics(pool, Number(song.id), found.lines, found.sourceUrl)) {
       result.saved.push(song.title);
-      log(`저장: ${song.title}`);
+      log(`Saved: ${song.title}`);
     }
   }
   if (result.saved.length > 0) {

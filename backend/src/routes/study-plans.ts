@@ -9,21 +9,21 @@ import { body, calendarDate, toId } from '../validation.js';
 
 const title = (label: string) =>
   z
-    .string({ error: `${label}을 입력해 주세요` })
+    .string({ error: `${label} is required` })
     .trim()
-    .refine((value) => value.length >= 1, `${label}을 입력해 주세요`)
-    .refine((value) => value.length <= 200, `${label}은 200자 이하로 입력해 주세요`);
+    .refine((value) => value.length >= 1, `${label} is required`)
+    .refine((value) => value.length <= 200, `${label} must be 200 characters or fewer`);
 
-// express.json() accepts an array or a bare value too; the message stays Korean.
-const objectMessage = { error: '요청 본문은 JSON 객체여야 합니다' };
+// express.json() accepts an array or a bare value too; the message stays English.
+const objectMessage = { error: 'Request body must be a JSON object' };
 
 // PUT replaces the whole stage or task, so POST and PUT share one input.
 const stageInput = z
   .object(
     {
-      title: title('단계 이름'),
-      startDate: calendarDate('시작일').nullable().default(null),
-      endDate: calendarDate('종료일').nullable().default(null),
+      title: title('Stage name'),
+      startDate: calendarDate('Start date').nullable().default(null),
+      endDate: calendarDate('End date').nullable().default(null),
     },
     objectMessage,
   )
@@ -32,21 +32,21 @@ const stageInput = z
       ctx.addIssue({
         code: 'custom',
         path: ['endDate'],
-        message: '종료일은 시작일 이후여야 합니다',
+        message: 'End date must be on or after the start date',
       });
     }
   });
 
 const taskInput = z.object(
   {
-    title: title('할 일'),
-    dueDate: calendarDate('마감일').nullable().default(null),
+    title: title('Task'),
+    dueDate: calendarDate('Due date').nullable().default(null),
   },
   objectMessage,
 );
 
 const completionInput = z.object(
-  { completed: z.boolean({ error: '완료 여부는 true나 false여야 합니다' }) },
+  { completed: z.boolean({ error: 'Completed must be true or false' }) },
   objectMessage,
 );
 
@@ -90,14 +90,14 @@ const toTask = <T extends TaskRow>(row: T) => ({
   stageId: toId(row.stageId),
 });
 
-const goalNotFound = '자격증 목표를 찾을 수 없습니다';
-const stageNotFound = '공부 단계를 찾을 수 없습니다';
-const taskNotFound = '할 일을 찾을 수 없습니다';
+const goalNotFound = 'Certification goal not found';
+const stageNotFound = 'Study stage not found';
+const taskNotFound = 'Task not found';
 
 export function registerStudyPlanRoutes(app: Express, pool: Pool, today: () => string) {
   // Stages in order, each with its tasks in order.
   app.get('/api/certifications/:id/plan', async (req, res) => {
-    const id = parseId(req.params.id, '자격증 목표');
+    const id = parseId(req.params.id, 'certification goal');
     const current = today();
     const goal = await pool.query('SELECT 1 FROM certifications WHERE id = $1', [id]);
     if (!goal.rowCount) throw new HttpError(404, goalNotFound);
@@ -146,7 +146,7 @@ export function registerStudyPlanRoutes(app: Express, pool: Pool, today: () => s
 
   // A new stage or task goes last. The goal or stage must exist, or the SELECT inserts nothing.
   app.post('/api/certifications/:id/stages', async (req, res) => {
-    const id = parseId(req.params.id, '자격증 목표');
+    const id = parseId(req.params.id, 'certification goal');
     const input = stageInput.parse(body(req.body));
     const { rows } = await pool.query<StageRow>(
       `INSERT INTO study_stages AS s (certification_id, title, position, start_date, end_date)
@@ -162,7 +162,7 @@ export function registerStudyPlanRoutes(app: Express, pool: Pool, today: () => s
   });
 
   app.put('/api/study-stages/:id', async (req, res) => {
-    const id = parseId(req.params.id, '공부 단계');
+    const id = parseId(req.params.id, 'study stage');
     const input = stageInput.parse(body(req.body));
     const { rows } = await pool.query<StageRow>(
       `UPDATE study_stages s SET title = $2, start_date = $3, end_date = $4, updated_at = now()
@@ -176,14 +176,14 @@ export function registerStudyPlanRoutes(app: Express, pool: Pool, today: () => s
 
   // Its tasks go with it.
   app.delete('/api/study-stages/:id', async (req, res) => {
-    const id = parseId(req.params.id, '공부 단계');
+    const id = parseId(req.params.id, 'study stage');
     const { rowCount } = await pool.query('DELETE FROM study_stages WHERE id = $1', [id]);
     if (!rowCount) throw new HttpError(404, stageNotFound);
     res.status(204).end();
   });
 
   app.post('/api/study-stages/:id/tasks', async (req, res) => {
-    const id = parseId(req.params.id, '공부 단계');
+    const id = parseId(req.params.id, 'study stage');
     const input = taskInput.parse(body(req.body));
     const { rows } = await pool.query<TaskRow>(
       `INSERT INTO study_tasks AS t (stage_id, title, position, due_date)
@@ -199,7 +199,7 @@ export function registerStudyPlanRoutes(app: Express, pool: Pool, today: () => s
   });
 
   app.put('/api/study-tasks/:id', async (req, res) => {
-    const id = parseId(req.params.id, '할 일');
+    const id = parseId(req.params.id, 'task');
     const input = taskInput.parse(body(req.body));
     const { rows } = await pool.query<TaskRow>(
       `UPDATE study_tasks t SET title = $2, due_date = $3, updated_at = now()
@@ -213,7 +213,7 @@ export function registerStudyPlanRoutes(app: Express, pool: Pool, today: () => s
 
   // Asking for a finished task to be finished again keeps the moment it was first finished.
   app.patch('/api/study-tasks/:id/completion', async (req, res) => {
-    const id = parseId(req.params.id, '할 일');
+    const id = parseId(req.params.id, 'task');
     const input = completionInput.parse(body(req.body));
     const { rows } = await pool.query<TaskRow>(
       `UPDATE study_tasks t
@@ -228,7 +228,7 @@ export function registerStudyPlanRoutes(app: Express, pool: Pool, today: () => s
   });
 
   app.delete('/api/study-tasks/:id', async (req, res) => {
-    const id = parseId(req.params.id, '할 일');
+    const id = parseId(req.params.id, 'task');
     const { rowCount } = await pool.query('DELETE FROM study_tasks WHERE id = $1', [id]);
     if (!rowCount) throw new HttpError(404, taskNotFound);
     res.status(204).end();

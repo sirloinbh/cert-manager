@@ -14,9 +14,13 @@ try {
     { baseUrl: kaikkiUrl, sleep },
     console.log,
   );
-  console.log(`찾음 ${found}단어, 자료 없음 ${none.length}단어, 실패 ${failed.length}단어`);
+  console.log(
+    `Found ${found} words, no data for ${none.length} words, ${failed.length} words failed`,
+  );
   if (stopped)
-    console.warn(`중간에 멈췄습니다: ${stopped}. 나중에 다시 실행하면 남은 단어부터 받습니다.`);
+    console.warn(
+      `Stopped early: ${stopped}. Run it again later to continue with the remaining words.`,
+    );
   if (failed.length > 0) process.exitCode = 1;
 } finally {
   await pool.end();

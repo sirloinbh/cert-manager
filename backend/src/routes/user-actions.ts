@@ -7,24 +7,24 @@ import { body, calendarDate, toId } from '../validation.js';
 
 // Things the user must do outside the app, shown as alerts (#60). Columns: docs/design/scope-and-data-model.md section 5.
 
-const objectMessage = { error: '요청 본문은 JSON 객체여야 합니다' };
+const objectMessage = { error: 'Request body must be a JSON object' };
 
 const actionInput = z
   .object(
     {
       title: z
-        .string({ error: '할 일을 입력해 주세요' })
+        .string({ error: 'Task is required' })
         .trim()
-        .refine((value) => value.length >= 1, '할 일을 입력해 주세요')
-        .refine((value) => value.length <= 200, '할 일은 200자 이하로 입력해 주세요'),
-      note: z.string({ error: '설명은 문자열이어야 합니다' }).default(''),
+        .refine((value) => value.length >= 1, 'Task is required')
+        .refine((value) => value.length <= 200, 'Task must be 200 characters or fewer'),
+      note: z.string({ error: 'Note must be text' }).default(''),
       // The link becomes an href, so only web addresses are accepted.
       linkUrl: z
-        .string({ error: '링크는 문자열이어야 합니다' })
-        .regex(/^(https?:\/\/\S+)?$/i, '링크는 http 또는 https 주소여야 합니다')
+        .string({ error: 'Link must be text' })
+        .regex(/^(https?:\/\/\S+)?$/i, 'Link must be an http or https address')
         .default(''),
-      remindFrom: calendarDate('알림 시작일'),
-      dueDate: calendarDate('마감일').nullable().default(null),
+      remindFrom: calendarDate('Reminder start date'),
+      dueDate: calendarDate('Due date').nullable().default(null),
     },
     objectMessage,
   )
@@ -33,13 +33,13 @@ const actionInput = z
       ctx.addIssue({
         code: 'custom',
         path: ['dueDate'],
-        message: '마감일은 알림 시작일 이후여야 합니다',
+        message: 'Due date must be on or after the reminder start date',
       });
     }
   });
 
 const completionInput = z.object(
-  { completed: z.boolean({ error: '완료 여부는 true나 false여야 합니다' }) },
+  { completed: z.boolean({ error: 'Completed must be true or false' }) },
   objectMessage,
 );
 
@@ -61,7 +61,7 @@ const columns = (today: string) => `id::text AS id, title, note, link_url AS "li
 
 const toAction = (row: ActionRow) => ({ ...row, id: toId(row.id) });
 
-const notFoundMessage = '직접 할 일을 찾을 수 없습니다';
+const notFoundMessage = 'Custom task not found';
 
 export function registerUserActionRoutes(app: Express, pool: Pool, today: () => string) {
   // What needs attention now: not done and past its reminder day, the nearest deadline first.
@@ -89,7 +89,7 @@ export function registerUserActionRoutes(app: Express, pool: Pool, today: () => 
 
   // Marking it done again keeps the first time; undoing clears it.
   app.put('/api/user-actions/:id/completion', async (req, res) => {
-    const id = parseId(req.params.id, '직접 할 일');
+    const id = parseId(req.params.id, 'custom task');
     const input = completionInput.parse(body(req.body));
     const { rows } = await pool.query<ActionRow>(
       `UPDATE user_actions
@@ -104,7 +104,7 @@ export function registerUserActionRoutes(app: Express, pool: Pool, today: () => 
   });
 
   app.delete('/api/user-actions/:id', async (req, res) => {
-    const id = parseId(req.params.id, '직접 할 일');
+    const id = parseId(req.params.id, 'custom task');
     const { rowCount } = await pool.query('DELETE FROM user_actions WHERE id = $1', [id]);
     if (!rowCount) throw new HttpError(404, notFoundMessage);
     res.status(204).end();

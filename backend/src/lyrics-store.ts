@@ -29,7 +29,7 @@ export async function inTransaction(pool: Pool, work: (client: PoolClient) => Pr
 // Every write takes this lock first, so one finishes before the next reads the lines.
 export async function lockSong(client: PoolClient, id: number) {
   const song = await client.query('SELECT 1 FROM songs WHERE id = $1 FOR UPDATE', [id]);
-  if (!song.rowCount) throw new HttpError(404, '곡을 찾을 수 없습니다');
+  if (!song.rowCount) throw new HttpError(404, 'Song not found');
 }
 
 /** Writes translations onto existing lines. Call inside a transaction holding the song's lock. */

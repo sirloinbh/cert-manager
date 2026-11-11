@@ -14,10 +14,12 @@ try {
     { baseUrl: lrclibUrl, sleep },
     console.log,
   );
-  console.log(`저장 ${saved.length}곡, 없음 ${missing.length}곡, 실패 ${failed.length}곡`);
-  if (missing.length > 0) console.log('없는 곡은 화면에서 직접 붙여 넣을 수 있습니다.');
+  console.log(`Saved ${saved.length} songs, ${missing.length} not found, ${failed.length} failed`);
+  if (missing.length > 0) console.log('Songs that were not found can be pasted in on the screen.');
   if (stopped)
-    console.warn(`중간에 멈췄습니다: ${stopped}. 나중에 다시 실행하면 남은 곡부터 받습니다.`);
+    console.warn(
+      `Stopped early: ${stopped}. Run it again later to continue with the remaining songs.`,
+    );
   if (failed.length > 0) process.exitCode = 1;
 } finally {
   await pool.end();
