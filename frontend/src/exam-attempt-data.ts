@@ -34,10 +34,10 @@ export type ExamAttemptInput = Omit<
 };
 
 export const outcomeLabels: Record<Outcome, string> = {
-  waiting: '결과 전',
-  passed: '합격',
-  failed: '불합격',
-  scored: '점수·등급',
+  waiting: 'Pending',
+  passed: 'Passed',
+  failed: 'Failed',
+  scored: 'Score/grade',
 };
 
 /** Only these outcomes earn something that can expire. */
@@ -46,11 +46,11 @@ export const hasExpiry = (outcome: Outcome) => outcome === 'passed' || outcome =
 export type ExpiryState = 'none' | 'unknown' | 'expired' | 'soon' | 'valid';
 
 export const expiryLabels: Record<ExpiryState, string> = {
-  none: '만료 없음',
-  unknown: '만료일 모름',
-  expired: '만료',
-  soon: '만료 임박',
-  valid: '유효',
+  none: 'No expiry',
+  unknown: 'Expiry unknown',
+  expired: 'Expired',
+  soon: 'Expiring soon',
+  valid: 'Valid',
 };
 
 const soonDays = 90;

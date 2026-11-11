@@ -47,43 +47,43 @@ export type CertificationInput = Omit<
 };
 
 export const categoryLabels: Record<Category, string> = {
-  english: '영어',
-  dev: '개발',
-  life: '생활',
+  english: 'English',
+  dev: 'Development',
+  life: 'Life',
 };
 
 export const statusLabels: Record<Status, string> = {
-  planned: '계획',
-  studying: '공부 중',
-  registered: '접수',
-  taken: '응시 완료',
-  passed: '합격',
-  failed: '불합격',
+  planned: 'Planned',
+  studying: 'Studying',
+  registered: 'Registered',
+  taken: 'Taken',
+  passed: 'Passed',
+  failed: 'Failed',
 };
 
 export const validityLabels: Record<ValidityKind, string> = {
-  months: '개월 수 입력',
-  none: '만료 없음',
-  unknown: '모름',
+  months: 'Enter months',
+  none: 'No expiry',
+  unknown: 'Unknown',
 };
 
 export function examCountdown(days: number | null) {
-  if (days === null) return '시험일 미정';
-  if (days === 0) return '오늘 시험';
-  return days > 0 ? `${days}일 남음` : `${-days}일 지남`;
+  if (days === null) return 'Exam date not set';
+  if (days === 0) return 'Exam today';
+  return days > 0 ? `${days} days left` : `${-days} days ago`;
 }
 
 /** Days left until a last day, such as an expiry or a due date. */
 export function deadlineCountdown(days: number) {
-  if (days === 0) return '오늘까지';
-  return days > 0 ? `${days}일 남음` : `${-days}일 지남`;
+  if (days === 0) return 'Due today';
+  return days > 0 ? `${days} days left` : `${-days} days overdue`;
 }
 
 export function validityText(
   certification: Pick<Certification, 'validityKind' | 'validityMonths'>,
 ) {
-  if (certification.validityKind === 'months') return `${certification.validityMonths}개월`;
-  return certification.validityKind === 'none' ? '만료 없음' : '모름';
+  if (certification.validityKind === 'months') return `${certification.validityMonths} months`;
+  return certification.validityKind === 'none' ? 'No expiry' : 'Unknown';
 }
 
 /** Categories in menu order with their goals, keeping the server's date order; empty categories are left out. */

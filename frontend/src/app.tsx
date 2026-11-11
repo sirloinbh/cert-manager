@@ -56,11 +56,11 @@ const wordPaths: WordPaths = {
 
 // Main menu (LNB) items, in display order.
 const nav: NavItem[] = [
-  { to: pages.overview, label: '대시보드', icon: LayoutDashboard },
-  { to: pages.certifications, label: '자격증', icon: Award },
-  { to: pages.songs, label: '팝송 가사', icon: Music },
-  { to: pages.words, label: '단어장', icon: BookOpenText },
-  { to: pages.settings, label: '설정', icon: Settings2 },
+  { to: pages.overview, label: 'Dashboard', icon: LayoutDashboard },
+  { to: pages.certifications, label: 'Certifications', icon: Award },
+  { to: pages.songs, label: 'Song lyrics', icon: Music },
+  { to: pages.words, label: 'Vocabulary', icon: BookOpenText },
+  { to: pages.settings, label: 'Settings', icon: Settings2 },
 ];
 
 function useHealth() {
@@ -72,10 +72,10 @@ function useHealth() {
         setHealth(
           response.ok && data.today
             ? { state: 'ok', today: data.today }
-            : { state: 'error', message: data.error ?? '서버 상태를 확인할 수 없습니다' },
+            : { state: 'error', message: data.error ?? 'Could not check the server status' },
         );
       })
-      .catch(() => setHealth({ state: 'error', message: '서버에 연결할 수 없습니다' }));
+      .catch(() => setHealth({ state: 'error', message: 'Could not connect to the server' }));
   }, []);
   return health;
 }
@@ -109,8 +109,8 @@ function Page({
       {children ?? (
         <EmptyState
           className="break-keep"
-          title="아직 기능이 없습니다"
-          description="기능은 GitHub 이슈 카드로 등록한 뒤 하나씩 추가합니다."
+          title="No features yet"
+          description="Features are registered as GitHub issue cards and added one at a time."
         />
       )}
     </section>
@@ -122,14 +122,14 @@ export function App() {
   return (
     // The song search box takes its value from the URL, and React says not to update a typed value in a transition.
     <BrowserRouter useTransitions={false}>
-      <AppShell appName="자격증 관리" nav={nav} actions={<UserActionAlerts />}>
+      <AppShell appName="Cert Manager" nav={nav} actions={<UserActionAlerts />}>
         <Routes>
           <Route
             path={pages.overview}
             element={
               <Page
-                title="대시보드"
-                description="자격증 목표와 영어 공부에서 오늘 볼 것을 모아 봅니다."
+                title="Dashboard"
+                description="See what to look at today from your certification goals and English study."
                 health={health}
               >
                 <div className="grid gap-4 lg:grid-cols-2">
@@ -163,7 +163,13 @@ export function App() {
           <Route path={pages.word} element={<WordDetail paths={wordPaths} />} />
           <Route
             path={pages.settings}
-            element={<Page title="설정" description="앱 환경과 데이터 관리" health={health} />}
+            element={
+              <Page
+                title="Settings"
+                description="App environment and data management"
+                health={health}
+              />
+            }
           />
           <Route path="*" element={<Navigate to={pages.overview} replace />} />
         </Routes>

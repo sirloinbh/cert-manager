@@ -14,6 +14,7 @@ import {
 } from './components/ui/sheet';
 import { SkeletonList } from './components/ui/skeleton';
 import { toast } from './components/ui/sonner';
+import { formatDate } from './date-format';
 import { errorText } from './lib/use-notice';
 import { cn } from './lib/utils';
 import { useReloading } from './use-load';
@@ -43,7 +44,7 @@ function ActionItem({
       ) : null}
       {action.dueDate !== null && action.daysUntilDue !== null ? (
         <p className={cn('text-caption', overdue && 'font-semibold text-destructive')}>
-          <time dateTime={action.dueDate}>{action.dueDate}</time>
+          <time dateTime={action.dueDate}>{formatDate(action.dueDate)}</time>
           {' · '}
           {deadlineCountdown(action.daysUntilDue)}
         </p>
@@ -56,11 +57,11 @@ function ActionItem({
           aria-disabled={pending || undefined}
           aria-busy={pending || undefined}
           className={pending ? 'pointer-events-none opacity-60' : undefined}
-          aria-label={`'${action.title}' 완료`}
+          aria-label={`Complete '${action.title}'`}
           onClick={pending ? undefined : onComplete}
         >
           <Check aria-hidden />
-          완료
+          Done
         </Button>
         {action.linkUrl ? (
           <Button asChild variant="link" size="sm">
@@ -68,9 +69,9 @@ function ActionItem({
               href={action.linkUrl}
               target="_blank"
               rel="noreferrer"
-              aria-label={`'${action.title}' 바로가기 (새 탭)`}
+              aria-label={`Open the link for '${action.title}' (new tab)`}
             >
-              바로가기
+              Open link
               <ExternalLink aria-hidden />
             </a>
           </Button>
@@ -110,8 +111,8 @@ export function UserActionAlerts() {
   useEffect(() => {
     if (announced.current || firstCount === 0) return;
     announced.current = true;
-    toast(`직접 할 일이 ${firstCount}건 있습니다`, {
-      description: '상단의 종 아이콘에서 볼 수 있습니다.',
+    toast(`You have ${firstCount} manual tasks`, {
+      description: 'See them from the bell icon at the top.',
       // At the top it would cover the bell it points to.
       position: 'bottom-center',
     });
@@ -126,11 +127,11 @@ export function UserActionAlerts() {
         ...list,
         actions: list.actions.filter((item) => item.id !== action.id),
       }));
-      toast.success('완료로 표시했습니다');
+      toast.success('Marked as done');
       // The button is gone with its row, so focus goes to the panel title.
       title.current?.focus();
     } catch (error) {
-      toast.error(errorText(error, '완료로 표시하지 못했습니다'));
+      toast.error(errorText(error, 'Could not mark as done'));
       // It may already be gone; the list then says what is true.
       reload();
     } finally {
@@ -154,10 +155,10 @@ export function UserActionAlerts() {
           className="relative"
           aria-label={
             failed
-              ? '직접 할 일 알림을 불러오지 못했습니다'
+              ? 'Could not load the manual task alerts'
               : count > 0
-                ? `직접 할 일 알림 ${count}건`
-                : '직접 할 일 알림'
+                ? `${count} manual task alerts`
+                : 'Manual task alerts'
           }
         >
           <Bell aria-hidden />
@@ -174,10 +175,10 @@ export function UserActionAlerts() {
       <SheetContent side="right" className="w-full sm:max-w-md">
         <SheetHeader className="border-b">
           <SheetTitle ref={title} tabIndex={-1} className="outline-none">
-            직접 할 일
+            Manual tasks
           </SheetTitle>
           <SheetDescription className="break-keep">
-            앱이 대신할 수 없어 직접 해야 하는 일입니다. 마친 일은 완료로 표시하세요.
+            These are things the app cannot do for you. Mark finished ones as done.
           </SheetDescription>
         </SheetHeader>
         {/* The list scrolls, not the panel, so the close button stays in reach. */}
@@ -185,7 +186,7 @@ export function UserActionAlerts() {
           {loaded.state === 'loading' && !data ? <SkeletonList rows={2} /> : null}
           {hasError ? (
             <Notice
-              notice={{ kind: 'error', text: errorText(lastError, '알림을 불러오지 못했습니다') }}
+              notice={{ kind: 'error', text: errorText(lastError, 'Could not load the alerts') }}
             />
           ) : null}
           {hasError ? (
@@ -198,12 +199,12 @@ export function UserActionAlerts() {
               className={`w-fit ${loaded.state === 'loading' ? 'pointer-events-none opacity-60' : ''}`}
               onClick={loaded.state === 'loading' ? undefined : () => reload()}
             >
-              다시 불러오기
+              Reload
             </Button>
           ) : null}
           {data && count === 0 && !hasError ? (
             <p className="text-body-sm break-keep text-muted-foreground">
-              지금 직접 할 일이 없습니다.
+              No manual tasks right now.
             </p>
           ) : null}
           {count > 0 ? (

@@ -29,6 +29,7 @@ import { Notice } from './components/ui/notice';
 import { SkeletonList } from './components/ui/skeleton';
 import { toast } from './components/ui/sonner';
 import { Spinner } from './components/ui/spinner';
+import { formatDate } from './date-format';
 import { ExamAttempts } from './exam-attempts';
 import { controlClass, toNumber } from './form-fields';
 import { RequestError } from './lib/api';
@@ -97,16 +98,16 @@ function BackLink({ to, children }: { to: string; children: ReactNode }) {
 }
 
 function goalSummary(item: Certification) {
-  const grade = item.targetGrade ? `목표 등급 ${item.targetGrade}` : '';
+  const grade = item.targetGrade ? `Target grade ${item.targetGrade}` : '';
   return [item.issuer, item.goalText, grade].filter(Boolean).join(' · ');
 }
 
 function ExamDate({ item }: { item: Certification }) {
   if (item.targetExamDate === null)
-    return <span className="text-muted-foreground">시험일 미정</span>;
+    return <span className="text-muted-foreground">Exam date not set</span>;
   return (
     <>
-      <time dateTime={item.targetExamDate}>{item.targetExamDate}</time>
+      <time dateTime={item.targetExamDate}>{formatDate(item.targetExamDate)}</time>
       {' · '}
       <strong
         className={cn('font-medium', (item.daysUntilExam ?? 0) < 0 && 'text-muted-foreground')}
@@ -123,15 +124,15 @@ export function CertificationList({ paths }: { paths: CertificationPaths }) {
     <Button asChild>
       <Link to={paths.create}>
         <Plus aria-hidden />
-        목표 추가
+        Add goal
       </Link>
     </Button>
   );
   return (
     <section aria-labelledby="page-title" className="flex flex-col gap-6">
       <PageHeader
-        title="자격증"
-        description="따고 싶은 자격증과 목표 시험일을 분류별로 봅니다."
+        title="Certifications"
+        description="See the certifications you want and their target exam dates by category."
         actions={addButton}
       />
       {loaded.state === 'loading' ? <SkeletonList rows={3} /> : null}
@@ -139,7 +140,7 @@ export function CertificationList({ paths }: { paths: CertificationPaths }) {
         <Notice
           notice={{
             kind: 'error',
-            text: errorText(loaded.error, '목표 목록을 불러오지 못했습니다'),
+            text: errorText(loaded.error, 'Could not load the goals'),
           }}
         />
       ) : null}
@@ -147,8 +148,8 @@ export function CertificationList({ paths }: { paths: CertificationPaths }) {
         <EmptyState
           className="break-keep"
           icon={<Award />}
-          title="아직 목표 자격증이 없습니다"
-          description="따고 싶은 자격증을 추가하면 분류별로 묶어 목표 시험일 순으로 보여 줍니다."
+          title="No certification goals yet"
+          description="Add a certification you want and it is grouped by category in target exam date order."
           action={addButton}
         />
       ) : null}
@@ -162,7 +163,7 @@ export function CertificationList({ paths }: { paths: CertificationPaths }) {
               <h2 id={`category-${category}`} className="flex items-baseline gap-2">
                 {categoryLabels[category]}
                 <span className="text-body-sm font-normal text-muted-foreground">
-                  {items.length}개
+                  {items.length}
                 </span>
               </h2>
               <ul className="grid gap-3 lg:grid-cols-2">
@@ -210,7 +211,7 @@ export function UpcomingExams({ paths }: { paths: CertificationPaths }) {
     <Card>
       <CardHeader>
         <CardTitle asHeading="h2" className="text-body">
-          가까운 시험
+          Upcoming exams
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
@@ -219,13 +220,13 @@ export function UpcomingExams({ paths }: { paths: CertificationPaths }) {
           <Notice
             notice={{
               kind: 'error',
-              text: errorText(loaded.error, '목표 시험을 불러오지 못했습니다'),
+              text: errorText(loaded.error, 'Could not load the target exams'),
             }}
           />
         ) : null}
         {loaded.state === 'ok' && exams.length === 0 ? (
           <p className="text-body-sm break-keep text-muted-foreground">
-            다가오는 시험이 없습니다. 자격증 목표에 시험일을 정하면 여기에 보입니다.
+            No upcoming exams. Set an exam date on a certification goal and it shows up here.
           </p>
         ) : null}
         {exams.length > 0 ? (
@@ -246,7 +247,7 @@ export function UpcomingExams({ paths }: { paths: CertificationPaths }) {
                     dateTime={item.targetExamDate ?? undefined}
                     className="text-caption text-muted-foreground"
                   >
-                    {item.targetExamDate}
+                    {item.targetExamDate ? formatDate(item.targetExamDate) : null}
                   </time>
                 </div>
                 <strong className="shrink-0 text-body-sm font-semibold">
@@ -260,7 +261,7 @@ export function UpcomingExams({ paths }: { paths: CertificationPaths }) {
           to={paths.list}
           className="w-fit text-body-sm text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50"
         >
-          자격증 목표 전체 보기
+          View all certification goals
         </Link>
       </CardContent>
     </Card>
@@ -278,8 +279,8 @@ function Field({ label, value }: { label: string; value: ReactNode }) {
 
 function notFoundText(error: unknown) {
   return error instanceof RequestError && error.status === 404
-    ? '자격증 목표를 찾을 수 없습니다. 이미 지웠을 수 있습니다.'
-    : errorText(error, '자격증 목표를 불러오지 못했습니다');
+    ? 'Certification goal not found. It may have been deleted already.'
+    : errorText(error, 'Could not load the certification goal');
 }
 
 export function CertificationDetail({ paths }: { paths: CertificationPaths }) {
@@ -293,8 +294,8 @@ export function CertificationDetail({ paths }: { paths: CertificationPaths }) {
   if (loaded.state !== 'ok') {
     return (
       <section aria-labelledby="page-title" className="flex flex-col gap-6">
-        <BackLink to={paths.list}>자격증 목록</BackLink>
-        <PageHeader title="자격증 목표" />
+        <BackLink to={paths.list}>Certification list</BackLink>
+        <PageHeader title="Certification goal" />
         {loaded.state === 'loading' ? (
           <SkeletonList rows={4} />
         ) : (
@@ -313,10 +314,10 @@ export function CertificationDetail({ paths }: { paths: CertificationPaths }) {
         status: 'passed',
       });
       setChanged(certification);
-      toast.success('목표 상태를 합격으로 바꿨습니다');
+      toast.success('Goal status changed to Passed');
     } catch (error) {
       // The open dialog covers the page, so the reason goes in a toast above it.
-      toast.error(errorText(error, '목표 상태를 바꾸지 못했습니다'));
+      toast.error(errorText(error, 'Could not change the goal status'));
       throw error;
     }
   };
@@ -327,17 +328,17 @@ export function CertificationDetail({ paths }: { paths: CertificationPaths }) {
       // Already gone counts as deleted; anything else keeps the dialog open with the reason.
       if (!(error instanceof RequestError && error.status === 404)) {
         // The open dialog covers the page, so the reason goes in a toast above it.
-        toast.error(errorText(error, '목표를 지우지 못했습니다'));
+        toast.error(errorText(error, 'Could not delete the goal'));
         throw error;
       }
     }
-    toast.success(`'${item.name}' 목표를 지웠습니다`);
+    toast.success(`Deleted the '${item.name}' goal`);
     void navigate(paths.list);
   };
 
   return (
     <section aria-labelledby="page-title" className="flex flex-col gap-6">
-      <BackLink to={paths.list}>자격증 목록</BackLink>
+      <BackLink to={paths.list}>Certification list</BackLink>
       <PageHeader
         title={item.name}
         actions={
@@ -345,21 +346,21 @@ export function CertificationDetail({ paths }: { paths: CertificationPaths }) {
             <Button asChild variant="outline">
               <Link to={paths.edit(item.id)}>
                 <Pencil aria-hidden />
-                수정
+                Edit
               </Link>
             </Button>
             <ConfirmDialog
-              title="목표를 지울까요?"
+              title="Delete this goal?"
               description={
                 <span className="break-keep">
-                  {`'${item.name}' 목표를 지웁니다. 이 목표에 딸린 응시 기록과 공부 계획도 함께 지워지고 되돌릴 수 없습니다.`}
+                  {`This deletes the '${item.name}' goal. Its exam attempts and study plan are deleted too, and this cannot be undone.`}
                 </span>
               }
               onConfirm={remove}
               trigger={
                 <Button variant="outline" className="text-destructive">
                   <Trash2 aria-hidden />
-                  삭제
+                  Delete
                 </Button>
               }
             />
@@ -367,44 +368,44 @@ export function CertificationDetail({ paths }: { paths: CertificationPaths }) {
         }
       />
       <dl className="rounded-xl border bg-card px-4 text-card-foreground shadow-sm">
-        <Field label="분류" value={categoryLabels[item.category]} />
-        <Field label="상태" value={<StatusBadge status={item.status} />} />
+        <Field label="Category" value={categoryLabels[item.category]} />
+        <Field label="Status" value={<StatusBadge status={item.status} />} />
         <Field
-          label="주관 기관"
-          value={item.issuer || <span className="text-muted-foreground">적지 않음</span>}
+          label="Issuer"
+          value={item.issuer || <span className="text-muted-foreground">Not entered</span>}
         />
         <Field
-          label="목표"
-          value={item.goalText || <span className="text-muted-foreground">적지 않음</span>}
+          label="Goal"
+          value={item.goalText || <span className="text-muted-foreground">Not entered</span>}
         />
         <Field
-          label="목표 점수"
+          label="Target score"
           value={
             item.targetScore === null ? (
-              <span className="text-muted-foreground">정하지 않음</span>
+              <span className="text-muted-foreground">Not set</span>
             ) : (
-              `${item.targetScore}점`
+              `${item.targetScore}`
             )
           }
         />
         {item.gradeScale === 'none' ? null : (
           <Field
-            label="목표 등급"
-            value={item.targetGrade ?? <span className="text-muted-foreground">미정</span>}
+            label="Target grade"
+            value={item.targetGrade ?? <span className="text-muted-foreground">Not set</span>}
           />
         )}
-        <Field label="목표 시험일" value={<ExamDate item={item} />} />
-        <Field label="유효기간" value={validityText(item)} />
+        <Field label="Target exam date" value={<ExamDate item={item} />} />
+        <Field label="Validity" value={validityText(item)} />
         <Field
-          label="메모"
-          value={item.memo || <span className="text-muted-foreground">없음</span>}
+          label="Memo"
+          value={item.memo || <span className="text-muted-foreground">None</span>}
         />
       </dl>
       {scalesFailed && item.gradeScale !== 'none' ? (
         <Notice
           notice={{
             kind: 'error',
-            text: '등급 목록을 불러오지 못해 등급표를 보여 줄 수 없습니다. 목표보다 높은 등급의 달성 표시도 지금은 나오지 않지만, 목표 등급과 기록은 그대로입니다.',
+            text: 'Could not load the grade list, so the grade table cannot be shown. Higher-than-target achievements are not marked for now, but the target grade and records are unchanged.',
           }}
         />
       ) : null}
@@ -503,7 +504,7 @@ function FormFields({
     setPending(true);
     notice.clear();
     onSubmit(toInput(form)).catch((error: unknown) => {
-      notice.error(error, '저장하지 못했습니다');
+      notice.error(error, 'Could not save');
       setPending(false);
     });
   };
@@ -515,19 +516,19 @@ function FormFields({
       aria-busy={pending || undefined}
     >
       <div className="flex flex-col gap-2">
-        <Label htmlFor={`${id}-name`}>자격증 이름</Label>
+        <Label htmlFor={`${id}-name`}>Certification name</Label>
         <Input
           id={`${id}-name`}
           required
           maxLength={200}
           value={form.name}
           onChange={(e) => set('name')(e.target.value)}
-          placeholder="예: 토익"
+          placeholder="e.g. TOEIC"
         />
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
-          <Label htmlFor={`${id}-category`}>분류</Label>
+          <Label htmlFor={`${id}-category`}>Category</Label>
           <select
             id={`${id}-category`}
             className={cn(controlClass, 'h-9')}
@@ -542,7 +543,7 @@ function FormFields({
           </select>
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor={`${id}-status`}>상태</Label>
+          <Label htmlFor={`${id}-status`}>Status</Label>
           <select
             id={`${id}-status`}
             className={cn(controlClass, 'h-9')}
@@ -558,28 +559,28 @@ function FormFields({
         </div>
       </div>
       <div className="flex flex-col gap-2">
-        <Label htmlFor={`${id}-issuer`}>주관 기관</Label>
+        <Label htmlFor={`${id}-issuer`}>Issuer</Label>
         <Input
           id={`${id}-issuer`}
           maxLength={200}
           value={form.issuer}
           onChange={(e) => set('issuer')(e.target.value)}
-          placeholder="예: YBM, 한국산업인력공단, AWS"
+          placeholder="e.g. YBM, HRD Korea, AWS"
         />
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
-          <Label htmlFor={`${id}-goal`}>목표</Label>
+          <Label htmlFor={`${id}-goal`}>Goal</Label>
           <Input
             id={`${id}-goal`}
             maxLength={200}
             value={form.goalText}
             onChange={(e) => set('goalText')(e.target.value)}
-            placeholder="예: 900점 이상, 합격"
+            placeholder="e.g. 900 or higher, pass"
           />
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor={`${id}-score`}>목표 점수</Label>
+          <Label htmlFor={`${id}-score`}>Target score</Label>
           <Input
             id={`${id}-score`}
             type="number"
@@ -590,13 +591,13 @@ function FormFields({
             aria-describedby={`${id}-score-hint`}
           />
           <p id={`${id}-score-hint`} className="text-caption text-muted-foreground">
-            점수가 없는 시험이면 비워 둡니다.
+            Leave empty if the exam has no score.
           </p>
         </div>
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
-          <Label htmlFor={`${id}-scale`}>등급 체계</Label>
+          <Label htmlFor={`${id}-scale`}>Grade scale</Label>
           <select
             id={`${id}-scale`}
             className={cn(controlClass, 'h-9')}
@@ -608,34 +609,34 @@ function FormFields({
               setForm((current) => ({ ...current, gradeScale: e.target.value, targetGrade: '' }))
             }
           >
-            <option value="none">쓰지 않음</option>
+            <option value="none">Not used</option>
             {scales.map((item) => (
               <option key={item.key} value={item.key}>
                 {item.label}
               </option>
             ))}
             {scales.length === 0 && form.gradeScale !== 'none' ? (
-              <option value={form.gradeScale}>저장된 등급 체계</option>
+              <option value={form.gradeScale}>Saved grade scale</option>
             ) : null}
           </select>
           <p id={`${id}-scale-hint`} className="text-caption break-keep text-muted-foreground">
             {failed
-              ? '등급 목록을 불러오지 못해 지금은 고를 수 없습니다. 이미 고른 값은 그대로 저장됩니다.'
+              ? 'Could not load the grade list, so you cannot choose one now. The value already chosen is saved as it is.'
               : scales.length === 0
-                ? '등급 목록을 불러오는 중입니다.'
-                : (scale?.note ?? '점수·레벨·단계가 있는 자격증이면 고릅니다.')}
+                ? 'Loading the grade list.'
+                : (scale?.note ?? 'Choose one if the certification has scores, levels, or steps.')}
           </p>
         </div>
         {scale ? (
           <div className="flex flex-col gap-2">
-            <Label htmlFor={`${id}-target-grade`}>목표 등급</Label>
+            <Label htmlFor={`${id}-target-grade`}>Target grade</Label>
             <select
               id={`${id}-target-grade`}
               className={cn(controlClass, 'h-9')}
               value={form.targetGrade}
               onChange={(e) => set('targetGrade')(e.target.value)}
             >
-              <option value="">미정</option>
+              <option value="">Not set</option>
               {[...scale.levels].reverse().map((level) => (
                 <option key={level.value} value={level.value}>
                   {level.value}
@@ -646,7 +647,7 @@ function FormFields({
         ) : null}
       </div>
       <div className="flex flex-col gap-2">
-        <Label htmlFor={`${id}-date`}>목표 시험일</Label>
+        <Label htmlFor={`${id}-date`}>Target exam date</Label>
         <Input
           id={`${id}-date`}
           type="date"
@@ -656,12 +657,12 @@ function FormFields({
           aria-describedby={`${id}-date-hint`}
         />
         <p id={`${id}-date-hint`} className="text-caption text-muted-foreground">
-          아직 정하지 않았으면 비워 둡니다.
+          Leave empty if not decided yet.
         </p>
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
-          <Label htmlFor={`${id}-validity`}>유효기간</Label>
+          <Label htmlFor={`${id}-validity`}>Validity</Label>
           <select
             id={`${id}-validity`}
             className={cn(controlClass, 'h-9')}
@@ -677,7 +678,7 @@ function FormFields({
         </div>
         {form.validityKind === 'months' ? (
           <div className="flex flex-col gap-2">
-            <Label htmlFor={`${id}-months`}>유효기간 개월 수</Label>
+            <Label htmlFor={`${id}-months`}>Validity months</Label>
             <Input
               id={`${id}-months`}
               type="number"
@@ -686,30 +687,30 @@ function FormFields({
               required
               value={form.validityMonths}
               onChange={(e) => set('validityMonths')(e.target.value)}
-              placeholder="예: 24"
+              placeholder="e.g. 24"
             />
           </div>
         ) : null}
       </div>
       <div className="flex flex-col gap-2">
-        <Label htmlFor={`${id}-memo`}>메모</Label>
+        <Label htmlFor={`${id}-memo`}>Memo</Label>
         <textarea
           id={`${id}-memo`}
           rows={4}
           className={cn(controlClass, 'min-h-24 py-2')}
           value={form.memo}
           onChange={(e) => set('memo')(e.target.value)}
-          placeholder="접수 기간, 준비물 등"
+          placeholder="Registration period, things to bring, etc."
         />
       </div>
       <Notice notice={notice.notice} />
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={pending} aria-busy={pending || undefined}>
-          {pending ? <Spinner size="sm" label="저장하는 중" /> : null}
+          {pending ? <Spinner size="sm" label="Saving" /> : null}
           {submitLabel}
         </Button>
         <Button asChild variant="outline">
-          <Link to={cancelTo}>취소</Link>
+          <Link to={cancelTo}>Cancel</Link>
         </Button>
       </div>
     </form>
@@ -720,17 +721,17 @@ export function NewCertification({ paths }: { paths: CertificationPaths }) {
   const navigate = useNavigate();
   const create = async (input: CertificationInput) => {
     const { certification } = await certificationApi.create(input);
-    toast.success(`'${certification.name}' 목표를 추가했습니다`);
+    toast.success(`Added the '${certification.name}' goal`);
     void navigate(paths.detail(certification.id));
   };
   return (
     <section aria-labelledby="page-title" className="flex flex-col gap-6">
-      <BackLink to={paths.list}>자격증 목록</BackLink>
+      <BackLink to={paths.list}>Certification list</BackLink>
       <PageHeader
-        title="목표 추가"
-        description="따고 싶은 자격증과 목표를 적습니다. 이름과 분류만 있으면 됩니다."
+        title="Add goal"
+        description="Enter the certification you want and your goal. Only the name and category are required."
       />
-      <FormFields initial={emptyForm} submitLabel="추가" cancelTo={paths.list} onSubmit={create} />
+      <FormFields initial={emptyForm} submitLabel="Add" cancelTo={paths.list} onSubmit={create} />
     </section>
   );
 }
@@ -741,7 +742,7 @@ export function EditCertification({ paths }: { paths: CertificationPaths }) {
   const navigate = useNavigate();
   const update = async (input: CertificationInput) => {
     const { certification } = await certificationApi.update(Number(id), input);
-    toast.success('저장했습니다');
+    toast.success('Saved');
     void navigate(paths.detail(certification.id));
   };
   return (
@@ -749,9 +750,9 @@ export function EditCertification({ paths }: { paths: CertificationPaths }) {
       <BackLink
         to={loaded.state === 'ok' ? paths.detail(loaded.data.certification.id) : paths.list}
       >
-        {loaded.state === 'ok' ? loaded.data.certification.name : '자격증 목록'}
+        {loaded.state === 'ok' ? loaded.data.certification.name : 'Certification list'}
       </BackLink>
-      <PageHeader title="목표 수정" />
+      <PageHeader title="Edit goal" />
       {loaded.state === 'loading' ? <SkeletonList rows={4} /> : null}
       {loaded.state === 'error' ? (
         <Notice notice={{ kind: 'error', text: notFoundText(loaded.error) }} />
@@ -759,7 +760,7 @@ export function EditCertification({ paths }: { paths: CertificationPaths }) {
       {loaded.state === 'ok' ? (
         <FormFields
           initial={toForm(loaded.data.certification)}
-          submitLabel="저장"
+          submitLabel="Save"
           cancelTo={paths.detail(loaded.data.certification.id)}
           onSubmit={update}
         />

@@ -54,9 +54,9 @@ export type WordPaths = {
 };
 
 export const kindLabels: Record<Morpheme['kind'], string> = {
-  prefix: '접두사',
-  root: '어근',
-  suffix: '접미사',
+  prefix: 'Prefix',
+  root: 'Root',
+  suffix: 'Suffix',
 };
 
 /** How a word part is written: a prefix ends in a hyphen and a suffix starts with one. */

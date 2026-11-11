@@ -1,3 +1,4 @@
+import { formatDate } from './date-format';
 import { requestJson } from './lib/api';
 
 // Study plans (#33): API calls and display rules. The screens are in study-plan.tsx.
@@ -56,9 +57,10 @@ export const isOverdue = (task: Pick<StudyTask, 'completedAt' | 'daysUntilDue'>)
 
 /** The stage's period in words; empty when neither date is set. */
 export function periodText(stage: Pick<StudyStage, 'startDate' | 'endDate'>) {
-  if (stage.startDate && stage.endDate) return `${stage.startDate} ~ ${stage.endDate}`;
-  if (stage.startDate) return `${stage.startDate}부터`;
-  return stage.endDate ? `${stage.endDate}까지` : '';
+  if (stage.startDate && stage.endDate)
+    return `${formatDate(stage.startDate)} ~ ${formatDate(stage.endDate)}`;
+  if (stage.startDate) return `From ${formatDate(stage.startDate)}`;
+  return stage.endDate ? `Until ${formatDate(stage.endDate)}` : '';
 }
 
 const planPath = (certificationId: number) => `/api/certifications/${certificationId}`;
