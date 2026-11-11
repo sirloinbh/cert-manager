@@ -70,7 +70,7 @@ test('learning a word needs a yes or no and an existing word', async () => {
     });
     assert.equal(notBoolean.status, 400);
     const badId = await call('/api/words/x/learned', { method: 'PUT', body: { learned: true } });
-    assert.deepEqual(badId.data, { error: '단어 ID가 올바르지 않습니다' });
+    assert.deepEqual(badId.data, { error: 'Invalid 단어 ID' });
     assert.deepEqual(queries, []);
     const gone = await call('/api/words/1/learned', { method: 'PUT', body: { learned: true } });
     assert.equal(gone.status, 404);

@@ -117,7 +117,7 @@ test('completion needs a boolean, and a missing action is a 404', async () => {
     assert.equal(removed.status, 404);
     const badId = await call(`${path}/abc`, { method: 'DELETE' });
     assert.equal(badId.status, 400);
-    assert.deepEqual(badId.data, { error: '직접 할 일 ID가 올바르지 않습니다' });
+    assert.deepEqual(badId.data, { error: 'Invalid 직접 할 일 ID' });
   });
 });
 

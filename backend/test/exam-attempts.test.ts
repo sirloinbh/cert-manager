@@ -178,7 +178,7 @@ test('a missing goal or attempt is a 404, and a bad id a 400', async () => {
     assert.equal(remove.status, 404);
     const badId = await call(`${path}/abc`, { method: 'DELETE' });
     assert.equal(badId.status, 400);
-    assert.deepEqual(badId.data, { error: '응시 기록 ID가 올바르지 않습니다' });
+    assert.deepEqual(badId.data, { error: 'Invalid 응시 기록 ID' });
   });
 });
 

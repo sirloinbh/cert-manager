@@ -361,7 +361,7 @@ test('deleting a stage names its tasks, and focus goes to the heading', async ()
   fireEvent.click(await screen.findByRole('button', { name: '1주차 단계 삭제' }));
   const dialog = await screen.findByRole('dialog', { name: '단계를 지울까요?' });
   expect(dialog).toHaveTextContent('할 일 2개를');
-  fireEvent.click(within(dialog).getByRole('button', { name: '삭제' }));
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
   await waitFor(() =>
     expect(screen.queryByRole('heading', { level: 3, name: '1주차' })).not.toBeInTheDocument(),
   );
@@ -375,7 +375,7 @@ test('a deleted task leaves the list even if reloading fails', async () => {
   await openDetail({ stages: [week()], reloadFails: true });
   fireEvent.click(await screen.findByRole('button', { name: '기출 풀기 삭제' }));
   const dialog = await screen.findByRole('dialog', { name: '할 일을 지울까요?' });
-  fireEvent.click(within(dialog).getByRole('button', { name: '삭제' }));
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
   expect(await screen.findByText('다시 읽지 못했습니다')).toBeInTheDocument();
   expect(screen.queryByRole('checkbox', { name: '기출 풀기' })).not.toBeInTheDocument();
   expect(screen.getByRole('checkbox', { name: '단어 외우기' })).toBeInTheDocument();
@@ -527,7 +527,7 @@ test('deleting the last stage still offers adding one when reloading fails', asy
   await openDetail({ stages: [stage({ id: 1, title: '1주차' })], reloadFails: true });
   fireEvent.click(await screen.findByRole('button', { name: '1주차 단계 삭제' }));
   const dialog = await screen.findByRole('dialog', { name: '단계를 지울까요?' });
-  fireEvent.click(within(dialog).getByRole('button', { name: '삭제' }));
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
   expect(await screen.findByText('다시 읽지 못했습니다')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: '단계 추가' })).toBeInTheDocument();
 });

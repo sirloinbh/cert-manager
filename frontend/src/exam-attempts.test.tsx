@@ -299,7 +299,7 @@ test('deleting an attempt asks first and removes it from the list', async () => 
   const api = await openDetail({ attempts: [attempt({ id: 7, score: 800 })] });
   fireEvent.click(await screen.findByRole('button', { name: '2026-03-15 기록 삭제' }));
   const dialog = await screen.findByRole('dialog', { name: '기록을 지울까요?' });
-  fireEvent.click(within(dialog).getByRole('button', { name: '삭제' }));
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
   expect(await screen.findByText('아직 응시 기록이 없습니다')).toBeInTheDocument();
   expect(api.sent.some((item) => item.method === 'DELETE' && item.path.endsWith('/7'))).toBe(true);
 });
@@ -351,7 +351,7 @@ test('a save in progress keeps the dialog open, so its error is not lost', async
   fireEvent.click(screen.getByRole('button', { name: '저장' }));
   const dialog = screen.getByRole('dialog', { name: '응시 기록 추가' });
   fireEvent.keyDown(dialog, { key: 'Escape' });
-  fireEvent.click(within(dialog).getByRole('button', { name: '닫기' }));
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
   expect(screen.getByRole('dialog', { name: '응시 기록 추가' })).toBeInTheDocument();
 
   release();
@@ -446,7 +446,7 @@ test('a deleted attempt leaves the list even if reloading fails, and focus goes 
   });
   fireEvent.click(await screen.findByRole('button', { name: '2026-05-05 기록 삭제' }));
   const dialog = await screen.findByRole('dialog', { name: '기록을 지울까요?' });
-  fireEvent.click(within(dialog).getByRole('button', { name: '삭제' }));
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
   expect(await screen.findByText('다시 읽지 못했습니다')).toBeInTheDocument();
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   expect(screen.queryByRole('button', { name: '2026-05-05 기록 수정' })).not.toBeInTheDocument();
@@ -460,7 +460,7 @@ test('deleting the only attempt still offers adding one when reloading fails', a
   await openDetail({ attempts: [attempt({ id: 1, score: 800 })], reloadFails: true });
   fireEvent.click(await screen.findByRole('button', { name: '2026-03-15 기록 삭제' }));
   const dialog = await screen.findByRole('dialog', { name: '기록을 지울까요?' });
-  fireEvent.click(within(dialog).getByRole('button', { name: '삭제' }));
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
   expect(await screen.findByText('다시 읽지 못했습니다')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: '기록 추가' })).toBeInTheDocument();
 });

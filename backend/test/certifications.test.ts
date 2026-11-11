@@ -101,7 +101,7 @@ test('invalid input is a Korean 400 and never reaches the database', async () =>
     ],
     [[], '요청 본문은 JSON 객체여야 합니다'],
     // A bare JSON string never reaches the route: express.json() (strict) rejects it first.
-    ['토익', '요청 본문의 JSON 형식이 올바르지 않습니다'],
+    ['토익', 'Request body is not valid JSON'],
     [{ name: '토익', category: 'english', validityKind: 'months' }, '개월 수를 입력해 주세요'],
     [
       { name: '토익', category: 'english', validityKind: 'none', validityMonths: 24 },
@@ -156,7 +156,7 @@ test('a malformed id is a Korean 400', async () => {
     for (const id of ['abc', '0', '01', '1e3']) {
       const { status, data } = await call(`/api/certifications/${id}`, { method: 'DELETE' });
       assert.equal(status, 400);
-      assert.equal(data.error, '자격증 목표 ID가 올바르지 않습니다');
+      assert.equal(data.error, 'Invalid 자격증 목표 ID');
     }
   });
   assert.equal(queries.length, 0);

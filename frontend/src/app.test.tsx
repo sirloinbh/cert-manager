@@ -28,14 +28,14 @@ test('shows the server date from /api/health on the overview', async () => {
   health({ today: '2026-10-26' });
   render(<App />);
   expect(screen.getByRole('heading', { level: 1, name: '대시보드' })).toBeInTheDocument();
-  expect(await screen.findByText('서버 연결됨 · 2026-10-26')).toBeInTheDocument();
+  expect(await screen.findByText('Server connected · 2026-10-26')).toBeInTheDocument();
 });
 
 test('shows the service name in the header link home', async () => {
   health({ today: '2026-10-26' });
   render(<App />);
   expect(screen.getByRole('link', { name: '자격증 관리' })).toHaveAttribute('href', '/');
-  expect(await screen.findByText('서버 연결됨 · 2026-10-26')).toBeInTheDocument();
+  expect(await screen.findByText('Server connected · 2026-10-26')).toBeInTheDocument();
 });
 
 test('reports a server error as an alert', async () => {
@@ -47,7 +47,7 @@ test('reports a server error as an alert', async () => {
 test('the main menu lists the five areas in order', () => {
   health({ today: '2026-10-26' });
   render(<App />);
-  const menu = screen.getByRole('navigation', { name: '주 메뉴' });
+  const menu = screen.getByRole('navigation', { name: 'Main menu' });
   expect(
     within(menu)
       .getAllByRole('link')
@@ -58,7 +58,7 @@ test('the main menu lists the five areas in order', () => {
 test('each page has its own address and is marked in the main menu', async () => {
   health({ today: '2026-10-26' });
   render(<App />);
-  const menu = screen.getByRole('navigation', { name: '주 메뉴' });
+  const menu = screen.getByRole('navigation', { name: 'Main menu' });
   fireEvent.click(within(menu).getByRole('link', { name: '설정' }));
   expect(window.location.pathname).toBe('/settings');
   expect(await screen.findByRole('heading', { level: 1, name: '설정' })).toBeInTheDocument();
@@ -68,7 +68,7 @@ test('each page has its own address and is marked in the main menu', async () =>
 test('menu areas without features yet show the empty notice', async () => {
   health({ today: '2026-10-26' });
   render(<App />);
-  const menu = screen.getByRole('navigation', { name: '주 메뉴' });
+  const menu = screen.getByRole('navigation', { name: 'Main menu' });
   fireEvent.click(within(menu).getByRole('link', { name: '설정' }));
   expect(window.location.pathname).toBe('/settings');
   expect(await screen.findByRole('heading', { level: 1, name: '설정' })).toBeInTheDocument();

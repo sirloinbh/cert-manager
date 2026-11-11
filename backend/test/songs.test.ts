@@ -108,7 +108,7 @@ test('a missing song is a 404, and a bad id a 400', async () => {
     assert.deepEqual(missing.data, { error: '곡을 찾을 수 없습니다' });
     const bad = await call('/api/songs/abc');
     assert.equal(bad.status, 400);
-    assert.deepEqual(bad.data, { error: '곡 ID가 올바르지 않습니다' });
+    assert.deepEqual(bad.data, { error: 'Invalid 곡 ID' });
     const save = await call('/api/songs/9/lyrics', {
       method: 'PUT',
       body: { original: '새로 지은 문장' },

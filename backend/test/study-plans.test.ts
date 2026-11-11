@@ -194,7 +194,7 @@ test('missing rows are a 404 naming what is missing, and a bad id a 400', async 
     }
     const badId = await call('/api/study-tasks/abc', { method: 'DELETE' });
     assert.equal(badId.status, 400);
-    assert.deepEqual(badId.data, { error: '할 일 ID가 올바르지 않습니다' });
+    assert.deepEqual(badId.data, { error: 'Invalid 할 일 ID' });
   });
 });
 
