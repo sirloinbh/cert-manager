@@ -1,35 +1,35 @@
-# 토익 스피킹 공부 계획
+# TOEIC Speaking study plan
 
-[전체 일정표](README.md) · 확인일 2026-10-31
+[Overall schedule](README.md) · Checked 2026-10-31
 
-## 시험 정보
+## Exam information
 
-| 항목     | 내용                                                                                                                                      |
-| -------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| 구성     | 11문항, 약 20분. 지문 읽기 2, 사진 묘사 2, 질문 답하기 3, 정보 보고 답하기 3, 의견 말하기 1                                               |
-| 응시료   | 2026년 83,000원(민간 자료. 접수 화면에서 확인)                                                                                            |
-| 유효기간 | 시험일부터 2년                                                                                                                            |
-| 등급     | NM·NL → NH → IL → IM1 → IM2 → IM3 → IH → AL → AM → AH                                                                                     |
-| 교재     | 사지 않고 시작한다. [공식 문항 안내](https://www.toeicstory.co.kr/2567)의 유형으로 말하기 연습을 녹음한다. 첫 성적을 보고 필요하면 고른다 |
+| Item     | Details                                                                                                                                                                                           |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Format   | 11 questions, about 20 minutes. Read a text aloud 2, describe a picture 2, respond to questions 3, respond using information 3, express an opinion 1                                              |
+| Exam fee | 83,000 KRW in 2026 (private source. Check on the registration screen)                                                                                                                             |
+| Validity | 2 years from the exam date                                                                                                                                                                        |
+| Level    | NM·NL → NH → IL → IM1 → IM2 → IM3 → IH → AL → AM → AH                                                                                                                                             |
+| Textbook | Start without buying one. Record speaking practice with the question types in the [official question guide](https://www.toeicstory.co.kr/2567). Choose one after seeing the first score if needed |
 
-출처: [토익스토리 문항 구성](https://www.toeicstory.co.kr/2567), [2026년 일정 기사](https://magazine.hankyung.com/job-joy/article/202511117993d), [응시료 정리(민간)](https://tilnote.io/pages/6acbb2c41bc5b55a94ddf302)
+Sources: [TOEIC Story question format](https://www.toeicstory.co.kr/2567), [2026 schedule article](https://magazine.hankyung.com/job-joy/article/202511117993d), [Exam fee summary (private)](https://tilnote.io/pages/6acbb2c41bc5b55a94ddf302)
 
-## 응시 예정일
+## Planned exam date
 
-**정보처리기사 실기 합격 뒤에 정한다.** 2027년 공휴일은 실기에 먼저 쓴다. 실기 결과가 나오면 [전체 일정표](README.md)의 순서대로 날짜를 넣는다. 2026년에는 매주 토·일요일에 시험이 있었다. 2027년 일정은 아직 확인되지 않았다.
+**Decide it after passing the Engineer Information Processing practical exam.** The 2027 holidays go to the practical exam first. When the practical result is out, fill in the dates in the order of the [overall schedule](README.md). In 2026 there was an exam every Saturday and Sunday. The 2027 schedule is not confirmed yet.
 
-## 단계별 할 일
+## Tasks by stage
 
-표의 공부는 공휴일 2시간씩이다. 시험 전 2주 동안 평일에 1시간씩 더 공부한다. 응시일이 정해지면 그 날에서 거꾸로 계산한다.
+Study in the table is 2 hours per public holiday. Study 1 more hour on weekdays in the 2 weeks before the exam. Once the exam date is set, count backward from that day.
 
-| 순서   | 할 일                                        |
-| ------ | -------------------------------------------- |
-| 공부 1 | 11문항 유형과 준비·답변 시간 익히기, 첫 녹음 |
-| 공부 2 | 지문 읽기, 사진 묘사(1~4번) 녹음하고 고치기  |
-| 공부 3 | 질문 답하기, 정보 보고 답하기(5~10번) 연습   |
-| 공부 4 | 의견 말하기(11번) 연습, 20분 모의시험 녹음   |
-| 시험   | 첫 응시. 성적을 앱에 넣고 다음 등급 정하기   |
+| Order   | Task                                                                                       |
+| ------- | ------------------------------------------------------------------------------------------ |
+| Study 1 | Learn the 11 question types and the preparation and answer times, make the first recording |
+| Study 2 | Record read-aloud and picture description (questions 1-4) and improve them                 |
+| Study 3 | Practice responding to questions and responding using information (questions 5-10)         |
+| Study 4 | Practice expressing an opinion (question 11), record a 20 minute mock exam                 |
+| Exam    | First attempt. Enter the score in the app and set the next level                           |
 
-### 이후
+### After this
 
-첫 응시 뒤에는 해마다 한 번 이상 응시하며 AH를 목표로 삼는다. IM1~IM3는 점수 구간을 확인하지 못했으므로 성적표의 등급을 그대로 기록한다.
+After the first attempt, take it at least once a year and aim for AH. The score ranges for IM1 to IM3 could not be confirmed, so record the grade on the score report as it is.

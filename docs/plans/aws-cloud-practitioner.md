@@ -1,41 +1,41 @@
-# AWS Cloud Practitioner 공부 계획
+# AWS Cloud Practitioner study plan
 
-[전체 일정표](README.md) · 확인일 2026-10-31
+[Overall schedule](README.md) · Checked 2026-10-31
 
-## 시험 정보
+## Exam information
 
-| 항목     | 내용                                                                                              |
-| -------- | ------------------------------------------------------------------------------------------------- |
-| 등급     | Foundational                                                                                      |
-| 구성     | 65문항, 90분, 객관식·복수 응답, 시험장 또는 온라인                                                |
-| 합격     | 100~1000점 환산, 700점 이상. 과목별 기준 없이 전체 점수로 본다                                    |
-| 응시료   | 100 USD(환율 등 추가 비용 가능)                                                                   |
-| 유효기간 | 3년                                                                                               |
-| 범위     | 클라우드 개념 24%, 보안·규정 준수 30%, 기술·서비스 34%, 청구·요금·지원 12%                        |
-| 자료     | AWS 시험 안내서(무료). 강의는 AWS Skill Builder를 먼저 찾아본다. 무료 제공 여부는 확인하지 못했다 |
+| Item     | Details                                                                                                         |
+| -------- | --------------------------------------------------------------------------------------------------------------- |
+| Level    | Foundational                                                                                                    |
+| Format   | 65 questions, 90 minutes, multiple choice and multiple response, at a test center or online                     |
+| Passing  | Scaled 100-1000, 700 or higher. Judged on the total score with no per-section minimum                           |
+| Exam fee | 100 USD (exchange rate and other extra costs are possible)                                                      |
+| Validity | 3 years                                                                                                         |
+| Scope    | Cloud concepts 24%, security and compliance 30%, technology and services 34%, billing, pricing, and support 12% |
+| Material | The AWS exam guide (free). For courses, look at AWS Skill Builder first. I could not confirm whether it is free |
 
-출처: [AWS 자격증 안내](https://aws.amazon.com/certification/certified-cloud-practitioner/), [시험 안내서 CLF-C02](https://docs.aws.amazon.com/aws-certification/latest/cloud-practitioner-02/cloud-practitioner-02.html), [재인증 안내](https://aws.amazon.com/certification/policies/recertification/)
+Sources: [AWS certification guide](https://aws.amazon.com/certification/certified-cloud-practitioner/), [Exam guide CLF-C02](https://docs.aws.amazon.com/aws-certification/latest/cloud-practitioner-02/cloud-practitioner-02.html), [Recertification guide](https://aws.amazon.com/certification/policies/recertification/)
 
-## 응시 예정일
+## Planned exam date
 
-**정보처리기사 실기 합격 뒤에 정한다.** 2027년 공휴일은 실기에 먼저 쓴다. 실기 결과가 나오면 [전체 일정표](README.md)의 순서대로 날짜를 넣는다. 상시 응시 시험이라 마지막 공부 뒤 가까운 주말로 예약한다.
+**Decide it after passing the Engineer Information Processing practical exam.** The 2027 holidays go to the practical exam first. When the practical result is out, fill in the dates in the order of the [overall schedule](README.md). It can be taken at any time, so book the weekend closest to the last study session.
 
-## 단계별 할 일
+## Tasks by stage
 
-표의 공부는 공휴일 2시간씩이다. 시험 전 2주 동안 평일에 1시간씩 더 공부한다. 응시일이 정해지면 그 날에서 거꾸로 계산한다.
+Study in the table is 2 hours per public holiday. Study 1 more hour on weekdays in the 2 weeks before the exam. Once the exam date is set, count backward from that day.
 
-| 순서   | 할 일                                                   |
-| ------ | ------------------------------------------------------- |
-| 공부 1 | 시험 안내서 읽기, 공부 자료 정하기, 시험 예약 방법 확인 |
-| 공부 2 | 클라우드 개념                                           |
-| 공부 3 | 보안·규정 준수                                          |
-| 공부 4 | 기술·서비스(컴퓨팅, 스토리지, 네트워크, 데이터베이스)   |
-| 공부 5 | 청구·요금·지원                                          |
-| 공부 6 | 모의 문제 풀고 약한 범위 복습, 시험 예약 확정           |
-| 시험   | 응시                                                    |
+| Order   | Task                                                                     |
+| ------- | ------------------------------------------------------------------------ |
+| Study 1 | Read the exam guide, choose study material, check how to book the exam   |
+| Study 2 | Cloud concepts                                                           |
+| Study 3 | Security and compliance                                                  |
+| Study 4 | Technology and services (compute, storage, network, database)            |
+| Study 5 | Billing, pricing, and support                                            |
+| Study 6 | Solve practice questions and review weak areas, confirm the exam booking |
+| Exam    | Take the exam                                                            |
 
-불합격하면 앱에 기록하고 다음 공휴일을 복습에 쓴다. 그 시간은 뒤 계획에서 빼 온다.
+If you fail, record it in the app and use the next holiday for review. That time is taken from the later plan.
 
-### 이후
+### After this
 
-다음 단계는 [AWS Solutions Architect – Associate](aws-solutions-architect.md)다.
+The next step is [AWS Solutions Architect – Associate](aws-solutions-architect.md).

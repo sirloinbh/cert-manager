@@ -1,49 +1,49 @@
-# 자격증 관리
+# Certification manager
 
-자격증 정보·시험 일정·공부 기록을 관리하고, 자격증과 별개로 영어 공부도 기록하고 복습하는 개인 서비스입니다. 사용자는 본인 한 명이며 로그인 없이 로컬에서 사용합니다.
+A personal service that manages certification information, exam dates, and study records, and also records and reviews English study separately from the certifications. There is one user (the owner), and it runs locally without a login.
 
-## 개발 기준
+## Development standards
 
-Node.js **24.21.0**, npm **11.19.0**. 설치는 `npm ci --ignore-scripts`(사용자 확인 후), 포맷은 `npm run format`, 전체 검증은 `npm run check`입니다. 전체 기준은 [개발 환경 설정 문서](docs/project-setup.md)와 [AGENTS.md](AGENTS.md)를 따릅니다.
+Node.js **24.21.0**, npm **11.19.0**. Install with `npm ci --ignore-scripts` (after the user confirms), format with `npm run format`, and run the full check with `npm run check`. Follow the [development environment setup doc](docs/project-setup.md) and [AGENTS.md](AGENTS.md) for the full standards.
 
-변경은 **GitHub 이슈 → 이슈 번호 브랜치 → 구현·테스트·docs 기록 → `npm run check` → PR → 자동 코드 리뷰(최대 2회, 보완 커밋·큰 수정은 새 이슈) → 필수 CI 통과 후 에이전트 merge commit 병합** 순서로 진행합니다.
+Changes go in this order: **GitHub issue → branch with the issue number → implementation, tests, and docs record → `npm run check` → PR → automatic code review (up to 2 rounds; follow-up commits, and a new issue for big changes) → required CI passes → the agent merges with a merge commit**.
 
-## 실행
+## Run
 
 ```powershell
 Copy-Item .env.example .env
 docker compose up --build -d
 ```
 
-접속: http://localhost:8106 . `.env`의 비밀번호를 바꾼 뒤 실행하세요. 데이터는 `cert-manager-data` 볼륨에 저장되며 `docker compose down -v`는 데이터를 삭제합니다.
+Open http://localhost:8106 . Change the password in `.env` before you run it. Data is stored in the `cert-manager-data` volume, and `docker compose down -v` deletes the data.
 
-개발 실행:
+Run for development:
 
 ```powershell
 docker compose up -d db
 npm run dev
 ```
 
-Vite http://localhost:5206, API http://localhost:3106/api/health, 호스트 DB 포트 15406.
+Vite http://localhost:5206, API http://localhost:3106/api/health, host DB port 15406.
 
-이미 쓰던 DB에는 `database/migrations`의 새 파일을 직접 적용합니다(빈 볼륨에서만 자동 적용). 곡 목록은 `npm run songs:import -w backend`로 받습니다. `DATABASE_URL`의 DB에 앨범·곡 이름, 발매일, 길이만 저장하고 가사는 받지 않으며, 시작할 때 대상 DB를 출력합니다.
+For an existing DB, apply the new files in `database/migrations` by hand (they are applied automatically only on an empty volume). Get the song list with `npm run songs:import -w backend`. It stores only album and song names, release dates, and lengths in the DB named by `DATABASE_URL`, does not fetch lyrics, and prints the target DB when it starts.
 
-가사는 `npm run lyrics:import -w backend`로 LRCLIB에서 받아 그 DB에만 넣습니다. 번역은 `npm run translations:export -w backend`로 `.local/translations/`에 파일을 만들어 채운 뒤 `npm run translations:import -w backend`로 넣습니다. 저장한 파일은 `imported/`로 옮겨집니다. 가사와 번역은 커밋하지 않습니다.
+Fetch lyrics from LRCLIB with `npm run lyrics:import -w backend` and put them only in that DB. For translations, create files in `.local/translations/` with `npm run translations:export -w backend`, fill them in, and load them with `npm run translations:import -w backend`. Saved files are moved to `imported/`. Do not commit lyrics or translations.
 
-단어는 `npm run words:import -w backend`로 목록을, `npm run words:etymology -w backend`로 어원을 받습니다. 뜻과 어원 요소는 `npm run words:export -w backend -- 50`으로 `.local/word-batches/`에 내보내 채운 뒤 `npm run words:fill -w backend`로 넣습니다. 사용 순서는 [변경 기록](docs/changes/36-word-list.md)에 있습니다.
+Get the word list with `npm run words:import -w backend` and the etymology with `npm run words:etymology -w backend`. Export meanings and etymology parts to `.local/word-batches/` with `npm run words:export -w backend -- 50`, fill them in, and load them with `npm run words:fill -w backend`. The order of use is in the [change record](docs/changes/36-word-list.md).
 
-## 검증
+## Verification
 
-- `npm run check`: 포맷, lint, 타입, 테스트, 스킬 동기화 검사, 빌드.
-- DB 통합 테스트는 마이그레이션을 적용한 전용 테스트 DB의 `TEST_DATABASE_URL`이 필요합니다. 없으면 건너뜁니다.
-- GitHub Actions가 PostgreSQL 서비스로 전체 검사를 실행하고 Docker 이미지를 빌드합니다.
+- `npm run check`: format, lint, types, tests, skill sync check, build.
+- DB integration tests need `TEST_DATABASE_URL`, a dedicated test DB with the migrations applied. They are skipped without it.
+- GitHub Actions runs the full check with a PostgreSQL service and builds the Docker image.
 
-## 저장소 구성
+## Repository layout
 
-이 저장소는 전체 소스를 담은 우산 모노레포입니다. `frontend`, `backend`, `database`는 `git subtree split`으로 배포용 비공개 저장소 `cert-manager-frontend`, `cert-manager-backend`, `cert-manager-db`에 동기화합니다(`scripts/push-repositories.ps1`, 요청 시에만). AWS 인프라는 공유 저장소 `shared-aws-infrastructure`에서 관리합니다.
+This repository is an umbrella monorepo that holds all the source. `frontend`, `backend`, and `database` are synced with `git subtree split` to the private deploy repositories `cert-manager-frontend`, `cert-manager-backend`, and `cert-manager-db` (`scripts/push-repositories.ps1`, only on request). AWS infrastructure is managed in the shared repository `shared-aws-infrastructure`.
 
-## 문서
+## Docs
 
-- [AI 지침](AGENTS.md) · [Claude 지침](CLAUDE.md) · [DB](database/README.md)
-- [변경 기록](docs/changes/README.md) · [일일 기록](docs/daily/README.md) · [다음 작업](docs/next-steps/README.md)
-- [서비스 범위와 데이터 구조](docs/design/scope-and-data-model.md) · [영어 공부 자료 출처 조사](docs/research/english-content-sources.md)
+- [AI instructions](AGENTS.md) · [Claude instructions](CLAUDE.md) · [DB](database/README.md)
+- [Change records](docs/changes/README.md) · [Daily logs](docs/daily/README.md) · [Next steps](docs/next-steps/README.md)
+- [Scope and data model](docs/design/scope-and-data-model.md) · [Survey of English study material sources](docs/research/english-content-sources.md)

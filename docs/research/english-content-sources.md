@@ -1,135 +1,135 @@
-# 영어 공부 자료 출처와 가져오기 방법
+# Sources of English study material and how to fetch them
 
-- 이슈: [#31](https://github.com/sirloinbh/cert-manager/issues/31)
-- 조사일: 2026-10-30 (Asia/Seoul). 아래 숫자(요청 제한, 단어 수 등)는 이날 공식 문서에서 확인한 값이고, 바뀔 수 있다.
-- 이 문서를 따르는 기능 이슈: [#35](https://github.com/sirloinbh/cert-manager/issues/35) 팝송 가사 보기, [#36](https://github.com/sirloinbh/cert-manager/issues/36) 단어장과 어원, [#37](https://github.com/sirloinbh/cert-manager/issues/37) 오늘의 단어
+- Issue: [#31](https://github.com/sirloinbh/cert-manager/issues/31)
+- Surveyed: 2026-10-30 (Asia/Seoul). The numbers below (rate limits, word counts, and so on) are the values confirmed in official documents on that day, and they may change.
+- Feature issues that follow this document: [#35](https://github.com/sirloinbh/cert-manager/issues/35) viewing pop song lyrics, [#36](https://github.com/sirloinbh/cert-manager/issues/36) word list and etymology, [#37](https://github.com/sirloinbh/cert-manager/issues/37) word of the day
 
-## 결론
+## Conclusion
 
-가사 출처, 번역 방식, 곡 범위는 사용자가 2026-10-30에 정했다(#31 댓글).
+The lyrics source, the translation method, and the song scope were decided by the user on 2026-10-30 (comment on #31).
 
-| 대상           | 정한 방법                                                                                                          | 결정         |
-| -------------- | ------------------------------------------------------------------------------------------------------------------ | ------------ |
-| 가사 원문      | 유튜브 뮤직은 쓰지 않는다. LRCLIB API에서 곡마다 한 번 받아 로컬 DB에 저장하고, 없는 곡은 직접 붙여 넣는다         | 사용자 결정  |
-| 가사 번역      | 사용자가 화면에 붙여 넣거나 번역 파일을 들여온다. 앱은 Claude API를 부르지 않는다                                  | #35에서 변경 |
-| "전곡" 범위    | 정규 앨범 12장의 기본 수록곡과 Taylor's Version 4장의 From the Vault 곡부터 시작한다                               | 사용자 결정  |
-| 곡 목록        | MusicBrainz API에서 앨범·수록곡 목록을 받는다                                                                      | 추천         |
-| 자주 쓰는 단어 | NGSL 1.2(2,809단어)를 공식 사이트에서 받아 쓴다                                                                    | 추천         |
-| 어원           | Wiktionary 어원 글(kaikki.org 추출본)을 근거로, Claude Code 세션에서 접두사·어근·접미사로 나누고 한국어로 설명한다 | 추천         |
-| 저장 위치      | 가사 원문·번역은 로컬 DB와 `.local/`에만 둔다. 리포에는 커밋하지 않는다                                            | 필수 규칙    |
+| Target                | Method decided                                                                                                                                         | Decision       |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------- |
+| Original lyrics       | Do not use YouTube Music. Fetch once per song from the LRCLIB API and store in the local DB, and paste in songs that are not found by hand             | User decision  |
+| Lyrics translation    | The user pastes it on the screen or imports a translation file. The app does not call the Claude API                                                   | Changed in #35 |
+| "All songs" scope     | Start with the base tracks of the 12 regular albums and the From the Vault songs of the 4 Taylor's Version albums                                      | User decision  |
+| Song list             | Fetch the list of albums and tracks from the MusicBrainz API                                                                                           | Recommended    |
+| Frequently used words | Download NGSL 1.2 (2,809 words) from the official site                                                                                                 | Recommended    |
+| Etymology             | Based on the Wiktionary etymology text (the kaikki.org extract), split into prefix, root, and suffix in a Claude Code session and explain it in Korean | Recommended    |
+| Where to store        | Keep original lyrics and translations only in the local DB and `.local/`. Do not commit them to the repository                                         | Required rule  |
 
-## 1. 가사 원문
+## 1. Original lyrics
 
-### 유튜브 뮤직: 쓰지 않는다
+### YouTube Music: not used
 
-- 유튜브 뮤직에는 가사를 주는 공식 API가 없다.
-- 비공식 라이브러리 `ytmusicapi`(Python)에 `get_lyrics()`가 있다. 하지만 이 라이브러리는 웹 브라우저 요청을 흉내 내는 방식이다.
-- YouTube 서비스 약관은 "자동화된 수단(로봇, 봇넷 또는 스크래퍼 등)을 사용해 서비스에 액세스"하는 것을 금지한다. 예외는 robots.txt를 따르는 공개 검색엔진과 YouTube의 사전 서면 승인뿐이다.
-- 이 프로젝트는 Node.js라서 Python 도구를 새로 들여와야 한다.
-- 그래서 사용자 요구사항의 "안 되면" 경로로 간다.
+- YouTube Music has no official API that provides lyrics.
+- The unofficial library `ytmusicapi` (Python) has `get_lyrics()`. But this library works by imitating web browser requests.
+- The YouTube Terms of Service forbid "accessing the Service using automated means (such as robots, botnets, or scrapers)". The only exceptions are public search engines that follow robots.txt and prior written approval from YouTube.
+- This project is Node.js, so a Python tool would have to be brought in.
+- So we take the "if that does not work" path of the user requirement.
 
-### 다른 가사 출처 비교
+### Comparison of other lyrics sources
 
-| 출처                       | 가사 전문                                | API 키      | 이용 조건·제한                                                   | 판단                      |
-| -------------------------- | ---------------------------------------- | ----------- | ---------------------------------------------------------------- | ------------------------- |
-| 유튜브 뮤직 (`ytmusicapi`) | 받을 수 있음                             | 로그인 쿠키 | 비공식 방식이고 YouTube 약관이 자동화된 접근을 금지              | 쓰지 않음                 |
-| Genius API                 | 주지 않음. 곡 정보와 웹 페이지 주소만 줌 | 필요        | 가사를 얻으려면 웹 페이지를 긁어야 함                            | 쓰지 않음                 |
-| Musixmatch API             | 무료 등급은 가사의 약 30%만 줌           | 필요        | 전문은 상업 계약이 필요(가격 비공개)                             | 쓰지 않음                 |
-| **LRCLIB**                 | 받을 수 있음(일반·시간 정보 가사)        | 필요 없음   | 무료 공개 서비스. 요청 제한을 지켜야 함. 가사 라이선스 표기 없음 | **사용**                  |
-| 직접 붙여 넣기             | 사용자가 넣음                            | 없음        | 외부 서비스 없음. 곡이 많으면 손이 많이 감                       | LRCLIB에 없는 곡에만 사용 |
+| Source                       | Full lyrics                                               | API key      | Terms and limits                                                                    | Judgment                          |
+| ---------------------------- | --------------------------------------------------------- | ------------ | ----------------------------------------------------------------------------------- | --------------------------------- |
+| YouTube Music (`ytmusicapi`) | Available                                                 | Login cookie | An unofficial method, and the YouTube terms forbid automated access                 | Not used                          |
+| Genius API                   | Not provided. Gives only song info and web page addresses | Required     | You would have to scrape the web page to get lyrics                                 | Not used                          |
+| Musixmatch API               | The free tier gives only about 30% of the lyrics          | Required     | Full lyrics need a commercial contract (price not public)                           | Not used                          |
+| **LRCLIB**                   | Available (plain and time-synced lyrics)                  | Not needed   | A free public service. You must follow the rate limit. No license notice for lyrics | **Used**                          |
+| Paste by hand                | The user enters them                                      | None         | No external service. A lot of manual work if there are many songs                   | Used only for songs not in LRCLIB |
 
-Genius·Musixmatch의 제한은 공식 약관이 아니라 개발자 글과 API 목록 사이트에서 확인한 내용이다. 둘 다 쓰지 않으므로 더 확인하지 않았다.
+The limits of Genius and Musixmatch are what I confirmed from developer posts and an API listing site, not from the official terms. Since neither is used, I did not check further.
 
 ### LRCLIB
 
-[LRCLIB](https://lrclib.net/docs)는 무료로 공개된 가사 데이터베이스다.
+[LRCLIB](https://lrclib.net/docs) is a free public lyrics database.
 
-- API 키가 필요 없다.
-- `GET /api/get`으로 곡 하나의 가사를 찾는다. 시간 정보가 붙은 가사(`syncedLyrics`)와 일반 가사(`plainLyrics`)를 준다.
-  - 필수 값: `track_name`, `artist_name`
-  - 선택 값: `album_name`, `duration`(초, 1~3600). 일치 정확도를 높이므로 MusicBrainz에서 받은 값으로 채운다.
-  - 못 찾으면 `404`를 준다.
-- 요청 제한은 IP당 약 45회/분이다. 앱 이름과 연락처가 든 `User-Agent`를 보내면 약 90회/분이다.
-- 요청은 하나씩 보내고, 요청 사이에 700ms를 둔다(약 90회/분을 넘지 않는 간격, #64에서 200~500ms에서 변경). `429` 응답이면 `Retry-After`만큼 기다린다.
-- 문서에 가사 데이터의 라이선스 표기가 없다. 가사의 저작권은 원저작자에게 있다고 본다.
-- 못 찾은 곡은 사용자가 화면에서 직접 붙여 넣을 수 있게 한다.
+- No API key is needed.
+- Find the lyrics of one song with `GET /api/get`. It returns time-synced lyrics (`syncedLyrics`) and plain lyrics (`plainLyrics`).
+  - Required values: `track_name`, `artist_name`
+  - Optional values: `album_name`, `duration` (seconds, 1 to 3600). They improve match accuracy, so fill them with the values fetched from MusicBrainz.
+  - It returns `404` if it cannot find the song.
+- The rate limit is about 45 requests per minute per IP. If you send a `User-Agent` that contains the app name and a contact, it is about 90 requests per minute.
+- Send requests one at a time with 700 ms between requests (an interval that does not exceed about 90 requests per minute; changed from 200-500 ms in #64). On a `429` response, wait for `Retry-After`.
+- The docs have no license notice for the lyrics data. The copyright of the lyrics is treated as belonging to the original author.
+- For songs that are not found, let the user paste them in by hand on the screen.
 
-### 저작권과 저장 규칙
+### Copyright and storage rules
 
-아래는 법적으로 허용된다는 판단이 아니라, 위험을 줄이려고 이 프로젝트가 지키는 운영 규칙이다.
+The following are operating rules this project follows to reduce risk, not a judgment that it is legally allowed.
 
-- 가사 원문과 그 번역은 저작물이다. 이 리포는 공개 리포라서 가사·번역을 커밋하면 공개 배포가 된다.
-- 가사·번역은 로컬 DB에만 저장한다. 번역 작업용 파일은 `.local/`에 두고, 백업 파일은 `backups/`에 생긴다. 두 폴더 모두 `.gitignore`에 들어 있다.
-- 가사는 사용자 본인만 본다. 앱을 외부에 공개하기 전에는 가사 화면을 사설 접속이나 인증 뒤에 둔다(#25 서비스 범위의 공개 전 조건).
-- 테스트에는 직접 지은 짧은 문장만 쓴다.
+- Original lyrics and their translations are copyrighted works. This repository is public, so committing lyrics or translations would publish them.
+- Store lyrics and translations only in the local DB. Keep files for translation work in `.local/`, and backup files go to `backups/`. Both folders are in `.gitignore`.
+- Only the user sees the lyrics. Before the app is made public, put the lyrics screen behind private access or authentication (a precondition for going public in the #25 service scope).
+- Tests use only short sentences written by hand.
 
-## 2. 가사 번역
+## 2. Lyrics translation
 
-**2026-10-31 변경(#35):** 아래 표와 순서의 "Claude Code 세션에서 번역"은 할 수 없다. Claude Code는 저작권이 있는 가사 전문을 옮기거나 번역해 주지 않는다. 번역 파일을 채우는 일은 사용자가 직접 하거나 다른 번역 도구로 하고, 내보내기·들여오기 스크립트(#64)와 화면 붙여 넣기로 넣는다. 아래는 당시 비교 기록으로 남긴다. 실제 사용법은 [#64 변경 기록](../changes/64-lyrics-scripts.md)에 있다.
+**Changed 2026-10-31 (#35):** "Translate in a Claude Code session" in the table and the steps below cannot be done. Claude Code does not copy or translate full copyrighted lyrics. Filling in the translation file is done by the user or with another translation tool, and it is loaded with the export and import scripts (#64) and by pasting on the screen. The text below is kept as a record of the comparison at the time. The real usage is in the [#64 change record](../changes/64-lyrics-scripts.md).
 
-| 방식                                               | 장점                                                  | 단점                                                   |
-| -------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------ |
-| 화면을 열 때마다 Claude API 호출                   | 바로 볼 수 있음                                       | 같은 곡을 여러 번 번역해 비용이 계속 나감. API 키 필요 |
-| 가져올 때 Claude API로 한 번 번역해 저장           | 자동으로 많이 처리함                                  | API 키와 레지스트리 설정 필요                          |
-| **Claude Code 세션에서 번역해 넣기 (사용자 결정)** | API 키·추가 비용이 없음. 번역을 대화로 다듬을 수 있음 | 곡이 많으면 여러 번에 나눠 해야 함                     |
+| Method                                                               | Advantages                                                               | Disadvantages                                                                     |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| Call the Claude API every time the screen opens                      | Can be seen right away                                                   | The same song is translated many times, so the cost keeps going. Needs an API key |
+| Translate once with the Claude API when importing and store it       | Handles a lot automatically                                              | Needs an API key and a registry setting                                           |
+| **Translate in a Claude Code session and put it in (user decision)** | No API key or extra cost. The translation can be refined in conversation | If there are many songs, it has to be done in several batches                     |
 
-정한 방식의 순서:
+Order of the chosen method:
 
-1. 내보내기 스크립트가 번역이 없는 곡의 가사를 줄 번호와 함께 `.local/translations/<곡 ID>.json`으로 내보낸다.
-2. Claude Code 세션에서 그 파일을 읽어 줄 수가 같은 한국어 번역을 같은 파일에 채운다.
-3. 들여오기 스크립트가 줄 수가 맞는지 확인하고 DB에 줄 단위로 저장한다. 줄 수가 다르면 저장하지 않고 알린다.
+1. The export script exports the lyrics of songs without a translation, with line numbers, to `.local/translations/<song ID>.json`.
+2. In a Claude Code session, read that file and fill the same file with a Korean translation that has the same number of lines.
+3. The import script checks that the line counts match and saves it to the DB line by line. If the line counts differ, it does not save and reports it.
 
-- 앨범 단위로 나눠 진행한다. 진행 상황은 DB의 "번역 있음" 여부로 확인한다.
-- 이 방식은 가사를 Claude Code(Anthropic) 쪽으로 보낸다. 앱이 외부 API를 직접 부르지는 않지만, 가사가 제3자 서비스로 전달된다는 점은 같다.
-- 앱이 Claude API를 쓰지 않으므로 중앙 레지스트리의 `features.claude`는 꺼 둔 채로 둔다.
+- Work album by album. Check progress with whether a song is "translated" in the DB.
+- This method sends the lyrics to Claude Code (Anthropic). The app does not call an external API directly, but it is the same in that the lyrics are passed to a third-party service.
+- The app does not use the Claude API, so leave `features.claude` in the central registry turned off.
 
-## 3. 곡 목록과 "전곡" 범위
+## 3. Song list and the "all songs" scope
 
-### 곡 목록 출처: MusicBrainz
+### Source of the song list: MusicBrainz
 
-- [MusicBrainz](https://musicbrainz.org/doc/MusicBrainz_API) API에서 아티스트 → 앨범(release group) → 수록곡 목록을 받는다.
-- 핵심 데이터(아티스트, 앨범, 곡 이름)는 CC0(퍼블릭 도메인)이라 곡 목록은 저장하고 공개해도 된다.
-- 요청 제한은 IP당 평균 1회/초이고, 앱을 알아볼 수 있는 `User-Agent`가 필요하다.
+- Fetch artist → album (release group) → track list from the [MusicBrainz](https://musicbrainz.org/doc/MusicBrainz_API) API.
+- The core data (artist, album, and song names) is CC0 (public domain), so the song list may be stored and published.
+- The rate limit is 1 request per second on average per IP, and a `User-Agent` that identifies the app is required.
 
-### 범위 (사용자 결정)
+### Scope (user decision)
 
-테일러 스위프트의 정규 앨범은 12장이다(2026-10 기준). 마지막은 2025-10-03에 나온 _The Life of a Showgirl_이다.
+Taylor Swift has 12 regular albums (as of 2026-10). The last is _The Life of a Showgirl_, released on 2025-10-03.
 
-1. 정규 앨범 12장의 기본판 수록곡: _Taylor Swift_, _Fearless_, _Speak Now_, _Red_, _1989_, _reputation_, _Lover_, _folklore_, _evermore_, _Midnights_, _The Tortured Poets Department_, _The Life of a Showgirl_
-2. Taylor's Version 4장(_Fearless_, _Red_, _Speak Now_, _1989_)의 From the Vault 곡만. 다시 녹음한 곡은 가사가 대부분 원곡과 같아 넣지 않는다. 가사가 바뀐 곡(예: _Speak Now (Taylor's Version)_의 "Better than Revenge")은 원곡 가사를 쓰고, 바뀐 줄은 곡 메모에 적는다.
-3. 디럭스판 보너스 곡, 싱글·OST 곡은 2단계로 미룬다.
+1. Base edition tracks of the 12 regular albums: _Taylor Swift_, _Fearless_, _Speak Now_, _Red_, _1989_, _reputation_, _Lover_, _folklore_, _evermore_, _Midnights_, _The Tortured Poets Department_, _The Life of a Showgirl_
+2. Only the From the Vault songs of the 4 Taylor's Version albums (_Fearless_, _Red_, _Speak Now_, _1989_). Re-recorded songs mostly have the same lyrics as the originals, so they are not included. For songs whose lyrics changed (for example "Better than Revenge" in _Speak Now (Taylor's Version)_), use the original lyrics and write the changed lines in the song note.
+3. Deluxe edition bonus tracks and single and soundtrack songs are postponed to phase 2.
 
-같은 곡이 여러 앨범에 있으면 곡 하나로 저장하고 수록 앨범을 여러 개 연결한다.
+If the same song is on several albums, store it as one song and link several albums that include it.
 
-## 4. 자주 쓰는 단어
+## 4. Frequently used words
 
-[NGSL(New General Service List) 1.2](https://www.newgeneralservicelist.com/new-general-service-list)를 쓴다.
+Use [NGSL (New General Service List) 1.2](https://www.newgeneralservicelist.com/new-general-service-list).
 
-- 영어 학습자를 위한 일반·일상 영어 핵심 단어 2,809개다.
-- 라이선스는 CC BY-SA 4.0이다. 출처(Browne, Culligan, Phillips)를 표기해야 하고, 고친 목록을 배포하면 같은 라이선스를 따라야 한다.
-- 공식 사이트는 `newgeneralservicelist.com` 하나뿐이라고 밝힌다. 그곳에서만 받는다.
-- 빈도 통계가 있는 버전(`NGSL_12_stats.csv`, 2026-11-01 확인 2,809단어)을 받아 빈도 순위를 저장한다. 스프레드시트를 거친 흔적으로 `TRUE`, `FALSE`가 대문자라 소문자로 고친다.
-- 한국어 뜻과 예문은 Claude Code 세션에서 만들어 저장하고(가사와 달리 저작권 있는 글을 옮기는 일이 아니다), AI가 만든 값이라고 표시한다. 빈도가 높은 단어부터 나눠 진행한다.
+- It is 2,809 core words of general, everyday English for English learners.
+- The license is CC BY-SA 4.0. You must credit the source (Browne, Culligan, Phillips), and if you distribute a modified list, you must follow the same license.
+- The official site says `newgeneralservicelist.com` is its only site. Download only from there.
+- Download the version with frequency statistics (`NGSL_12_stats.csv`, confirmed 2,809 words on 2026-11-01) and store the frequency rank. As a trace of passing through a spreadsheet, `TRUE` and `FALSE` are uppercase, so fix them to lowercase.
+- Create the Korean meanings and examples in a Claude Code session and store them (unlike lyrics, this is not copying copyrighted text), and mark them as AI-generated values. Proceed in batches from the most frequent words.
 
-## 5. 어원
+## 5. Etymology
 
-- 근거 자료는 Wiktionary의 영어 어원 글이다. [kaikki.org](https://kaikki.org/)가 Wiktionary 덤프에서 뽑은 JSON 자료(wiktextract)를 단어별 파일로 1초 간격에 하나씩 받는다(#36). 전체 파일은 3.2GB이고 폐기 예정으로 표시되어 있다.
-- Wiktionary 글의 라이선스는 CC BY-SA다. kaikki.org에는 라이선스 표기가 없어(2026-11-01 확인) Wiktionary 저작권 문서의 CC BY-SA 4.0을 기록한다.
-- Wiktionary 어원은 문장이라 접두사·어근·접미사로 나뉘어 있지 않다. Claude Code 세션에서 어원 글을 근거로 요소를 나누고 한국어로 설명한다. 근거 글이 없는 단어는 "어원 자료 없음"으로 두고 지어내지 않는다.
-- 화면에 출처(Wiktionary 링크)와 AI 정리 여부를 함께 보여 준다.
+- The source is the English etymology text in Wiktionary. Download the JSON data (wiktextract) that [kaikki.org](https://kaikki.org/) extracted from the Wiktionary dump, one file per word, one at a time at 1 second intervals (#36). The full file is 3.2 GB and is marked as scheduled for removal.
+- The license of Wiktionary text is CC BY-SA. kaikki.org has no license notice (confirmed 2026-11-01), so record CC BY-SA 4.0 from the Wiktionary copyright page.
+- Wiktionary etymology is prose, not split into prefix, root, and suffix. In a Claude Code session, split it into parts based on the etymology text and explain it in Korean. Leave a word with no source text as "no etymology data" and do not make anything up.
+- Show the source (a Wiktionary link) and whether it was organized by AI on the screen.
 
-## 6. 공통 규칙
+## 6. Common rules
 
-- 외부 자료를 받는 스크립트는 받은 원본을 리포 밖(로컬 DB나 `.local/`)에 둔다. 출처 URL과 받은 날짜를 함께 저장한다.
-- 공개 리포에 넣어도 되는 것은 곡 목록(CC0)과 스크립트 코드뿐이다. NGSL·Wiktionary 자료를 리포에 넣으려면 CC BY-SA 표기를 함께 넣어야 하므로, 처음에는 넣지 않는다.
+- A script that fetches external material keeps the downloaded originals outside the repository (the local DB or `.local/`). Store the source URL and the fetch date together.
+- Only the song list (CC0) and the script code may go into the public repository. To put NGSL or Wiktionary material in the repository you must include the CC BY-SA notice, so do not include it at first.
 
-## 출처
+## Sources
 
-- [ytmusicapi 문서](https://ytmusicapi.readthedocs.io/en/stable/)
-- [YouTube 서비스 약관](https://www.youtube.com/static?template=terms)
-- [LRCLIB API 문서](https://lrclib.net/docs)
-- Genius API가 가사를 주지 않는다는 기록: [Getting Song Lyrics from Genius’s API + Scraping](https://bigishdata.com/2016/09/27/getting-song-lyrics-from-geniuss-api-scraping/)
-- Musixmatch 무료 등급 30% 제한: [Musixmatch API (API 목록)](https://freeapihub.com/apis/musixmatch)
-- [MusicBrainz API 요청 제한](https://musicbrainz.org/doc/MusicBrainz_API/Rate_Limiting)
+- [ytmusicapi docs](https://ytmusicapi.readthedocs.io/en/stable/)
+- [YouTube Terms of Service](https://www.youtube.com/static?template=terms)
+- [LRCLIB API docs](https://lrclib.net/docs)
+- A record that the Genius API does not provide lyrics: [Getting Song Lyrics from Genius’s API + Scraping](https://bigishdata.com/2016/09/27/getting-song-lyrics-from-geniuss-api-scraping/)
+- Musixmatch free tier 30% limit: [Musixmatch API (API listing)](https://freeapihub.com/apis/musixmatch)
+- [MusicBrainz API rate limiting](https://musicbrainz.org/doc/MusicBrainz_API/Rate_Limiting)
 - [NGSL 1.2](https://www.newgeneralservicelist.com/new-general-service-list)
 - [kaikki.org](https://kaikki.org/)

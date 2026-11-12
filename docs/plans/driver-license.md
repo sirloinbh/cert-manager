@@ -1,39 +1,39 @@
-# 운전면허 공부 계획
+# Driver's license study plan
 
-[전체 일정표](README.md) · 확인일 2026-10-31
+[Overall schedule](README.md) · Checked 2026-10-31
 
-**이 문서의 절차·금액은 공식 자료로 확인하지 못했다.** 등록 전에 도로교통공단 안전운전 통합민원과 학원에서 확인한다.
+**I could not confirm the procedures and amounts in this document with official sources.** Before you register, check with the Road Traffic Authority safe driving one-stop service and the driving school.
 
-## 정보
+## Information
 
-| 항목    | 내용                                                                                |
-| ------- | ----------------------------------------------------------------------------------- |
-| 첫 종류 | 2종 보통. 가장 많이 쓰는 면허이고 특별한 경력 조건이 없다고 안내된다                |
-| 절차    | 신체검사 → 학과 교육과 시험 → 장내기능 → 연습면허 → 도로주행 교육과 시험(민간 자료) |
-| 합격    | 2종 학과 60점, 장내기능 80점, 도로주행 70점(민간 자료)                              |
-| 비용    | 학원비는 학원마다 다르다. 수도권 2종 보통 오토 약 60만 원(민간 자료, 참고용)        |
-| 기간    | 학원 과정 평균 2~4주(민간 자료)                                                     |
-| 자료    | 도로교통공단 학과시험 문제은행(무료로 공개된다고 알려짐, 받을 때 확인)              |
+| Item       | Details                                                                                                                                       |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| First kind | Class 2 Regular. The most commonly used license, and no special experience condition is listed                                                |
+| Procedure  | Physical exam → classroom education and test → in-course skills → learner permit → road driving education and test (private sources)          |
+| Passing    | Class 2 written test 60 points, in-course skills 80 points, road driving 70 points (private sources)                                          |
+| Cost       | The driving school fee differs by school. About 600,000 KRW for Class 2 Regular automatic in the capital area (private source, for reference) |
+| Duration   | The driving school course takes 2-4 weeks on average (private source)                                                                         |
+| Material   | The Road Traffic Authority written test question bank (known to be public for free; check when you download it)                               |
 
-출처: [운전면허 취득 안내(KB)](https://kbthink.com/life/card/driving-license.html), [학원비 비교(민간)](https://glasswallet.com/calculate/driving-school-cost/1st-regular-cost), [면허 종류(공공데이터포털)](https://www.data.go.kr/biz/dcat/metadata/15160156.do)
+Sources: [Driver's license guide (KB)](https://kbthink.com/life/card/driving-license.html), [Driving school fee comparison (private)](https://glasswallet.com/calculate/driving-school-cost/1st-regular-cost), [License types (Public Data Portal)](https://www.data.go.kr/biz/dcat/metadata/15160156.do)
 
-## 응시 예정일
+## Planned exam date
 
-**정보처리기사 실기 합격 뒤에 정한다.** 지금 면허가 없다(사용자 답변). 실기가 끝나고 처음 시작하는 시험이다. 학과 공부 뒤 학원 일정에 맞추며, 정확한 날은 학원과 시험장이 정한다. 실기와 관계없이 먼저 하고 싶으면 학원 시간은 공휴일 밖이므로 앞당길 수 있다.
+**Decide it after passing the Engineer Information Processing practical exam.** You have no license now (the user answered). It is the first exam to start after the practical exam. Fit it to the driving school schedule after the written study; the school and the test center decide the exact day. If you want to do it first regardless of the practical exam, the driving school time is outside holidays, so it can be moved earlier.
 
-공휴일 2시간에 들어가는 것은 학과 공부뿐이다. **학원 교육과 시험은 공휴일에 열리지 않을 수 있어 평일이나 주말 시간이 따로 필요하다.** 공부 시간과 별개로 봐 달라.
+Only the written study fits into the 2 holiday hours. **Driving school education and tests may not be held on public holidays, so you need weekday or weekend time separately.** Please treat it as separate from the study time.
 
-## 단계별 할 일
+## Tasks by stage
 
-표의 공부는 공휴일 2시간씩이다. 시험 전 2주 동안 평일에 1시간씩 더 공부한다. 응시일이 정해지면 그 날에서 거꾸로 계산한다.
+Study in the table is 2 hours per public holiday. Study 1 more hour on weekdays in the 2 weeks before the exam. Once the exam date is set, count backward from that day.
 
-| 순서   | 할 일                                   |
-| ------ | --------------------------------------- |
-| 공부 1 | 학과 문제은행 받기, 절반 풀기           |
-| 공부 2 | 학과 문제은행 나머지 풀기               |
-| 공부 3 | 틀린 문제 복습, 학원·시험장 일정 정하기 |
-| 시험   | 학과·장내기능·도로주행 응시             |
+| Order   | Task                                                                  |
+| ------- | --------------------------------------------------------------------- |
+| Study 1 | Get the written question bank, solve half of it                       |
+| Study 2 | Solve the rest of the written question bank                           |
+| Study 3 | Review wrong answers, set the driving school and test center schedule |
+| Exam    | Take the written test, in-course skills, and road driving             |
 
-### 이후
+### After this
 
-1종 보통, 2종 소형처럼 필요한 종류부터 한 해에 하나씩 정한다. 1종 대형과 특수의 경력·연령 조건은 공식 자료로 확인한 뒤 계획한다.
+Decide one type per year, starting with the one you need, such as Class 1 Regular or Class 2 Small. Plan the experience and age conditions for Class 1 Large and Special after confirming them with official sources.

@@ -1,43 +1,43 @@
-# AWS Solutions Architect – Associate 공부 계획
+# AWS Solutions Architect – Associate study plan
 
-[전체 일정표](README.md) · 확인일 2026-10-31
+[Overall schedule](README.md) · Checked 2026-10-31
 
-## 시험 정보
+## Exam information
 
-| 항목     | 내용                                                                           |
-| -------- | ------------------------------------------------------------------------------ |
-| 등급     | Associate                                                                      |
-| 구성     | 65문항, 130분, 객관식·복수 응답                                                |
-| 합격     | 100~1000점 환산, 720점 이상                                                    |
-| 응시료   | 150 USD(환율 등 추가 비용 가능)                                                |
-| 유효기간 | 3년                                                                            |
-| 권장     | AWS로 클라우드 솔루션을 설계한 실무 경험 1년 이상                              |
-| 범위     | 보안 30%, 복원력 26%, 고성능 24%, 비용 최적화 20%                              |
-| 자료     | AWS 시험 안내서(무료). 강의와 모의고사는 Cloud Practitioner 경험을 보고 정한다 |
+| Item        | Details                                                                                                 |
+| ----------- | ------------------------------------------------------------------------------------------------------- |
+| Level       | Associate                                                                                               |
+| Format      | 65 questions, 130 minutes, multiple choice and multiple response                                        |
+| Passing     | Scaled 100-1000, 720 or higher                                                                          |
+| Exam fee    | 150 USD (exchange rate and other extra costs are possible)                                              |
+| Validity    | 3 years                                                                                                 |
+| Recommended | 1 or more years of hands-on experience designing cloud solutions on AWS                                 |
+| Scope       | Security 30%, resilience 26%, high performance 24%, cost optimization 20%                               |
+| Material    | The AWS exam guide (free). Decide on courses and practice exams after the Cloud Practitioner experience |
 
-출처: [AWS 자격증 안내](https://aws.amazon.com/certification/certified-solutions-architect-associate/), [시험 안내서 SAA-C03](https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html)
+Sources: [AWS certification guide](https://aws.amazon.com/certification/certified-solutions-architect-associate/), [Exam guide SAA-C03](https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html)
 
-## 응시 예정일
+## Planned exam date
 
-**정보처리기사 실기 합격 뒤에 정한다.** 2027년 공휴일은 실기에 먼저 쓴다. 실기 결과가 나오면 [전체 일정표](README.md)의 순서대로 날짜를 넣는다. 상시 응시 시험이다. 18시간은 권장 경험에 비해 짧으므로, 모의 문제 결과가 낮으면 미룬다.
+**Decide it after passing the Engineer Information Processing practical exam.** The 2027 holidays go to the practical exam first. When the practical result is out, fill in the dates in the order of the [overall schedule](README.md). It can be taken at any time. 18 hours is short compared with the recommended experience, so postpone it if the practice question results are low.
 
-## 단계별 할 일
+## Tasks by stage
 
-표의 공부는 공휴일 2시간씩이다. 시험 전 2주 동안 평일에 1시간씩 더 공부한다. 응시일이 정해지면 그 날에서 거꾸로 계산한다.
+Study in the table is 2 hours per public holiday. Study 1 more hour on weekdays in the 2 weeks before the exam. Once the exam date is set, count backward from that day.
 
-| 순서   | 할 일                                 |
-| ------ | ------------------------------------- |
-| 공부 1 | 시험 안내서 읽기, 공부 자료 정하기    |
-| 공부 2 | 보안 설계 1: IAM, 네트워크 보안       |
-| 공부 3 | 보안 설계 2: 데이터 보호              |
-| 공부 4 | 복원력 설계 1: 고가용성, 확장         |
-| 공부 5 | 복원력 설계 2: 메시징, 재해 복구      |
-| 공부 6 | 고성능 설계 1: 스토리지, 컴퓨팅       |
-| 공부 7 | 고성능 설계 2: 데이터베이스, 네트워크 |
-| 공부 8 | 비용 최적화 설계                      |
-| 공부 9 | 모의 문제 풀고 약한 범위 복습         |
-| 시험   | 응시                                  |
+| Order   | Task                                             |
+| ------- | ------------------------------------------------ |
+| Study 1 | Read the exam guide, choose study material       |
+| Study 2 | Secure design 1: IAM, network security           |
+| Study 3 | Secure design 2: data protection                 |
+| Study 4 | Resilient design 1: high availability, scaling   |
+| Study 5 | Resilient design 2: messaging, disaster recovery |
+| Study 6 | High-performance design 1: storage, compute      |
+| Study 7 | High-performance design 2: database, network     |
+| Study 8 | Cost-optimized design                            |
+| Study 9 | Solve practice questions and review weak areas   |
+| Exam    | Take the exam                                    |
 
-### 이후
+### After this
 
-Professional과 Specialty는 2년 이상 경험 안내나 분야 선택이 필요하므로 Associate를 딴 뒤 다시 정한다.
+Professional and Specialty need 2 or more years of suggested experience or a choice of field, so decide again after earning the Associate.
