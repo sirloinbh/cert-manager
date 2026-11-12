@@ -48,8 +48,8 @@ export function reachedGrade(
 export function scoreRange(level: GradeLevel) {
   if (level.minScore === null || level.maxScore === null) return '';
   return level.minScore === level.maxScore
-    ? `${level.minScore}점`
-    : `${level.minScore}~${level.maxScore}점`;
+    ? `${level.minScore}`
+    : `${level.minScore}-${level.maxScore}`;
 }
 
 export const gradeScaleApi = {

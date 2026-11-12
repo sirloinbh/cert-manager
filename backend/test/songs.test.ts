@@ -105,10 +105,10 @@ test('a missing song is a 404, and a bad id a 400', async () => {
   await withApi(pool, async (call) => {
     const missing = await call('/api/songs/9');
     assert.equal(missing.status, 404);
-    assert.deepEqual(missing.data, { error: '곡을 찾을 수 없습니다' });
+    assert.deepEqual(missing.data, { error: 'Song not found' });
     const bad = await call('/api/songs/abc');
     assert.equal(bad.status, 400);
-    assert.deepEqual(bad.data, { error: 'Invalid 곡 ID' });
+    assert.deepEqual(bad.data, { error: 'Invalid song ID' });
     const save = await call('/api/songs/9/lyrics', {
       method: 'PUT',
       body: { original: '새로 지은 문장' },
@@ -121,13 +121,17 @@ test('invalid lyrics and translations are a Korean 400 and change nothing', asyn
   const { pool, queries } = fakePool(() => ({ rows: [] }));
   await withApi(pool, async (call) => {
     const cases: [string, unknown, string][] = [
-      ['lyrics', {}, '가사를 입력해 주세요'],
-      ['lyrics', { original: '  \n  ' }, '가사를 입력해 주세요'],
-      ['lyrics', { original: 1 }, '가사를 입력해 주세요'],
-      ['lyrics', { original: 'a'.repeat(50_001) }, '가사는 50000자 이하로 입력해 주세요'],
-      ['translation', {}, '번역을 입력해 주세요'],
-      ['translation', { translation: 'a'.repeat(50_001) }, '번역은 50000자 이하로 입력해 주세요'],
-      ['lyrics', [1], '요청 본문은 JSON 객체여야 합니다'],
+      ['lyrics', {}, 'Lyrics are required'],
+      ['lyrics', { original: '  \n  ' }, 'Lyrics are required'],
+      ['lyrics', { original: 1 }, 'Lyrics are required'],
+      ['lyrics', { original: 'a'.repeat(50_001) }, 'Lyrics must be 50000 characters or fewer'],
+      ['translation', {}, 'Translation is required'],
+      [
+        'translation',
+        { translation: 'a'.repeat(50_001) },
+        'Translation must be 50000 characters or fewer',
+      ],
+      ['lyrics', [1], 'Request body must be a JSON object'],
     ];
     for (const [kind, body, message] of cases) {
       const { status, data } = await call(`/api/songs/3/${kind}`, { method: 'PUT', body });
@@ -141,8 +145,8 @@ test('invalid lyrics and translations are a Korean 400 and change nothing', asyn
 test('an array in place of lyrics or a translation answers one message', async () => {
   const { pool, queries } = fakePool(() => ({ rows: [] }));
   const cases: [string, unknown, string][] = [
-    ['lyrics', { original: [] }, '가사를 입력해 주세요'],
-    ['translation', { translation: [] }, '번역을 입력해 주세요'],
+    ['lyrics', { original: [] }, 'Lyrics are required'],
+    ['translation', { translation: [] }, 'Translation is required'],
   ];
   await withApi(pool, async (call) => {
     for (const [kind, body, error] of cases) {
@@ -166,7 +170,10 @@ test('a translation with the wrong line count says both counts and saves nothing
       body: { translation: '한 줄뿐' },
     });
     assert.equal(status, 400);
-    assert.equal(data.error, '번역 줄 수(1줄)가 원문 줄 수(2줄)와 다릅니다. 빈 줄은 세지 않습니다');
+    assert.equal(
+      data.error,
+      'The translation has 1 lines but the original has 2. Blank lines are not counted',
+    );
   });
   assert.ok(!queries.some((query) => query.text.startsWith('UPDATE')));
   assert.ok(queries.some((query) => query.text === 'ROLLBACK'));
@@ -197,7 +204,7 @@ test('a translation needs lyrics first', async () => {
       body: { translation: '번역' },
     });
     assert.equal(status, 400);
-    assert.equal(data.error, '원문 가사를 먼저 넣어 주세요');
+    assert.equal(data.error, 'Add the original lyrics first');
   });
 });
 

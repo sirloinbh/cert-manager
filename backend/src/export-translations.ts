@@ -8,7 +8,9 @@ import { exportTranslations, translationsDir } from './translation-files.js';
 const pool = new Pool({ connectionString: scriptDatabaseUrl() });
 try {
   const { written, kept } = await exportTranslations(pool, translationsDir);
-  console.log(`새 파일 ${written.length}개, 그대로 둔 파일 ${kept.length}개: ${translationsDir}`);
+  console.log(
+    `${written.length} new files, ${kept.length} files left as they were: ${translationsDir}`,
+  );
 } finally {
   await pool.end();
 }

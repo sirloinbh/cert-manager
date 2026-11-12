@@ -27,6 +27,7 @@ import { Notice } from './components/ui/notice';
 import { SkeletonList } from './components/ui/skeleton';
 import { toast } from './components/ui/sonner';
 import { Spinner } from './components/ui/spinner';
+import { formatDate } from './date-format';
 import {
   addMonths,
   currentAttempt,
@@ -79,7 +80,7 @@ function ExpiryLine({ attempt, state }: { attempt: ExamAttempt; state: ExpirySta
       <ExpiryBadge state={state} />
       {attempt.expiresOn !== null && attempt.daysUntilExpiry !== null ? (
         <span>
-          <time dateTime={attempt.expiresOn}>{attempt.expiresOn}</time>
+          <time dateTime={attempt.expiresOn}>{formatDate(attempt.expiresOn)}</time>
           {' · '}
           {deadlineCountdown(attempt.daysUntilExpiry)}
         </span>
@@ -89,7 +90,7 @@ function ExpiryLine({ attempt, state }: { attempt: ExamAttempt; state: ExpirySta
 }
 
 function resultText(attempt: ExamAttempt) {
-  const score = attempt.score === null ? '' : `${attempt.score}점`;
+  const score = attempt.score === null ? '' : `${attempt.score}`;
   return [score, attempt.grade ?? ''].filter(Boolean).join(' · ');
 }
 
@@ -160,7 +161,7 @@ function AttemptForm({
       expiresOn: showExpiry && expiresOn !== '' ? expiresOn : null,
       memo: form.memo,
     }).catch((error: unknown) => {
-      notice.error(error, '저장하지 못했습니다');
+      notice.error(error, 'Could not save');
       setPending(false);
     });
   };
@@ -169,7 +170,7 @@ function AttemptForm({
     <form onSubmit={submit} className="flex flex-col gap-4" aria-busy={pending || undefined}>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
-          <Label htmlFor={`${id}-date`}>시험일</Label>
+          <Label htmlFor={`${id}-date`}>Exam date</Label>
           <Input
             id={`${id}-date`}
             type="date"
@@ -180,7 +181,7 @@ function AttemptForm({
           />
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor={`${id}-outcome`}>결과</Label>
+          <Label htmlFor={`${id}-outcome`}>Result</Label>
           <select
             id={`${id}-outcome`}
             className={cn(controlClass, 'h-9')}
@@ -198,7 +199,7 @@ function AttemptForm({
       {showResult ? (
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
-            <Label htmlFor={`${id}-score`}>점수</Label>
+            <Label htmlFor={`${id}-score`}>Score</Label>
             <Input
               id={`${id}-score`}
               type="number"
@@ -210,12 +211,12 @@ function AttemptForm({
             />
             {certification.targetScore === null ? null : (
               <p id={`${id}-score-hint`} className="text-caption text-muted-foreground">
-                목표 점수는 {certification.targetScore}점입니다.
+                The target score is {certification.targetScore}.
               </p>
             )}
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor={`${id}-grade`}>등급</Label>
+            <Label htmlFor={`${id}-grade`}>Grade</Label>
             {gradeScale ? (
               <>
                 <select
@@ -228,7 +229,7 @@ function AttemptForm({
                   }}
                   aria-describedby={`${id}-grade-hint`}
                 >
-                  <option value="">없음</option>
+                  <option value="">None</option>
                   {[...gradeScale.levels].reverse().map((level) => (
                     <option key={level.value} value={level.value}>
                       {level.value}
@@ -246,10 +247,10 @@ function AttemptForm({
                   className="text-caption break-keep text-muted-foreground"
                 >
                   {fitting.length > 1
-                    ? `${score}점은 ${fitting.map((level) => level.value).join(', ')} 중 하나입니다. 성적표의 등급을 고르세요.`
+                    ? `A score of ${score} is one of ${fitting.map((level) => level.value).join(', ')}. Choose the grade shown on your score report.`
                     : suggested
-                      ? `${score}점의 기준 등급은 ${suggested}입니다.`
-                      : '목록에서 고릅니다.'}
+                      ? `The standard grade for a score of ${score} is ${suggested}.`
+                      : 'Choose from the list.'}
                 </p>
               </>
             ) : (
@@ -262,7 +263,7 @@ function AttemptForm({
                   setGradeEdited(true);
                   set('grade')(e.target.value);
                 }}
-                placeholder="예: Level 7, IH"
+                placeholder="e.g. Level 7, IH"
               />
             )}
           </div>
@@ -270,7 +271,7 @@ function AttemptForm({
       ) : null}
       {showExpiry ? (
         <div className="flex flex-col gap-2">
-          <Label htmlFor={`${id}-expires`}>만료일</Label>
+          <Label htmlFor={`${id}-expires`}>Expiry date</Label>
           <Input
             id={`${id}-expires`}
             ref={expiryInput}
@@ -287,8 +288,8 @@ function AttemptForm({
           />
           <p id={`${id}-expires-hint`} className="text-caption break-keep text-muted-foreground">
             {months === null
-              ? '유효기간을 정하지 않은 목표입니다. 만료일을 모르면 비워 둡니다.'
-              : '비우면 "만료일 모름"으로 저장합니다.'}
+              ? 'This goal has no validity period set. Leave the expiry date empty if you do not know it.'
+              : 'If left empty, it is saved as "Expiry unknown".'}
           </p>
           {prefilled !== '' && expiresOn !== prefilled ? (
             <Button
@@ -302,13 +303,13 @@ function AttemptForm({
                 expiryInput.current?.focus();
               }}
             >
-              시험일에서 {months}개월 뒤({prefilled})로 채우기
+              Fill in {months} months after the exam date ({formatDate(prefilled)})
             </Button>
           ) : null}
         </div>
       ) : null}
       <div className="flex flex-col gap-2">
-        <Label htmlFor={`${id}-memo`}>메모</Label>
+        <Label htmlFor={`${id}-memo`}>Memo</Label>
         <textarea
           id={`${id}-memo`}
           rows={3}
@@ -321,12 +322,12 @@ function AttemptForm({
       <DialogFooter>
         <DialogClose asChild>
           <Button type="button" variant="outline" disabled={pending}>
-            취소
+            Cancel
           </Button>
         </DialogClose>
         <Button type="submit" disabled={pending} aria-busy={pending || undefined}>
-          {pending ? <Spinner size="sm" label="저장하는 중" /> : null}
-          저장
+          {pending ? <Spinner size="sm" label="Saving" /> : null}
+          Save
         </Button>
       </DialogFooter>
     </form>
@@ -378,7 +379,7 @@ export function ExamAttempts({
         (a, b) => b.examDate.localeCompare(a.examDate) || b.id - a.id,
       ),
     }));
-    toast.success('응시 기록을 저장했습니다');
+    toast.success('Saved the exam attempt');
     const newlyPassed = input.outcome === 'passed' && attempt?.outcome !== 'passed';
     if (newlyPassed && certification.status !== 'passed') setAskPassed(true);
   };
@@ -389,11 +390,11 @@ export function ExamAttempts({
     } catch (error) {
       // Already gone counts as deleted; anything else keeps the dialog open with the reason.
       if (!(error instanceof RequestError && error.status === 404)) {
-        toast.error(errorText(error, '기록을 지우지 못했습니다'));
+        toast.error(errorText(error, 'Could not delete the attempt'));
         throw error;
       }
     }
-    toast.success('응시 기록을 지웠습니다');
+    toast.success('Deleted the exam attempt');
     focus.afterRemoval();
     reload((list) => ({
       ...list,
@@ -404,7 +405,7 @@ export function ExamAttempts({
   const addButton = (
     <Button variant="outline" onClick={(event) => openForm(event, null)}>
       <Plus aria-hidden />
-      기록 추가
+      Add attempt
     </Button>
   );
   const attempts = data?.attempts ?? [];
@@ -414,7 +415,7 @@ export function ExamAttempts({
     <section aria-labelledby={titleId} className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 id={titleId} ref={focus.heading} tabIndex={-1} className="outline-none">
-          응시·취득 기록
+          Exam attempts
         </h2>
         {attempts.length > 0 ? addButton : null}
       </div>
@@ -428,15 +429,15 @@ export function ExamAttempts({
       {loaded.state === 'loading' && !data ? <SkeletonList rows={2} /> : null}
       {loaded.state === 'error' ? (
         <Notice
-          notice={{ kind: 'error', text: errorText(loaded.error, '기록을 불러오지 못했습니다') }}
+          notice={{ kind: 'error', text: errorText(loaded.error, 'Could not load the attempts') }}
         />
       ) : null}
       {data && attempts.length === 0 ? (
         <EmptyState
           className="break-keep"
           icon={<ClipboardList />}
-          title="아직 응시 기록이 없습니다"
-          description="시험을 보면 점수와 결과를 적어 두세요. 유효기간이 있는 자격증은 만료일을 함께 챙겨 드립니다."
+          title="No exam attempts yet"
+          description="After you take an exam, record the score and result. For certifications with a validity period, the expiry date is tracked too."
           action={addButton}
         />
       ) : null}
@@ -453,7 +454,7 @@ export function ExamAttempts({
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <time dateTime={attempt.examDate} className="font-semibold">
-                      {attempt.examDate}
+                      {formatDate(attempt.examDate)}
                     </time>
                     <Badge variant={outcomeVariant[attempt.outcome]}>
                       {outcomeLabels[attempt.outcome]}
@@ -463,21 +464,21 @@ export function ExamAttempts({
                     <Button
                       variant="ghost"
                       size="icon"
-                      aria-label={`${attempt.examDate} 기록 수정`}
+                      aria-label={`Edit attempt on ${formatDate(attempt.examDate)}`}
                       onClick={(event) => openForm(event, attempt)}
                     >
                       <Pencil aria-hidden />
                     </Button>
                     <ConfirmDialog
-                      title="기록을 지울까요?"
-                      description={`${attempt.examDate} 응시 기록을 지웁니다. 되돌릴 수 없습니다.`}
+                      title="Delete this attempt?"
+                      description={`This deletes the exam attempt on ${formatDate(attempt.examDate)}. This cannot be undone.`}
                       onConfirm={() => remove(attempt)}
                       trigger={
                         <Button
                           variant="ghost"
                           size="icon"
                           className="text-destructive"
-                          aria-label={`${attempt.examDate} 기록 삭제`}
+                          aria-label={`Delete attempt on ${formatDate(attempt.examDate)}`}
                         >
                           <Trash2 aria-hidden />
                         </Button>
@@ -489,12 +490,12 @@ export function ExamAttempts({
                   <p className="flex flex-wrap items-center gap-2 text-body">
                     {result}
                     {reachedTarget(attempt, certification, gradeScale) ? (
-                      <Badge variant="success">목표 달성</Badge>
+                      <Badge variant="success">Goal reached</Badge>
                     ) : null}
                   </p>
                 ) : null}
                 {state !== null && attempt.id !== current?.id ? (
-                  <p className="text-body-sm text-muted-foreground">새 기록 있음</p>
+                  <p className="text-body-sm text-muted-foreground">Newer attempt exists</p>
                 ) : null}
                 {state !== null && attempt.id === current?.id ? (
                   <ExpiryLine attempt={attempt} state={state} />
@@ -516,7 +517,7 @@ export function ExamAttempts({
       >
         <DialogContent onCloseAutoFocus={focus.restore}>
           <DialogHeader>
-            <DialogTitle>{editing.attempt ? '응시 기록 수정' : '응시 기록 추가'}</DialogTitle>
+            <DialogTitle>{editing.attempt ? 'Edit exam attempt' : 'Add exam attempt'}</DialogTitle>
             <DialogDescription className="break-keep">{certification.name}</DialogDescription>
           </DialogHeader>
           <AttemptForm
@@ -530,10 +531,10 @@ export function ExamAttempts({
       <ConfirmDialog
         open={askPassed}
         onOpenChange={setAskPassed}
-        title="목표 상태를 합격으로 바꿀까요?"
-        description={`'${certification.name}' 목표의 상태를 "합격"으로 바꿉니다.`}
-        confirmLabel="바꾸기"
-        cancelLabel="그대로 두기"
+        title="Change the goal status to Passed?"
+        description={`This changes the status of the '${certification.name}' goal to "Passed".`}
+        confirmLabel="Change"
+        cancelLabel="Keep as is"
         destructive={false}
         onConfirm={onMarkPassed}
         returnFocusRef={focus.heading}
@@ -552,7 +553,7 @@ export function ExpiringCertifications({ paths }: { paths: CertificationPaths })
     <Card>
       <CardHeader>
         <CardTitle asHeading="h2" className="text-body">
-          만료 임박
+          Expiring soon
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
@@ -561,13 +562,13 @@ export function ExpiringCertifications({ paths }: { paths: CertificationPaths })
           <Notice
             notice={{
               kind: 'error',
-              text: errorText(loaded.error, '만료일을 불러오지 못했습니다'),
+              text: errorText(loaded.error, 'Could not load the expiry dates'),
             }}
           />
         ) : null}
         {loaded.state === 'ok' && attempts.length === 0 ? (
           <p className="text-body-sm break-keep text-muted-foreground">
-            만료가 가까운 자격증이 없습니다. 만료일까지 90일 이하로 남으면 여기에 보입니다.
+            No certifications are close to expiring. They show up here when 90 days or fewer remain.
           </p>
         ) : null}
         {attempts.length > 0 ? (
@@ -585,7 +586,9 @@ export function ExpiringCertifications({ paths }: { paths: CertificationPaths })
                     {attempt.name}
                   </Link>
                   <span className="text-caption text-muted-foreground">
-                    <time dateTime={attempt.expiresOn ?? undefined}>{attempt.expiresOn}</time>
+                    <time dateTime={attempt.expiresOn ?? undefined}>
+                      {attempt.expiresOn ? formatDate(attempt.expiresOn) : null}
+                    </time>
                     {attempt.daysUntilExpiry === null
                       ? null
                       : ` · ${deadlineCountdown(attempt.daysUntilExpiry)}`}

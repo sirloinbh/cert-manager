@@ -25,7 +25,7 @@ test('requests over the limit get a Korean 429 and never reach the database', as
       assert.equal((await call('/api/health')).status, 200);
       const refused = await call('/api/health');
       assert.equal(refused.status, 429);
-      assert.deepEqual(refused.data, { error: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요' });
+      assert.deepEqual(refused.data, { error: 'Too many requests. Please try again shortly' });
     },
     { rateLimit: { limit: 2 } },
   );

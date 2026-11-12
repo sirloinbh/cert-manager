@@ -48,19 +48,19 @@ export async function politeGet(
       limitedTries += 1;
       const seconds = asked > 0 ? asked : defaultRetrySeconds;
       if (seconds > longestWaitSeconds || limitedTries >= maxAttempts) {
-        throw new RateLimited(`${options.name} 429, 대기 ${seconds}초 요청`);
+        throw new RateLimited(`${options.name} 429, asked to wait ${seconds} seconds`);
       }
       await options.sleep(seconds * 1000);
       continue;
     }
     // A 503 is a busy server, not a limit: wait what it asks or longer, never past longestWaitSeconds.
     if (asked > longestWaitSeconds) {
-      throw new RateLimited(`${options.name} 503, 대기 ${asked}초 요청`);
+      throw new RateLimited(`${options.name} 503, asked to wait ${asked} seconds`);
     }
     busyTries += 1;
     // Still busy after every try: that item fails, and the caller moves on to the next one.
     if (busyTries >= busyAttempts) {
-      throw new ServiceError(`${options.name} 503, ${busyAttempts}번 시도`);
+      throw new ServiceError(`${options.name} 503, ${busyAttempts} attempts`);
     }
     const backoff = busyFirstWaitSeconds * 2 ** (busyTries - 1);
     await options.sleep(Math.max(asked > 0 ? asked : 0, backoff) * 1000);

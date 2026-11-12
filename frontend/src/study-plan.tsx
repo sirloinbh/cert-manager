@@ -28,6 +28,7 @@ import { Notice } from './components/ui/notice';
 import { SkeletonList } from './components/ui/skeleton';
 import { toast } from './components/ui/sonner';
 import { Spinner } from './components/ui/spinner';
+import { formatDate } from './date-format';
 import { RequestError } from './lib/api';
 import { errorText, useNotice } from './lib/use-notice';
 import { cn } from './lib/utils';
@@ -103,7 +104,7 @@ function ItemForm({
     setPending(true);
     notice.clear();
     onSubmit(text, values).catch((error: unknown) => {
-      notice.error(error, '저장하지 못했습니다');
+      notice.error(error, 'Could not save');
       setPending(false);
     });
   };
@@ -141,12 +142,12 @@ function ItemForm({
       <DialogFooter>
         <DialogClose asChild>
           <Button type="button" variant="outline" disabled={pending}>
-            취소
+            Cancel
           </Button>
         </DialogClose>
         <Button type="submit" disabled={pending} aria-busy={pending || undefined}>
-          {pending ? <Spinner size="sm" label="저장하는 중" /> : null}
-          저장
+          {pending ? <Spinner size="sm" label="Saving" /> : null}
+          Save
         </Button>
       </DialogFooter>
     </form>
@@ -158,10 +159,10 @@ type Target =
   | { kind: 'task'; stage: StudyStage; task: StudyTask | null };
 
 const stageFields: DateField[] = [
-  { key: 'startDate', label: '시작일' },
-  { key: 'endDate', label: '종료일' },
+  { key: 'startDate', label: 'Start date' },
+  { key: 'endDate', label: 'End date' },
 ];
-const taskFields: DateField[] = [{ key: 'dueDate', label: '마감일' }];
+const taskFields: DateField[] = [{ key: 'dueDate', label: 'Due date' }];
 
 const withoutTask = (id: number) => (plan: Plan) => ({
   ...plan,
@@ -243,7 +244,7 @@ export function StudyPlan({ certification }: { certification: Certification }) {
     setEditing((current) => ({ ...current, open: false }));
     // What was saved shows even if reloading the plan then fails.
     reload(change);
-    toast.success('저장했습니다');
+    toast.success('Saved');
   };
 
   const remove = async (
@@ -256,7 +257,7 @@ export function StudyPlan({ certification }: { certification: Certification }) {
     } catch (error) {
       // Already gone counts as deleted; anything else keeps the dialog open with the reason.
       if (!(error instanceof RequestError && error.status === 404)) {
-        toast.error(errorText(error, '지우지 못했습니다'));
+        toast.error(errorText(error, 'Could not delete'));
         throw error;
       }
     }
@@ -272,7 +273,7 @@ export function StudyPlan({ certification }: { certification: Certification }) {
       const saved = await studyPlanApi.setCompleted(task.id, completed);
       reload(withTask(saved.task));
     } catch (error) {
-      toast.error(errorText(error, '할 일을 저장하지 못했습니다'));
+      toast.error(errorText(error, 'Could not save the task'));
       reload();
     } finally {
       setChecking(({ [task.id]: _done, ...rest }) => rest);
@@ -285,7 +286,7 @@ export function StudyPlan({ certification }: { certification: Certification }) {
   const addStage = (
     <Button variant="outline" onClick={(event) => open(event, { kind: 'stage', stage: null })}>
       <Plus aria-hidden />
-      단계 추가
+      Add stage
     </Button>
   );
 
@@ -293,31 +294,31 @@ export function StudyPlan({ certification }: { certification: Certification }) {
     <section aria-labelledby={titleId} className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 id={titleId} ref={focus.heading} tabIndex={-1} className="outline-none">
-          공부 계획
+          Study plan
         </h2>
         {stages.length > 0 ? addStage : null}
       </div>
       {loaded.state === 'loading' && !data ? <SkeletonList rows={2} /> : null}
       {loaded.state === 'error' ? (
         <Notice
-          notice={{ kind: 'error', text: errorText(loaded.error, '계획을 불러오지 못했습니다') }}
+          notice={{ kind: 'error', text: errorText(loaded.error, 'Could not load the plan') }}
         />
       ) : null}
       {data && stages.length === 0 ? (
         <EmptyState
           className="break-keep"
           icon={<ListChecks />}
-          title="아직 공부 계획이 없습니다"
-          description="주차나 과목처럼 단계를 나누고 할 일을 적으면 진행률을 함께 볼 수 있습니다."
+          title="No study plan yet"
+          description="Split the plan into stages such as weeks or subjects and add tasks to see your progress."
           action={addStage}
         />
       ) : null}
       {stages.length > 0 ? (
         <div className="flex flex-col gap-2">
-          <ProgressLine label="전체 진행률" tasks={allTasks} />
+          <ProgressLine label="Overall progress" tasks={allTasks} />
           {certification.targetExamDate !== null ? (
             <p className="text-body-sm text-muted-foreground">
-              목표 시험일까지: {examCountdown(certification.daysUntilExam)}
+              Until the target exam date: {examCountdown(certification.daysUntilExam)}
             </p>
           ) : null}
         </div>
@@ -342,23 +343,23 @@ export function StudyPlan({ certification }: { certification: Certification }) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    aria-label={`${stage.title} 단계 수정`}
+                    aria-label={`Edit stage ${stage.title}`}
                     onClick={(event) => open(event, { kind: 'stage', stage })}
                   >
                     <Pencil aria-hidden />
                   </Button>
                   <ConfirmDialog
-                    title="단계를 지울까요?"
+                    title="Delete this stage?"
                     description={
                       <span className="wrap-anywhere break-keep">
-                        {`'${stage.title}' 단계와 할 일 ${stage.tasks.length}개를 지웁니다. 되돌릴 수 없습니다.`}
+                        {`This deletes the '${stage.title}' stage and its ${stage.tasks.length} tasks. This cannot be undone.`}
                       </span>
                     }
                     onConfirm={() =>
                       remove(
                         () => studyPlanApi.removeStage(stage.id),
                         withoutStage(stage.id),
-                        '단계를 지웠습니다',
+                        'Deleted the stage',
                       )
                     }
                     trigger={
@@ -366,7 +367,7 @@ export function StudyPlan({ certification }: { certification: Certification }) {
                         variant="ghost"
                         size="icon"
                         className="text-destructive"
-                        aria-label={`${stage.title} 단계 삭제`}
+                        aria-label={`Delete stage ${stage.title}`}
                       >
                         <Trash2 aria-hidden />
                       </Button>
@@ -374,7 +375,7 @@ export function StudyPlan({ certification }: { certification: Certification }) {
                   />
                 </div>
               </div>
-              <ProgressLine label={`${stage.title} 진행률`} tasks={stage.tasks} />
+              <ProgressLine label={`${stage.title} progress`} tasks={stage.tasks} />
               {stage.tasks.length > 0 ? (
                 <ul className="flex flex-col divide-y">
                   {stage.tasks.map((task) => (
@@ -388,7 +389,7 @@ export function StudyPlan({ certification }: { certification: Certification }) {
                         remove(
                           () => studyPlanApi.removeTask(task.id),
                           withoutTask(task.id),
-                          '할 일을 지웠습니다',
+                          'Deleted the task',
                         )
                       }
                     />
@@ -399,10 +400,11 @@ export function StudyPlan({ certification }: { certification: Certification }) {
                 variant="outline"
                 size="sm"
                 className="w-fit"
-                aria-label={`${stage.title}에 할 일 추가`}
+                aria-label={`Add a task to ${stage.title}`}
                 onClick={(event) => open(event, { kind: 'task', stage, task: null })}
               >
-                <Plus aria-hidden />할 일 추가
+                <Plus aria-hidden />
+                Add task
               </Button>
             </li>
           ))}
@@ -422,8 +424,8 @@ export function StudyPlan({ certification }: { certification: Certification }) {
           </DialogHeader>
           {target.kind === 'stage' ? (
             <ItemForm
-              titleLabel="단계 이름"
-              placeholder="예: 1주차, 기출 풀이"
+              titleLabel="Stage name"
+              placeholder="e.g. Week 1, past exam practice"
               title={target.stage?.title ?? ''}
               fields={stageFields}
               dates={{
@@ -434,8 +436,8 @@ export function StudyPlan({ certification }: { certification: Certification }) {
             />
           ) : (
             <ItemForm
-              titleLabel="할 일"
-              placeholder="예: 기출 1회 풀기"
+              titleLabel="Task"
+              placeholder="e.g. Solve past exam 1"
               title={target.task?.title ?? ''}
               fields={taskFields}
               dates={{ dueDate: target.task?.dueDate ?? null }}
@@ -449,8 +451,8 @@ export function StudyPlan({ certification }: { certification: Certification }) {
 }
 
 function dialogTitle(target: Target) {
-  if (target.kind === 'stage') return target.stage ? '단계 수정' : '단계 추가';
-  return target.task ? '할 일 수정' : '할 일 추가';
+  if (target.kind === 'stage') return target.stage ? 'Edit stage' : 'Add stage';
+  return target.task ? 'Edit task' : 'Add task';
 }
 
 function TaskRow({
@@ -491,7 +493,7 @@ function TaskRow({
           </Label>
           {task.dueDate !== null && task.daysUntilDue !== null ? (
             <p className="text-caption text-muted-foreground">
-              <time dateTime={task.dueDate}>{task.dueDate}</time>
+              <time dateTime={task.dueDate}>{formatDate(task.dueDate)}</time>
               {done ? null : (
                 <span className={cn(isOverdue(task) && 'font-medium text-destructive')}>
                   {' · '}
@@ -503,14 +505,14 @@ function TaskRow({
         </div>
       </div>
       <div className="flex shrink-0 gap-1">
-        <Button variant="ghost" size="icon" aria-label={`${task.title} 수정`} onClick={onEdit}>
+        <Button variant="ghost" size="icon" aria-label={`Edit ${task.title}`} onClick={onEdit}>
           <Pencil aria-hidden />
         </Button>
         <ConfirmDialog
-          title="할 일을 지울까요?"
+          title="Delete this task?"
           description={
             <span className="wrap-anywhere break-keep">
-              {`'${task.title}'을 지웁니다. 되돌릴 수 없습니다.`}
+              {`This deletes '${task.title}'. This cannot be undone.`}
             </span>
           }
           onConfirm={onRemove}
@@ -519,7 +521,7 @@ function TaskRow({
               variant="ghost"
               size="icon"
               className="text-destructive"
-              aria-label={`${task.title} 삭제`}
+              aria-label={`Delete ${task.title}`}
             >
               <Trash2 aria-hidden />
             </Button>
@@ -540,19 +542,19 @@ export function TodayTasks({ paths }: { paths: CertificationPaths }) {
     <Card>
       <CardHeader>
         <CardTitle asHeading="h2" className="text-body">
-          오늘 할 일
+          Today’s tasks
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         {loaded.state === 'loading' ? <SkeletonList rows={2} /> : null}
         {loaded.state === 'error' ? (
           <Notice
-            notice={{ kind: 'error', text: errorText(loaded.error, '할 일을 불러오지 못했습니다') }}
+            notice={{ kind: 'error', text: errorText(loaded.error, 'Could not load the tasks') }}
           />
         ) : null}
         {loaded.state === 'ok' && tasks.length === 0 ? (
           <p className="text-body-sm break-keep text-muted-foreground">
-            오늘 할 일이 없습니다. 공부 계획의 할 일에 마감일을 정하면 여기에 보입니다.
+            No tasks for today. Set a due date on a task in a study plan and it shows up here.
           </p>
         ) : null}
         {tasks.length > 0 ? (

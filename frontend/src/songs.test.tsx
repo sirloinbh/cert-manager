@@ -113,7 +113,7 @@ function fakeApi(
       if (path === '/api/user-actions') return reply(200, { today: '2026-10-31', actions: [] });
       if (path === '/api/songs')
         return options.listFails
-          ? reply(500, { error: '목록 서버 오류' })
+          ? reply(500, { error: 'List server error' })
           : reply(200, { albums: options.albums ?? albums });
       if (method === 'PUT')
         return (options.saveGate ?? Promise.resolve()).then(() =>
@@ -121,7 +121,7 @@ function fakeApi(
             ? reply(400, { error: options.saveError })
             : reply(200, { song: options.saved ?? translated }),
         );
-      if (options.missing) return reply(404, { error: '곡을 찾을 수 없습니다' });
+      if (options.missing) return reply(404, { error: 'Song not found' });
       return reply(200, { song: options.song ?? withLyrics });
     }),
   );
@@ -170,50 +170,50 @@ test('the list shows albums, tracks with status, links and progress', async () =
   const first = await screen.findByRole('region', { name: /첫 앨범/ });
   const rows = within(first).getAllByRole('listitem');
   expect(rows[0]).toHaveTextContent('Morning Rain');
-  expect(rows[0]).toHaveTextContent('번역 있음');
+  expect(rows[0]).toHaveTextContent('Translated');
   expect(within(rows[0]).getByRole('link')).toHaveAttribute('href', '/songs/10');
-  expect(rows[1]).toHaveTextContent('번역 전');
-  expect(screen.getByText('3곡 · 가사 2곡 · 번역 1곡')).toBeInTheDocument();
+  expect(rows[1]).toHaveTextContent('Not translated');
+  expect(screen.getByText('3 songs · 2 with lyrics · 1 translated')).toBeInTheDocument();
 });
 
 test('searching narrows the list and says when nothing matches', async () => {
   open('/songs');
-  const search = await screen.findByLabelText('곡 검색');
+  const search = await screen.findByLabelText('Search songs');
   fireEvent.change(search, { target: { value: 'quiet' } });
   expect(screen.getByText('Quiet Road')).toBeInTheDocument();
   expect(screen.queryByText('Paper Boats')).not.toBeInTheDocument();
   fireEvent.change(search, { target: { value: '없는 곡' } });
-  expect(screen.getByText(/없는 곡.*들어간 곡이 없습니다/)).toBeInTheDocument();
+  expect(screen.getByText(/No songs match/)).toBeInTheDocument();
 });
 
 test('coming back from a song finds the same search', async () => {
   open('/songs');
-  fireEvent.change(await screen.findByLabelText('곡 검색'), { target: { value: 'quiet' } });
+  fireEvent.change(await screen.findByLabelText('Search songs'), { target: { value: 'quiet' } });
   expect(window.location.search).toBe('?q=quiet');
   fireEvent.click(screen.getByRole('link', { name: /Quiet Road/ }));
-  fireEvent.click(await screen.findByRole('link', { name: '곡 목록' }));
-  expect(await screen.findByLabelText('곡 검색')).toHaveValue('quiet');
+  fireEvent.click(await screen.findByRole('link', { name: 'Song list' }));
+  expect(await screen.findByLabelText('Search songs')).toHaveValue('quiet');
   expect(screen.queryByText('Paper Boats')).not.toBeInTheDocument();
 });
 
 test('an empty list explains itself', async () => {
   open('/songs', { albums: [] });
-  expect(await screen.findByText('아직 곡 목록이 없습니다')).toBeInTheDocument();
-  expect(screen.queryByLabelText('곡 검색')).not.toBeInTheDocument();
+  expect(await screen.findByText('No song list yet')).toBeInTheDocument();
+  expect(screen.queryByLabelText('Search songs')).not.toBeInTheDocument();
 });
 
 test('a failed list shows the reason', async () => {
   open('/songs', { listFails: true });
-  expect(await screen.findByText('목록 서버 오류')).toBeInTheDocument();
+  expect(await screen.findByText('List server error')).toBeInTheDocument();
 });
 
 test('a song without lyrics offers to paste them, and not a translation', async () => {
   open('/songs/12', { song: empty });
-  expect(await screen.findByText('아직 가사가 없습니다')).toBeInTheDocument();
+  expect(await screen.findByText('No lyrics yet')).toBeInTheDocument();
   expect(screen.getByRole('heading', { level: 1, name: 'Quiet Road' })).toBeInTheDocument();
   expect(screen.getByText('가수 · 둘째 앨범 · 3:05')).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: '가사 붙여 넣기' })).toBeInTheDocument();
-  expect(screen.queryByRole('button', { name: '번역 붙여 넣기' })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Paste lyrics' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Paste translation' })).not.toBeInTheDocument();
 });
 
 test('lines show the original and translation together, with blank lines between verses', async () => {
@@ -231,17 +231,17 @@ test('lines show the original and translation together, with blank lines between
 test('a line not yet translated is marked for screen readers', async () => {
   open('/songs/12');
   const line = (await screen.findByText('I walk alone')).closest('li') as HTMLElement;
-  expect(within(line).getByText('번역 없음')).toHaveClass('sr-only');
+  expect(within(line).getByText('No translation')).toHaveClass('sr-only');
 });
 
 test('pasting lyrics saves them and shows the lines right away', async () => {
   const api = open('/songs/12', { song: empty, saved: withLyrics });
-  fireEvent.click(await screen.findByRole('button', { name: '가사 붙여 넣기' }));
-  fireEvent.change(await screen.findByLabelText('가사 원문'), {
+  fireEvent.click(await screen.findByRole('button', { name: 'Paste lyrics' }));
+  fireEvent.change(await screen.findByLabelText('Original lyrics'), {
     target: { value: 'The road is quiet\n\nI walk alone' },
   });
-  expect(screen.getByText(/^2줄입니다/)).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: '저장' }));
+  expect(screen.getByText(/^2 lines\./)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
   expect(await screen.findByText('The road is quiet')).toBeInTheDocument();
   expect(api.sent.find((item) => item.method === 'PUT')).toEqual({
     method: 'PUT',
@@ -249,16 +249,18 @@ test('pasting lyrics saves them and shows the lines right away', async () => {
     body: { original: 'The road is quiet\n\nI walk alone' },
   });
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-  expect(screen.getByRole('button', { name: '번역 붙여 넣기' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Paste translation' })).toBeInTheDocument();
 });
 
 test('pasting a translation counts lines against the original and saves it', async () => {
   const api = open('/songs/12', { saved: translated });
-  fireEvent.click(await screen.findByRole('button', { name: '번역 붙여 넣기' }));
-  const field = await screen.findByLabelText('한국어 번역');
+  fireEvent.click(await screen.findByRole('button', { name: 'Paste translation' }));
+  const field = await screen.findByLabelText('Korean translation');
   fireEvent.change(field, { target: { value: '길은 조용하다\n나는 혼자 걷는다' } });
-  expect(screen.getByText(/원문 2줄과 같은 수로.*지금 2줄입니다/)).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: '저장' }));
+  expect(
+    screen.getByText(/Write one line per original line \(2\).*Currently 2 lines/),
+  ).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
   expect(await screen.findByText('길은 조용하다')).toBeInTheDocument();
   expect(api.sent.find((item) => item.method === 'PUT')).toMatchObject({
     path: '/api/songs/12/translation',
@@ -267,21 +269,23 @@ test('pasting a translation counts lines against the original and saves it', asy
 });
 
 test('a rejected translation stays in the form with the reason', async () => {
-  open('/songs/12', { saveError: '번역 줄 수(1줄)가 원문 줄 수(2줄)와 다릅니다' });
-  fireEvent.click(await screen.findByRole('button', { name: '번역 붙여 넣기' }));
-  fireEvent.change(await screen.findByLabelText('한국어 번역'), { target: { value: '한 줄' } });
-  fireEvent.click(screen.getByRole('button', { name: '저장' }));
-  expect(await screen.findByRole('alert')).toHaveTextContent('번역 줄 수(1줄)');
-  expect(screen.getByRole('dialog', { name: '번역 붙여 넣기' })).toBeInTheDocument();
-  expect(screen.getByLabelText('한국어 번역')).toHaveValue('한 줄');
+  open('/songs/12', { saveError: 'The translation has 1 lines but the original has 2' });
+  fireEvent.click(await screen.findByRole('button', { name: 'Paste translation' }));
+  fireEvent.change(await screen.findByLabelText('Korean translation'), {
+    target: { value: '한 줄' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('The translation has 1 lines');
+  expect(screen.getByRole('dialog', { name: 'Paste translation' })).toBeInTheDocument();
+  expect(screen.getByLabelText('Korean translation')).toHaveValue('한 줄');
   await settle();
 });
 
 test('closing the form puts focus back on the button that opened it', async () => {
   open('/songs/12');
-  const opener = await screen.findByRole('button', { name: '번역 붙여 넣기' });
+  const opener = await screen.findByRole('button', { name: 'Paste translation' });
   fireEvent.click(opener);
-  fireEvent.click(await screen.findByRole('button', { name: '취소' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   await waitFor(() => expect(opener).toHaveFocus());
 });
@@ -292,13 +296,13 @@ test('nothing closes the form while it saves', async () => {
     finish = resolve;
   });
   open('/songs/12', { saveGate });
-  fireEvent.click(await screen.findByRole('button', { name: '번역 붙여 넣기' }));
-  fireEvent.change(await screen.findByLabelText('한국어 번역'), {
+  fireEvent.click(await screen.findByRole('button', { name: 'Paste translation' }));
+  fireEvent.change(await screen.findByLabelText('Korean translation'), {
     target: { value: '길은 조용하다\n나는 혼자 걷는다' },
   });
-  fireEvent.click(screen.getByRole('button', { name: '저장' }));
-  await waitFor(() => expect(screen.getByRole('button', { name: '취소' })).toBeDisabled());
-  expect(screen.getByLabelText('한국어 번역')).toHaveAttribute('readonly');
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled());
+  expect(screen.getByLabelText('Korean translation')).toHaveAttribute('readonly');
   fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
   fireEvent.click(screen.getByRole('button', { name: 'Close' }));
   expect(screen.getByRole('dialog')).toBeInTheDocument();
@@ -309,39 +313,41 @@ test('nothing closes the form while it saves', async () => {
 
 test('Esc keeps a form with typed text, and closes an untouched one', async () => {
   open('/songs/12');
-  fireEvent.click(await screen.findByRole('button', { name: '번역 붙여 넣기' }));
-  const field = await screen.findByLabelText('한국어 번역');
+  fireEvent.click(await screen.findByRole('button', { name: 'Paste translation' }));
+  const field = await screen.findByLabelText('Korean translation');
   fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 
-  fireEvent.click(screen.getByRole('button', { name: '번역 붙여 넣기' }));
-  fireEvent.change(await screen.findByLabelText('한국어 번역'), { target: { value: '쓰던 번역' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Paste translation' }));
+  fireEvent.change(await screen.findByLabelText('Korean translation'), {
+    target: { value: '쓰던 번역' },
+  });
   expect(field).not.toBeInTheDocument();
   fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
   await settle();
-  expect(screen.getByLabelText('한국어 번역')).toHaveValue('쓰던 번역');
+  expect(screen.getByLabelText('Korean translation')).toHaveValue('쓰던 번역');
   // The form's own buttons still close it.
-  fireEvent.click(screen.getByRole('button', { name: '취소' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 });
 
 test('moving to another song does not carry an open form along', async () => {
   open('/songs/12');
-  fireEvent.click(await screen.findByRole('button', { name: '번역 붙여 넣기' }));
-  await screen.findByLabelText('한국어 번역');
+  fireEvent.click(await screen.findByRole('button', { name: 'Paste translation' }));
+  await screen.findByLabelText('Korean translation');
   act(() => {
     window.history.pushState({}, '', '/songs/13');
     window.dispatchEvent(new PopStateEvent('popstate'));
   });
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-  expect(await screen.findByRole('button', { name: '번역 붙여 넣기' })).toBeInTheDocument();
+  expect(await screen.findByRole('button', { name: 'Paste translation' })).toBeInTheDocument();
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 });
 
 test('a missing song says so', async () => {
   open('/songs/99', { missing: true });
-  expect(await screen.findByText('곡을 찾을 수 없습니다.')).toBeInTheDocument();
-  expect(screen.getByRole('link', { name: '곡 목록' })).toHaveAttribute('href', '/songs');
+  expect(await screen.findByText('Song not found.')).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Song list' })).toHaveAttribute('href', '/songs');
 });
 
 test('an LRCLIB song links to its source', async () => {
@@ -352,7 +358,7 @@ test('an LRCLIB song links to its source', async () => {
       lyricsSourceUrl: 'https://lrclib.net/api/get/1',
     },
   });
-  expect(await screen.findByRole('link', { name: '가사 출처 LRCLIB' })).toHaveAttribute(
+  expect(await screen.findByRole('link', { name: 'Lyrics source: LRCLIB' })).toHaveAttribute(
     'href',
     'https://lrclib.net/api/get/1',
   );

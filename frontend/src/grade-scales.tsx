@@ -13,7 +13,7 @@ export function GradeLadder({
 }) {
   return (
     <div className="flex flex-col gap-2 rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
-      <h3 className="text-body font-semibold">{scale.label} 등급</h3>
+      <h3 className="text-body font-semibold">{scale.label} grades</h3>
       <ul className="flex flex-col divide-y">
         {[...scale.levels].reverse().map((level) => (
           <li
@@ -22,8 +22,8 @@ export function GradeLadder({
           >
             <span className="flex flex-wrap items-center gap-2 text-body-sm">
               <span className="font-medium">{level.value}</span>
-              {level.value === target ? <Badge>목표</Badge> : null}
-              {level.value === latest ? <Badge variant="secondary">최근 결과</Badge> : null}
+              {level.value === target ? <Badge>Target</Badge> : null}
+              {level.value === latest ? <Badge variant="secondary">Latest result</Badge> : null}
             </span>
             <span className="text-caption text-muted-foreground">{scoreRange(level)}</span>
           </li>
@@ -36,7 +36,7 @@ export function GradeLadder({
         rel="noreferrer"
         className="w-fit text-caption text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50"
       >
-        출처 보기
+        View source
       </a>
     </div>
   );

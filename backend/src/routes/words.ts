@@ -38,7 +38,7 @@ export function registerWordRoutes(app: Express, pool: Pool) {
   });
 
   app.get('/api/words/:id', async (req, res) => {
-    const id = parseId(req.params.id, '단어');
+    const id = parseId(req.params.id, 'word');
     const { rows } = await pool.query<{ id: string }>(
       `SELECT id::text AS id, lemma, frequency_rank AS rank, part_of_speech AS "partOfSpeech",
          meaning_ko AS "meaningKo", example_en AS "exampleEn", example_ko AS "exampleKo",
@@ -47,7 +47,7 @@ export function registerWordRoutes(app: Express, pool: Pool) {
        FROM words WHERE id = $1`,
       [id],
     );
-    if (!rows[0]) throw new HttpError(404, '단어를 찾을 수 없습니다');
+    if (!rows[0]) throw new HttpError(404, 'Word not found');
     const parts = await pool.query<{ id: string }>(
       `SELECT m.id::text AS id, m.key, m.form, m.kind, m.meaning_ko AS "meaningKo", m.origin
        FROM word_morphemes wm JOIN morphemes m ON m.id = wm.morpheme_id

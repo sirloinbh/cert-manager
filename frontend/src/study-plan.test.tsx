@@ -91,8 +91,7 @@ function fakeApi(
       if (path === '/api/certifications/1/attempts') return reply(200, { today, attempts: [] });
       if (path === '/api/certifications/1/plan') {
         planned += 1;
-        if (options.reloadFails && planned > 1)
-          return reply(500, { error: '다시 읽지 못했습니다' });
+        if (options.reloadFails && planned > 1) return reply(500, { error: 'Could not reload' });
         return reply(200, { today, stages });
       }
       if (path === '/api/certifications/1/stages') {
@@ -135,7 +134,7 @@ function fakeApi(
       const taskId = Number(/^\/api\/study-tasks\/(\d+)/.exec(path)?.[1]);
       if (path.endsWith('/completion')) {
         await options.completionHold;
-        if (options.completionFails) return reply(500, { error: '완료를 저장하지 못했습니다' });
+        if (options.completionFails) return reply(500, { error: 'Could not save the completion' });
         let saved: StudyTask | undefined;
         updateTasks((item) => {
           if (item.id !== taskId) return item;
@@ -164,14 +163,14 @@ const openDetail = async (options?: Parameters<typeof fakeApi>[0]) => {
   const api = fakeApi(options);
   window.history.pushState({}, '', '/certifications/1');
   render(<App />);
-  await screen.findByRole('heading', { level: 2, name: '공부 계획' });
+  await screen.findByRole('heading', { level: 2, name: 'Study plan' });
   return api;
 };
 
 const change = (label: string, value: string) =>
   fireEvent.change(screen.getByLabelText(label), { target: { value } });
 
-const saveButton = () => screen.getByRole('button', { name: '저장' });
+const saveButton = () => screen.getByRole('button', { name: 'Save' });
 
 const week = () =>
   stage({
@@ -185,14 +184,14 @@ const week = () =>
 
 test('a first stage and task can be added, and the task then counts in the progress', async () => {
   const api = await openDetail();
-  expect(await screen.findByText('아직 공부 계획이 없습니다')).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: '단계 추가' }));
-  change('단계 이름', '1주차');
-  change('시작일', '2026-11-01');
-  change('종료일', '2026-11-07');
+  expect(await screen.findByText('No study plan yet')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Add stage' }));
+  change('Stage name', '1주차');
+  change('Start date', '2026-11-01');
+  change('End date', '2026-11-07');
   fireEvent.click(saveButton());
   expect(await screen.findByRole('heading', { level: 3, name: '1주차' })).toBeInTheDocument();
-  expect(screen.getByText('2026-11-01 ~ 2026-11-07')).toBeInTheDocument();
+  expect(screen.getByText('November 1, 2026 ~ November 7, 2026')).toBeInTheDocument();
   expect(api.sent.find((item) => item.path.endsWith('/stages'))?.body).toEqual({
     title: '1주차',
     startDate: '2026-11-01',
@@ -201,16 +200,16 @@ test('a first stage and task can be added, and the task then counts in the progr
   // No tasks yet, so no progress to show.
   expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
 
-  fireEvent.click(await screen.findByRole('button', { name: '1주차에 할 일 추가' }));
-  change('할 일', '기출 풀기');
-  change('마감일', '2026-11-03');
+  fireEvent.click(await screen.findByRole('button', { name: 'Add a task to 1주차' }));
+  change('Task', '기출 풀기');
+  change('Due date', '2026-11-03');
   fireEvent.click(saveButton());
   expect(await screen.findByRole('checkbox', { name: '기출 풀기' })).not.toBeChecked();
   expect(api.sent.find((item) => item.path.endsWith('/tasks'))?.body).toEqual({
     title: '기출 풀기',
     dueDate: '2026-11-03',
   });
-  expect(screen.getByRole('progressbar', { name: '전체 진행률' })).toHaveAttribute(
+  expect(screen.getByRole('progressbar', { name: 'Overall progress' })).toHaveAttribute(
     'aria-valuenow',
     '0',
   );
@@ -223,26 +222,26 @@ test('checking a task changes the stage and overall progress right away', async 
       stage({ id: 2, title: '2주차', tasks: [task({ id: 21, title: '모의고사' })] }),
     ],
   });
-  const overall = await screen.findByRole('progressbar', { name: '전체 진행률' });
+  const overall = await screen.findByRole('progressbar', { name: 'Overall progress' });
   expect(overall).toHaveAttribute('aria-valuenow', '33');
-  expect(screen.getByRole('progressbar', { name: '1주차 진행률' })).toHaveAttribute(
+  expect(screen.getByRole('progressbar', { name: '1주차 progress' })).toHaveAttribute(
     'aria-valuenow',
     '50',
   );
-  expect(screen.getByText('전체 진행률 1/3 · 33%')).toBeInTheDocument();
+  expect(screen.getByText('Overall progress 1/3 · 33%')).toBeInTheDocument();
 
   fireEvent.click(screen.getByRole('checkbox', { name: '기출 풀기' }));
   await waitFor(() =>
-    expect(screen.getByRole('progressbar', { name: '1주차 진행률' })).toHaveAttribute(
+    expect(screen.getByRole('progressbar', { name: '1주차 progress' })).toHaveAttribute(
       'aria-valuenow',
       '100',
     ),
   );
-  expect(screen.getByRole('progressbar', { name: '전체 진행률' })).toHaveAttribute(
+  expect(screen.getByRole('progressbar', { name: 'Overall progress' })).toHaveAttribute(
     'aria-valuenow',
     '67',
   );
-  expect(screen.getByRole('progressbar', { name: '2주차 진행률' })).toHaveAttribute(
+  expect(screen.getByRole('progressbar', { name: '2주차 progress' })).toHaveAttribute(
     'aria-valuenow',
     '0',
   );
@@ -258,7 +257,7 @@ test('checking a task changes the stage and overall progress right away', async 
   await waitFor(() =>
     expect(screen.getByRole('checkbox', { name: '단어 외우기' })).not.toBeChecked(),
   );
-  expect(screen.getByText('전체 진행률 1/3 · 33%')).toBeInTheDocument();
+  expect(screen.getByText('Overall progress 1/3 · 33%')).toBeInTheDocument();
 });
 
 test('a second click while saving does not send another request', async () => {
@@ -273,13 +272,13 @@ test('a second click while saving does not send another request', async () => {
 test('a failed check says why and leaves the task as it was', async () => {
   await openDetail({ stages: [week()], completionFails: true });
   fireEvent.click(await screen.findByRole('checkbox', { name: '기출 풀기' }));
-  expect(await screen.findByText('완료를 저장하지 못했습니다')).toBeInTheDocument();
+  expect(await screen.findByText('Could not save the completion')).toBeInTheDocument();
   expect(screen.getByRole('checkbox', { name: '기출 풀기' })).not.toBeChecked();
 });
 
 test('the section shows the days left until the target exam', async () => {
   await openDetail({ stages: [week()] });
-  expect(await screen.findByText('목표 시험일까지: 44일 남음')).toBeInTheDocument();
+  expect(await screen.findByText('Until the target exam date: 44 days left')).toBeInTheDocument();
 });
 
 test('a goal with no exam date leaves the countdown out', async () => {
@@ -288,7 +287,7 @@ test('a goal with no exam date leaves the countdown out', async () => {
     stages: [week()],
   });
   await screen.findByRole('checkbox', { name: '기출 풀기' });
-  expect(screen.queryByText(/목표 시험일까지/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/Until the target exam date/)).not.toBeInTheDocument();
 });
 
 test('due dates count down, and only an unfinished late task is marked', async () => {
@@ -311,23 +310,23 @@ test('due dates count down, and only an unfinished late task is marked', async (
       }),
     ],
   });
-  const late = await screen.findByText(/3일 지남/);
+  const late = await screen.findByText(/3 days overdue/);
   expect(late).toHaveClass('text-destructive');
-  expect(screen.getByText(/오늘까지/)).not.toHaveClass('text-destructive');
-  expect(screen.queryByText(/10일 지남/)).not.toBeInTheDocument();
+  expect(screen.getByText(/Due today/)).not.toHaveClass('text-destructive');
+  expect(screen.queryByText(/10 days overdue/)).not.toBeInTheDocument();
 });
 
 test('stages and tasks can be edited in place', async () => {
   const api = await openDetail({ stages: [week()] });
-  fireEvent.click(await screen.findByRole('button', { name: '1주차 단계 수정' }));
-  expect(screen.getByLabelText('단계 이름')).toHaveValue('1주차');
-  change('단계 이름', '첫 주');
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit stage 1주차' }));
+  expect(screen.getByLabelText('Stage name')).toHaveValue('1주차');
+  change('Stage name', '첫 주');
   fireEvent.click(saveButton());
   expect(await screen.findByRole('heading', { level: 3, name: '첫 주' })).toBeInTheDocument();
 
-  fireEvent.click(screen.getByRole('button', { name: '기출 풀기 수정' }));
-  change('할 일', '기출 2회');
-  change('마감일', '2026-11-02');
+  fireEvent.click(screen.getByRole('button', { name: 'Edit 기출 풀기' }));
+  change('Task', '기출 2회');
+  change('Due date', '2026-11-02');
   fireEvent.click(saveButton());
   expect(await screen.findByRole('checkbox', { name: '기출 2회' })).toBeInTheDocument();
   expect(
@@ -345,8 +344,8 @@ test('a date can be cleared, and an empty date is sent as null', async () => {
       }),
     ],
   });
-  fireEvent.click(await screen.findByRole('button', { name: '기출 수정' }));
-  change('마감일', '');
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit 기출' }));
+  change('Due date', '');
   fireEvent.click(saveButton());
   await waitFor(() =>
     expect(api.sent.find((item) => item.method === 'PUT')?.body).toEqual({
@@ -358,25 +357,25 @@ test('a date can be cleared, and an empty date is sent as null', async () => {
 
 test('deleting a stage names its tasks, and focus goes to the heading', async () => {
   await openDetail({ stages: [week(), stage({ id: 2, title: '2주차' })] });
-  fireEvent.click(await screen.findByRole('button', { name: '1주차 단계 삭제' }));
-  const dialog = await screen.findByRole('dialog', { name: '단계를 지울까요?' });
-  expect(dialog).toHaveTextContent('할 일 2개를');
+  fireEvent.click(await screen.findByRole('button', { name: 'Delete stage 1주차' }));
+  const dialog = await screen.findByRole('dialog', { name: 'Delete this stage?' });
+  expect(dialog).toHaveTextContent('its 2 tasks');
   fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
   await waitFor(() =>
     expect(screen.queryByRole('heading', { level: 3, name: '1주차' })).not.toBeInTheDocument(),
   );
   expect(screen.getByRole('heading', { level: 3, name: '2주차' })).toBeInTheDocument();
   await waitFor(() =>
-    expect(screen.getByRole('heading', { level: 2, name: '공부 계획' })).toHaveFocus(),
+    expect(screen.getByRole('heading', { level: 2, name: 'Study plan' })).toHaveFocus(),
   );
 });
 
 test('a deleted task leaves the list even if reloading fails', async () => {
   await openDetail({ stages: [week()], reloadFails: true });
-  fireEvent.click(await screen.findByRole('button', { name: '기출 풀기 삭제' }));
-  const dialog = await screen.findByRole('dialog', { name: '할 일을 지울까요?' });
+  fireEvent.click(await screen.findByRole('button', { name: 'Delete 기출 풀기' }));
+  const dialog = await screen.findByRole('dialog', { name: 'Delete this task?' });
   fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
-  expect(await screen.findByText('다시 읽지 못했습니다')).toBeInTheDocument();
+  expect(await screen.findByText('Could not reload')).toBeInTheDocument();
   expect(screen.queryByRole('checkbox', { name: '기출 풀기' })).not.toBeInTheDocument();
   expect(screen.getByRole('checkbox', { name: '단어 외우기' })).toBeInTheDocument();
 });
@@ -386,23 +385,23 @@ test('a save in progress keeps the dialog open, and its error stays in the form'
   const createHold = new Promise<void>((resolve) => {
     release = resolve;
   });
-  await openDetail({ createHold, createFails: '서버가 거절했습니다' });
-  fireEvent.click(await screen.findByRole('button', { name: '단계 추가' }));
-  change('단계 이름', '1주차');
+  await openDetail({ createHold, createFails: 'The server rejected it' });
+  fireEvent.click(await screen.findByRole('button', { name: 'Add stage' }));
+  change('Stage name', '1주차');
   fireEvent.click(saveButton());
-  const dialog = screen.getByRole('dialog', { name: '단계 추가' });
+  const dialog = screen.getByRole('dialog', { name: 'Add stage' });
   fireEvent.keyDown(dialog, { key: 'Escape' });
-  expect(screen.getByRole('dialog', { name: '단계 추가' })).toBeInTheDocument();
+  expect(screen.getByRole('dialog', { name: 'Add stage' })).toBeInTheDocument();
   release();
-  expect(await screen.findByRole('alert')).toHaveTextContent('서버가 거절했습니다');
+  expect(await screen.findByRole('alert')).toHaveTextContent('The server rejected it');
 });
 
 test('closing the form returns focus to the button that opened it', async () => {
   await openDetail({ stages: [week()] });
-  const edit = await screen.findByRole('button', { name: '기출 풀기 수정' });
+  const edit = await screen.findByRole('button', { name: 'Edit 기출 풀기' });
   edit.focus();
   fireEvent.click(edit);
-  fireEvent.click(await screen.findByRole('button', { name: '취소' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   await waitFor(() => expect(edit).toHaveFocus());
 });
@@ -424,15 +423,18 @@ test('the dashboard card lists overdue and due tasks with their goal', async () 
   });
   window.history.pushState({}, '', '/');
   render(<App />);
-  const heading = await screen.findByRole('heading', { level: 2, name: '오늘 할 일' });
+  const heading = await screen.findByRole('heading', { level: 2, name: 'Today’s tasks' });
   const card = heading.closest('[data-slot="card"]') as HTMLElement;
   const items = await within(card).findAllByRole('listitem');
   expect(items.map((item) => within(item).getByRole('link').textContent)).toEqual([
     '단어 외우기',
     '기출 풀기',
   ]);
-  expect(within(items[0]).getByText('3일 지남')).toHaveClass('text-destructive', 'text-body-sm');
-  expect(within(items[1]).getByText('오늘까지')).not.toHaveClass('text-destructive');
+  expect(within(items[0]).getByText('3 days overdue')).toHaveClass(
+    'text-destructive',
+    'text-body-sm',
+  );
+  expect(within(items[1]).getByText('Due today')).not.toHaveClass('text-destructive');
   expect(within(items[0]).getByText('토익')).toBeInTheDocument();
   expect(within(items[0]).getByRole('link')).toHaveAttribute('href', '/certifications/1');
 });
@@ -441,7 +443,7 @@ test('the dashboard card says so when nothing is due', async () => {
   fakeApi();
   window.history.pushState({}, '', '/');
   render(<App />);
-  expect(await screen.findByText(/오늘 할 일이 없습니다/)).toBeInTheDocument();
+  expect(await screen.findByText(/No tasks for today/)).toBeInTheDocument();
 });
 
 test('checking moves the progress before the server answers', async () => {
@@ -453,7 +455,7 @@ test('checking moves the progress before the server answers', async () => {
   fireEvent.click(await screen.findByRole('checkbox', { name: '기출 풀기' }));
   // The server has not answered, and the screen already shows the choice.
   expect(screen.getByRole('checkbox', { name: '기출 풀기' })).toBeChecked();
-  expect(screen.getByRole('progressbar', { name: '전체 진행률' })).toHaveAttribute(
+  expect(screen.getByRole('progressbar', { name: 'Overall progress' })).toHaveAttribute(
     'aria-valuenow',
     '100',
   );
@@ -465,7 +467,7 @@ test('checking moves the progress before the server answers', async () => {
   );
   // Another task can be checked meanwhile, and both are sent.
   fireEvent.click(screen.getByRole('checkbox', { name: '단어 외우기' }));
-  expect(screen.getByText('전체 진행률 1/2 · 50%')).toBeInTheDocument();
+  expect(screen.getByText('Overall progress 1/2 · 50%')).toBeInTheDocument();
   expect(api.sent.filter((item) => item.path.endsWith('/completion'))).toHaveLength(2);
 
   release();
@@ -474,60 +476,60 @@ test('checking moves the progress before the server answers', async () => {
   );
   expect(screen.getByRole('checkbox', { name: '기출 풀기' })).toBeChecked();
   expect(screen.getByRole('checkbox', { name: '단어 외우기' })).not.toBeChecked();
-  expect(screen.getByText('전체 진행률 1/2 · 50%')).toBeInTheDocument();
+  expect(screen.getByText('Overall progress 1/2 · 50%')).toBeInTheDocument();
 });
 
 test('a failed check takes the progress back', async () => {
   await openDetail({ stages: [week()], completionFails: true });
   fireEvent.click(await screen.findByRole('checkbox', { name: '기출 풀기' }));
-  expect(screen.getByText('전체 진행률 2/2 · 100%')).toBeInTheDocument();
-  expect(await screen.findByText('완료를 저장하지 못했습니다')).toBeInTheDocument();
-  expect(screen.getByText('전체 진행률 1/2 · 50%')).toBeInTheDocument();
+  expect(screen.getByText('Overall progress 2/2 · 100%')).toBeInTheDocument();
+  expect(await screen.findByText('Could not save the completion')).toBeInTheDocument();
+  expect(screen.getByText('Overall progress 1/2 · 50%')).toBeInTheDocument();
 });
 
 // Finding by role takes most of the time in these tests, so each one opens the form as few times as it can.
 test('a new stage and its first task show even if reloading the plan fails', async () => {
   await openDetail({ stages: [week()], reloadFails: true });
-  fireEvent.click(await screen.findByRole('button', { name: '단계 추가' }));
-  change('단계 이름', '2주차');
+  fireEvent.click(await screen.findByRole('button', { name: 'Add stage' }));
+  change('Stage name', '2주차');
   fireEvent.click(saveButton());
   expect(await screen.findByRole('heading', { level: 3, name: '2주차' })).toBeInTheDocument();
-  expect(await screen.findByText('다시 읽지 못했습니다')).toBeInTheDocument();
+  expect(await screen.findByText('Could not reload')).toBeInTheDocument();
 
-  fireEvent.click(screen.getByRole('button', { name: '2주차에 할 일 추가' }));
-  change('할 일', '모의고사');
+  fireEvent.click(screen.getByRole('button', { name: 'Add a task to 2주차' }));
+  change('Task', '모의고사');
   fireEvent.click(saveButton());
   expect(await screen.findByRole('checkbox', { name: '모의고사' })).toBeInTheDocument();
-  expect(await screen.findByText('다시 읽지 못했습니다')).toBeInTheDocument();
+  expect(await screen.findByText('Could not reload')).toBeInTheDocument();
   expect(screen.getByRole('checkbox', { name: '모의고사' })).toBeInTheDocument();
 });
 
 test('an edited task shows even if reloading the plan fails', async () => {
   await openDetail({ stages: [week()], reloadFails: true });
-  fireEvent.click(await screen.findByRole('button', { name: '기출 풀기 수정' }));
-  change('할 일', '기출 2회');
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit 기출 풀기' }));
+  change('Task', '기출 2회');
   fireEvent.click(saveButton());
   expect(await screen.findByRole('checkbox', { name: '기출 2회' })).toBeInTheDocument();
-  expect(await screen.findByText('다시 읽지 못했습니다')).toBeInTheDocument();
+  expect(await screen.findByText('Could not reload')).toBeInTheDocument();
   expect(screen.getByRole('checkbox', { name: '기출 2회' })).toBeInTheDocument();
 });
 
 test('an edited stage shows and keeps its tasks even if reloading the plan fails', async () => {
   await openDetail({ stages: [week()], reloadFails: true });
-  fireEvent.click(await screen.findByRole('button', { name: '1주차 단계 수정' }));
-  change('단계 이름', '마무리');
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit stage 1주차' }));
+  change('Stage name', '마무리');
   fireEvent.click(saveButton());
   expect(await screen.findByRole('heading', { level: 3, name: '마무리' })).toBeInTheDocument();
-  expect(await screen.findByText('다시 읽지 못했습니다')).toBeInTheDocument();
+  expect(await screen.findByText('Could not reload')).toBeInTheDocument();
   expect(screen.getByRole('heading', { level: 3, name: '마무리' })).toBeInTheDocument();
   expect(screen.getByRole('checkbox', { name: '기출 풀기' })).toBeInTheDocument();
 });
 
 test('deleting the last stage still offers adding one when reloading fails', async () => {
   await openDetail({ stages: [stage({ id: 1, title: '1주차' })], reloadFails: true });
-  fireEvent.click(await screen.findByRole('button', { name: '1주차 단계 삭제' }));
-  const dialog = await screen.findByRole('dialog', { name: '단계를 지울까요?' });
+  fireEvent.click(await screen.findByRole('button', { name: 'Delete stage 1주차' }));
+  const dialog = await screen.findByRole('dialog', { name: 'Delete this stage?' });
   fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
-  expect(await screen.findByText('다시 읽지 못했습니다')).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: '단계 추가' })).toBeInTheDocument();
+  expect(await screen.findByText('Could not reload')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Add stage' })).toBeInTheDocument();
 });

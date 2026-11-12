@@ -70,10 +70,10 @@ function open(
       if (url === '/api/user-actions') return reply(200, { today: '2026-11-01', actions: [] });
       if (url === '/api/words') {
         return options.failed
-          ? reply(500, { error: '단어 서버 오류' })
+          ? reply(500, { error: 'Word server error' })
           : reply(200, { words: options.words ?? rows, sources });
       }
-      if (options.missing) return reply(404, { error: '단어를 찾을 수 없습니다' });
+      if (options.missing) return reply(404, { error: 'Word not found' });
       const id = Number(url.split('/').pop());
       return reply(200, { word: { ...(options.word ?? word), id }, sources });
     }),
@@ -83,7 +83,7 @@ function open(
 }
 
 const wordItems = () =>
-  within(screen.getByRole('region', { name: '단어장' })).getAllByRole('listitem');
+  within(screen.getByRole('region', { name: 'Vocabulary' })).getAllByRole('listitem');
 
 test('search matches spelling and Korean meaning', () => {
   expect(searchWords(rows, ' EXPORT ').map((row) => row.id)).toEqual([2]);
@@ -100,13 +100,13 @@ test('a word part is written with its hyphen', () => {
 
 test('the list shows words by frequency with their sources', async () => {
   open('/words');
-  await screen.findByLabelText('단어 검색');
+  await screen.findByLabelText('Search words');
   const items = wordItems();
   expect(items[0]).toHaveTextContent('the');
   expect(items[1]).toHaveTextContent('수출하다');
   expect(within(items[1]).getByRole('link')).toHaveAttribute('href', '/words/2');
-  expect(items[2]).toHaveTextContent('뜻 아직 없음');
-  expect(screen.getByText('3단어 · 뜻 2단어')).toBeInTheDocument();
+  expect(items[2]).toHaveTextContent('No meaning yet');
+  expect(screen.getByText('3 words · 2 with meanings')).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'NGSL 1.2' })).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Wiktionary' })).toBeInTheDocument();
   expect(screen.getByText(/Browne, Culligan, Phillips/)).toHaveTextContent('CC BY-SA 4.0');
@@ -114,49 +114,49 @@ test('the list shows words by frequency with their sources', async () => {
 
 test('long lists come in pages, and a search starts over', async () => {
   open('/words', { words: manyRows });
-  const more = await screen.findByRole('button', { name: /더 보기 \(150단어 남음\)/ });
+  const more = await screen.findByRole('button', { name: /Show more \(150 words left\)/ });
   expect(wordItems()).toHaveLength(100);
   fireEvent.click(more);
   expect(wordItems()).toHaveLength(200);
-  fireEvent.change(screen.getByLabelText('단어 검색'), { target: { value: 'word1' } });
+  fireEvent.change(screen.getByLabelText('Search words'), { target: { value: 'word1' } });
   expect(wordItems()).toHaveLength(100);
-  expect(screen.getByRole('button', { name: /더 보기 \(11단어 남음\)/ })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /Show more \(11 words left\)/ })).toBeInTheDocument();
 });
 
 test('coming back from a word finds the same search, and no match says so', async () => {
   open('/words');
-  const search = await screen.findByLabelText('단어 검색');
+  const search = await screen.findByLabelText('Search words');
   fireEvent.change(search, { target: { value: '없는 단어' } });
-  expect(screen.getByText(/없는 단어.*들어간 단어가 없습니다/)).toBeInTheDocument();
+  expect(screen.getByText(/No words match/)).toBeInTheDocument();
   fireEvent.change(search, { target: { value: 'export' } });
   expect(window.location.search).toBe('?q=export');
   fireEvent.click(screen.getByRole('link', { name: /export/ }));
-  fireEvent.click(await screen.findByRole('link', { name: '단어 목록' }));
-  expect(await screen.findByLabelText('단어 검색')).toHaveValue('export');
+  fireEvent.click(await screen.findByRole('link', { name: 'Word list' }));
+  expect(await screen.findByLabelText('Search words')).toHaveValue('export');
   expect(screen.queryByText('the')).not.toBeInTheDocument();
 });
 
 test('an empty list explains itself, and a failed one says why', async () => {
   open('/words', { words: [] });
-  expect(await screen.findByText('아직 단어가 없습니다')).toBeInTheDocument();
-  expect(screen.queryByLabelText('단어 검색')).not.toBeInTheDocument();
+  expect(await screen.findByText('No words yet')).toBeInTheDocument();
+  expect(screen.queryByLabelText('Search words')).not.toBeInTheDocument();
 });
 
 test('a failed list shows the reason', async () => {
   open('/words', { failed: true });
-  expect(await screen.findByText('단어 서버 오류')).toBeInTheDocument();
+  expect(await screen.findByText('Word server error')).toBeInTheDocument();
 });
 
 test('a word shows meaning, example, AI mark and sources', async () => {
   open('/words/2');
   expect(await screen.findByRole('heading', { level: 1, name: 'export' })).toBeInTheDocument();
-  expect(screen.getByText('AI 정리')).toBeInTheDocument();
-  expect(screen.getByText('빈도 2위 · 동사')).toBeInTheDocument();
+  expect(screen.getByText('AI summary')).toBeInTheDocument();
+  expect(screen.getByText('Rank 2 · 동사')).toBeInTheDocument();
   expect(screen.getByText('수출하다')).toBeInTheDocument();
   expect(screen.getByText('They export tea.')).toBeInTheDocument();
   expect(screen.getByText('그들은 차를 수출한다.')).toBeInTheDocument();
   expect(screen.getByText('From a made-up source.')).toBeInTheDocument();
-  expect(screen.getByRole('link', { name: 'Wiktionary 항목 보기' })).toHaveAttribute(
+  expect(screen.getByRole('link', { name: 'View Wiktionary entry' })).toHaveAttribute(
     'href',
     'https://en.wiktionary.org/wiki/export',
   );
@@ -169,30 +169,28 @@ test('pressing a word part shows the other words that have it', async () => {
   expect(screen.queryByRole('link', { name: 'transport' })).not.toBeInTheDocument();
   fireEvent.click(root);
   expect(root).toHaveAttribute('aria-pressed', 'true');
-  const shown = screen.getByRole('region', { name: 'port이(가) 들어간 단어' });
+  const shown = screen.getByRole('region', { name: 'Words containing port' });
   expect(within(shown).getByRole('link', { name: 'transport' })).toHaveAttribute(
     'href',
     '/words/3',
   );
-  expect(shown).toHaveTextContent('어근');
+  expect(shown).toHaveTextContent('Root');
   expect(shown).toHaveTextContent('라틴어');
   fireEvent.click(screen.getByRole('button', { name: /ex- 밖으로/ }));
-  expect(screen.getByText('아직 이 요소가 들어간 다른 단어가 없습니다.')).toBeInTheDocument();
+  expect(screen.getByText('No other words contain this part yet.')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: /ex- 밖으로/ }));
-  expect(
-    screen.getByText('요소를 누르면 그 요소가 들어간 다른 단어가 보입니다.'),
-  ).toBeInTheDocument();
+  expect(screen.getByText('Select a part to see other words that contain it.')).toBeInTheDocument();
 });
 
 test('a related word still leads back to the same search', async () => {
   open('/words');
-  fireEvent.change(await screen.findByLabelText('단어 검색'), { target: { value: 'export' } });
+  fireEvent.change(await screen.findByLabelText('Search words'), { target: { value: 'export' } });
   fireEvent.click(screen.getByRole('link', { name: /export/ }));
   fireEvent.click(await screen.findByRole('button', { name: /port 나르다/ }));
   fireEvent.click(screen.getByRole('link', { name: 'transport' }));
   await screen.findByRole('button', { name: /port 나르다/ });
   expect(window.location.pathname).toBe('/words/3');
-  expect(screen.getByRole('link', { name: '단어 목록' })).toHaveAttribute(
+  expect(screen.getByRole('link', { name: 'Word list' })).toHaveAttribute(
     'href',
     '/words?q=export',
   );
@@ -200,10 +198,10 @@ test('a related word still leads back to the same search', async () => {
 
 test('clearing the search from the menu goes back to the first page', async () => {
   open('/words?q=word', { words: manyRows });
-  fireEvent.click(await screen.findByRole('button', { name: /더 보기/ }));
+  fireEvent.click(await screen.findByRole('button', { name: /Show more/ }));
   expect(wordItems()).toHaveLength(200);
   const menu = screen.getByRole('navigation', { name: 'Main menu' });
-  fireEvent.click(within(menu).getByRole('link', { name: '단어장' }));
+  fireEvent.click(within(menu).getByRole('link', { name: 'Vocabulary' }));
   expect(window.location.search).toBe('');
   expect(wordItems()).toHaveLength(100);
 });
@@ -231,19 +229,21 @@ test('a word without anything filled in says so, and makes nothing up', async ()
       morphemes: [],
     },
   });
-  expect(await screen.findByText('아직 뜻과 예문을 채우지 않았습니다.')).toBeInTheDocument();
-  expect(screen.getByText('아직 어원을 찾아보지 않았습니다.')).toBeInTheDocument();
-  expect(screen.queryByText('AI 정리')).not.toBeInTheDocument();
+  expect(
+    await screen.findByText('The meaning and example are not filled in yet.'),
+  ).toBeInTheDocument();
+  expect(screen.getByText('The etymology has not been looked up yet.')).toBeInTheDocument();
+  expect(screen.queryByText('AI summary')).not.toBeInTheDocument();
 });
 
 test('a word with no etymology found says so', async () => {
   open('/words/3', { word: { ...word, etymologySource: '', etymologyUrl: '', morphemes: [] } });
-  expect(await screen.findByText('어원 자료 없음')).toBeInTheDocument();
-  expect(screen.queryByText('Wiktionary 어원 원문')).not.toBeInTheDocument();
+  expect(await screen.findByText('No etymology data')).toBeInTheDocument();
+  expect(screen.queryByText('Wiktionary etymology text')).not.toBeInTheDocument();
 });
 
 test('a missing word says so', async () => {
   open('/words/99', { missing: true });
-  expect(await screen.findByText('단어를 찾을 수 없습니다.')).toBeInTheDocument();
-  expect(screen.getByRole('link', { name: '단어 목록' })).toHaveAttribute('href', '/words');
+  expect(await screen.findByText('Word not found.')).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Word list' })).toHaveAttribute('href', '/words');
 });

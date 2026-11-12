@@ -83,7 +83,7 @@ function fakeApi(
       }
       if (path === '/api/certifications/1/attempts' && method === 'GET') {
         listed += 1;
-        if (options.reloadFails && listed > 1) return reply(500, { error: '다시 읽지 못했습니다' });
+        if (options.reloadFails && listed > 1) return reply(500, { error: 'Could not reload' });
         return reply(200, { today, attempts });
       }
       if (path === '/api/certifications/1/attempts' && method === 'POST') {
@@ -114,7 +114,7 @@ const openDetail = async (options?: Parameters<typeof fakeApi>[0]) => {
   const api = fakeApi(options);
   window.history.pushState({}, '', '/certifications/1');
   render(<App />);
-  await screen.findByRole('heading', { level: 2, name: '응시·취득 기록' });
+  await screen.findByRole('heading', { level: 2, name: 'Exam attempts' });
   return api;
 };
 
@@ -126,20 +126,20 @@ const sentBody = (api: { sent: Sent[] }, method: string) =>
 
 test('a new score fills the expiry from the goal, two years after the exam', async () => {
   const api = await openDetail();
-  fireEvent.click(await screen.findByRole('button', { name: '기록 추가' }));
-  change('시험일', '2024-02-29');
+  fireEvent.click(await screen.findByRole('button', { name: 'Add attempt' }));
+  change('Exam date', '2024-02-29');
   // No result yet: nothing to score or expire.
-  expect(screen.queryByLabelText('점수')).not.toBeInTheDocument();
-  expect(screen.queryByLabelText('만료일')).not.toBeInTheDocument();
+  expect(screen.queryByLabelText('Score')).not.toBeInTheDocument();
+  expect(screen.queryByLabelText('Expiry date')).not.toBeInTheDocument();
 
-  change('결과', 'scored');
-  change('점수', '910');
-  expect(screen.getByLabelText('만료일')).toHaveValue('2026-02-28');
-  change('시험일', '2026-03-15');
-  expect(screen.getByLabelText('만료일')).toHaveValue('2028-03-15');
+  change('Result', 'scored');
+  change('Score', '910');
+  expect(screen.getByLabelText('Expiry date')).toHaveValue('2026-02-28');
+  change('Exam date', '2026-03-15');
+  expect(screen.getByLabelText('Expiry date')).toHaveValue('2028-03-15');
 
-  fireEvent.click(screen.getByRole('button', { name: '저장' }));
-  expect(await screen.findByText('2026-03-15')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  expect(await screen.findByText('March 15, 2026')).toBeInTheDocument();
   expect(sentBody(api, 'POST')).toEqual({
     examDate: '2026-03-15',
     outcome: 'scored',
@@ -148,34 +148,34 @@ test('a new score fills the expiry from the goal, two years after the exam', asy
     expiresOn: '2028-03-15',
     memo: '',
   });
-  expect(screen.getByText('목표 달성')).toBeInTheDocument();
+  expect(screen.getByText('Goal reached')).toBeInTheDocument();
   // A score is not a pass, so nothing asks about the goal's status.
-  expect(screen.queryByText('목표 상태를 합격으로 바꿀까요?')).not.toBeInTheDocument();
+  expect(screen.queryByText('Change the goal status to Passed?')).not.toBeInTheDocument();
 });
 
 test('the prefilled expiry can be changed or cleared', async () => {
   const api = await openDetail();
-  fireEvent.click(await screen.findByRole('button', { name: '기록 추가' }));
-  change('시험일', '2026-03-15');
-  change('결과', 'scored');
-  change('만료일', '');
+  fireEvent.click(await screen.findByRole('button', { name: 'Add attempt' }));
+  change('Exam date', '2026-03-15');
+  change('Result', 'scored');
+  change('Expiry date', '');
   // A cleared date stays cleared when the exam date changes afterwards.
-  change('시험일', '2026-03-16');
-  expect(screen.getByLabelText('만료일')).toHaveValue('');
-  fireEvent.click(screen.getByRole('button', { name: '저장' }));
-  await screen.findByText('2026-03-16');
+  change('Exam date', '2026-03-16');
+  expect(screen.getByLabelText('Expiry date')).toHaveValue('');
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  await screen.findByText('March 16, 2026');
   expect(sentBody(api, 'POST')?.expiresOn).toBeNull();
 });
 
-test('a goal that never expires asks for no date and shows "만료 없음"', async () => {
+test('a goal that never expires asks for no date and shows "No expiry"', async () => {
   const api = await openDetail({
     goal: { ...toeic, validityKind: 'none', validityMonths: null },
     attempts: [attempt({ id: 1, outcome: 'passed' })],
   });
   // Once as the goal's validity field, once as the attempt's badge.
-  await waitFor(() => expect(screen.getAllByText('만료 없음')).toHaveLength(2));
-  fireEvent.click(screen.getByRole('button', { name: '2026-03-15 기록 수정' }));
-  expect(screen.queryByLabelText('만료일')).not.toBeInTheDocument();
+  await waitFor(() => expect(screen.getAllByText('No expiry')).toHaveLength(2));
+  fireEvent.click(screen.getByRole('button', { name: 'Edit attempt on March 15, 2026' }));
+  expect(screen.queryByLabelText('Expiry date')).not.toBeInTheDocument();
   expect(api.sent.some((item) => item.method === 'PUT')).toBe(false);
 });
 
@@ -199,70 +199,64 @@ test('expiry states show on the newest result only', async () => {
       }),
     ],
   });
-  expect(await screen.findByText('만료 임박')).toBeInTheDocument();
-  expect(screen.getByText(/32일 남음/)).toBeInTheDocument();
-  expect(screen.getByText('새 기록 있음')).toBeInTheDocument();
-  expect(screen.queryByText('만료')).not.toBeInTheDocument();
-  expect(screen.queryByText('목표 달성')).not.toBeInTheDocument();
+  expect(await screen.findByText('Expiring soon')).toBeInTheDocument();
+  expect(screen.getByText(/32 days left/)).toBeInTheDocument();
+  expect(screen.getByText('Newer attempt exists')).toBeInTheDocument();
+  expect(screen.queryByText('Expired')).not.toBeInTheDocument();
+  expect(screen.queryByText('Goal reached')).not.toBeInTheDocument();
 });
 
 test('saving a pass asks before changing the goal, and the answer is respected', async () => {
   const api = await openDetail();
-  fireEvent.click(await screen.findByRole('button', { name: '기록 추가' }));
-  change('시험일', '2026-03-15');
-  change('결과', 'passed');
-  fireEvent.click(screen.getByRole('button', { name: '저장' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Add attempt' }));
+  change('Exam date', '2026-03-15');
+  change('Result', 'passed');
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
-  const dialog = await screen.findByRole('dialog', { name: '목표 상태를 합격으로 바꿀까요?' });
+  const dialog = await screen.findByRole('dialog', { name: 'Change the goal status to Passed?' });
   expect(
     api.sent.some((item) => item.path === '/api/certifications/1' && item.method === 'PUT'),
   ).toBe(false);
-  fireEvent.click(within(dialog).getByRole('button', { name: '바꾸기' }));
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Change' }));
   await waitFor(() =>
     expect(
       api.sent.find((item) => item.path === '/api/certifications/1' && item.method === 'PUT')?.body,
     ).toMatchObject({ name: '토익', status: 'passed', validityMonths: 24 }),
   );
-  // The page shows the new status without leaving; 합격 also labels the attempt itself.
-  await waitFor(() => expect(screen.getAllByText('합격')).toHaveLength(2));
-  await waitFor(() =>
-    expect(screen.getByRole('heading', { name: '응시·취득 기록' })).toHaveFocus(),
-  );
+  // The page shows the new status without leaving; Passed also labels the attempt itself.
+  await waitFor(() => expect(screen.getAllByText('Passed')).toHaveLength(2));
+  await waitFor(() => expect(screen.getByRole('heading', { name: 'Exam attempts' })).toHaveFocus());
 });
 
 test('declining the question leaves the goal alone', async () => {
   const api = await openDetail();
-  fireEvent.click(await screen.findByRole('button', { name: '기록 추가' }));
-  change('시험일', '2026-03-15');
-  change('결과', 'passed');
-  fireEvent.click(screen.getByRole('button', { name: '저장' }));
-  const dialog = await screen.findByRole('dialog', { name: '목표 상태를 합격으로 바꿀까요?' });
-  fireEvent.click(within(dialog).getByRole('button', { name: '그대로 두기' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Add attempt' }));
+  change('Exam date', '2026-03-15');
+  change('Result', 'passed');
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  const dialog = await screen.findByRole('dialog', { name: 'Change the goal status to Passed?' });
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Keep as is' }));
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   expect(
     api.sent.some((item) => item.path === '/api/certifications/1' && item.method === 'PUT'),
   ).toBe(false);
   // With no button that opened it, focus would otherwise fall back to the start of the page.
-  await waitFor(() =>
-    expect(screen.getByRole('heading', { name: '응시·취득 기록' })).toHaveFocus(),
-  );
+  await waitFor(() => expect(screen.getByRole('heading', { name: 'Exam attempts' })).toHaveFocus());
 });
 
 test('closing the question with Escape leaves the goal alone and returns focus', async () => {
   const api = await openDetail();
-  fireEvent.click(await screen.findByRole('button', { name: '기록 추가' }));
-  change('시험일', '2026-03-15');
-  change('결과', 'passed');
-  fireEvent.click(screen.getByRole('button', { name: '저장' }));
-  const dialog = await screen.findByRole('dialog', { name: '목표 상태를 합격으로 바꿀까요?' });
+  fireEvent.click(await screen.findByRole('button', { name: 'Add attempt' }));
+  change('Exam date', '2026-03-15');
+  change('Result', 'passed');
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  const dialog = await screen.findByRole('dialog', { name: 'Change the goal status to Passed?' });
   fireEvent.keyDown(dialog, { key: 'Escape' });
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   expect(
     api.sent.some((item) => item.path === '/api/certifications/1' && item.method === 'PUT'),
   ).toBe(false);
-  await waitFor(() =>
-    expect(screen.getByRole('heading', { name: '응시·취득 기록' })).toHaveFocus(),
-  );
+  await waitFor(() => expect(screen.getByRole('heading', { name: 'Exam attempts' })).toHaveFocus());
 });
 
 test('editing an attempt that is already a pass does not ask again', async () => {
@@ -271,36 +265,38 @@ test('editing an attempt that is already a pass does not ask again', async () =>
       attempt({ id: 1, outcome: 'passed', expiresOn: '2028-03-15', daysUntilExpiry: 867 }),
     ],
   });
-  fireEvent.click(await screen.findByRole('button', { name: '2026-03-15 기록 수정' }));
-  expect(screen.getByLabelText('만료일')).toHaveValue('2028-03-15');
-  change('메모', '성적표 받음');
-  fireEvent.click(screen.getByRole('button', { name: '저장' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit attempt on March 15, 2026' }));
+  expect(screen.getByLabelText('Expiry date')).toHaveValue('2028-03-15');
+  change('Memo', '성적표 받음');
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
   expect(await screen.findByText('성적표 받음', { selector: 'p' })).toBeInTheDocument();
-  expect(screen.queryByText('목표 상태를 합격으로 바꿀까요?')).not.toBeInTheDocument();
+  expect(screen.queryByText('Change the goal status to Passed?')).not.toBeInTheDocument();
 });
 
 test('a result entered later fills the expiry that was empty while waiting', async () => {
   await openDetail({ attempts: [attempt({ id: 1, outcome: 'waiting', grade: null })] });
-  fireEvent.click(await screen.findByRole('button', { name: '2026-03-15 기록 수정' }));
-  change('결과', 'scored');
-  expect(screen.getByLabelText('만료일')).toHaveValue('2028-03-15');
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit attempt on March 15, 2026' }));
+  change('Result', 'scored');
+  expect(screen.getByLabelText('Expiry date')).toHaveValue('2028-03-15');
 });
 
 test('a server error stays in the form with the message', async () => {
-  await openDetail({ createFails: '만료일은 시험일 이후여야 합니다' });
-  fireEvent.click(await screen.findByRole('button', { name: '기록 추가' }));
-  change('시험일', '2026-03-15');
-  fireEvent.click(screen.getByRole('button', { name: '저장' }));
-  expect(await screen.findByRole('alert')).toHaveTextContent('만료일은 시험일 이후여야 합니다');
-  expect(screen.getByRole('dialog', { name: '응시 기록 추가' })).toBeInTheDocument();
+  await openDetail({ createFails: 'Expiry date must be after the exam date' });
+  fireEvent.click(await screen.findByRole('button', { name: 'Add attempt' }));
+  change('Exam date', '2026-03-15');
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Expiry date must be after the exam date',
+  );
+  expect(screen.getByRole('dialog', { name: 'Add exam attempt' })).toBeInTheDocument();
 });
 
 test('deleting an attempt asks first and removes it from the list', async () => {
   const api = await openDetail({ attempts: [attempt({ id: 7, score: 800 })] });
-  fireEvent.click(await screen.findByRole('button', { name: '2026-03-15 기록 삭제' }));
-  const dialog = await screen.findByRole('dialog', { name: '기록을 지울까요?' });
+  fireEvent.click(await screen.findByRole('button', { name: 'Delete attempt on March 15, 2026' }));
+  const dialog = await screen.findByRole('dialog', { name: 'Delete this attempt?' });
   fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
-  expect(await screen.findByText('아직 응시 기록이 없습니다')).toBeInTheDocument();
+  expect(await screen.findByText('No exam attempts yet')).toBeInTheDocument();
   expect(api.sent.some((item) => item.method === 'DELETE' && item.path.endsWith('/7'))).toBe(true);
 });
 
@@ -314,22 +310,22 @@ test('the dashboard card lists goals close to expiry and links to them', async (
     latest: [
       latest({ id: 1, name: '오래 남은 토익', expiresOn: '2028-01-01', daysUntilExpiry: 428 }),
       latest({ id: 2, name: 'AWS CP', expiresOn: '2026-11-30', daysUntilExpiry: 31 }),
-      latest({ id: 3, name: '토익 스피킹', expiresOn: '2026-10-01', daysUntilExpiry: -29 }),
+      latest({ id: 3, name: 'TOEIC Speaking', expiresOn: '2026-10-01', daysUntilExpiry: -29 }),
     ],
   });
   window.history.pushState({}, '', '/');
   render(<App />);
   const items = await within(
-    (await screen.findByText('만료 임박', { selector: 'h2' })).closest(
+    (await screen.findByText('Expiring soon', { selector: 'h2' })).closest(
       '[data-slot="card"]',
     ) as HTMLElement,
   ).findAllByRole('listitem');
   expect(items.map((item) => within(item).getByRole('link').textContent)).toEqual([
-    '토익 스피킹',
+    'TOEIC Speaking',
     'AWS CP',
   ]);
-  expect(within(items[0]).getByText('만료')).toBeInTheDocument();
-  expect(within(items[1]).getByText('만료 임박')).toBeInTheDocument();
+  expect(within(items[0]).getByText('Expired')).toBeInTheDocument();
+  expect(within(items[1]).getByText('Expiring soon')).toBeInTheDocument();
   expect(within(items[1]).getByRole('link')).toHaveAttribute('href', '/certifications/1');
 });
 
@@ -337,7 +333,7 @@ test('the dashboard card says so when nothing is close to expiry', async () => {
   fakeApi();
   window.history.pushState({}, '', '/');
   render(<App />);
-  expect(await screen.findByText(/만료가 가까운 자격증이 없습니다/)).toBeInTheDocument();
+  expect(await screen.findByText(/No certifications are close to expiring/)).toBeInTheDocument();
 });
 
 test('a save in progress keeps the dialog open, so its error is not lost', async () => {
@@ -345,80 +341,80 @@ test('a save in progress keeps the dialog open, so its error is not lost', async
   const createHold = new Promise<void>((resolve) => {
     release = resolve;
   });
-  await openDetail({ createHold, createFails: '서버가 거절했습니다' });
-  fireEvent.click(await screen.findByRole('button', { name: '기록 추가' }));
-  change('시험일', '2026-03-15');
-  fireEvent.click(screen.getByRole('button', { name: '저장' }));
-  const dialog = screen.getByRole('dialog', { name: '응시 기록 추가' });
+  await openDetail({ createHold, createFails: 'The server rejected it' });
+  fireEvent.click(await screen.findByRole('button', { name: 'Add attempt' }));
+  change('Exam date', '2026-03-15');
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  const dialog = screen.getByRole('dialog', { name: 'Add exam attempt' });
   fireEvent.keyDown(dialog, { key: 'Escape' });
   fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
-  expect(screen.getByRole('dialog', { name: '응시 기록 추가' })).toBeInTheDocument();
+  expect(screen.getByRole('dialog', { name: 'Add exam attempt' })).toBeInTheDocument();
 
   release();
-  expect(await screen.findByRole('alert')).toHaveTextContent('서버가 거절했습니다');
+  expect(await screen.findByRole('alert')).toHaveTextContent('The server rejected it');
   // Once the save has finished, the dialog closes normally again.
-  fireEvent.keyDown(screen.getByRole('dialog', { name: '응시 기록 추가' }), { key: 'Escape' });
+  fireEvent.keyDown(screen.getByRole('dialog', { name: 'Add exam attempt' }), { key: 'Escape' });
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 });
 
 test('closing the form returns focus to the button that opened it', async () => {
   await openDetail({ attempts: [attempt({ id: 1, score: 800 })] });
-  const edit = await screen.findByRole('button', { name: '2026-03-15 기록 수정' });
+  const edit = await screen.findByRole('button', { name: 'Edit attempt on March 15, 2026' });
   edit.focus();
   fireEvent.click(edit);
-  fireEvent.click(await screen.findByRole('button', { name: '취소' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   await waitFor(() => expect(edit).toHaveFocus());
 });
 
 test('focus moves to the heading when the opening button is gone after the first record', async () => {
   await openDetail();
-  fireEvent.click(await screen.findByRole('button', { name: '기록 추가' }));
-  change('시험일', '2026-03-15');
-  fireEvent.click(screen.getByRole('button', { name: '저장' }));
-  await screen.findByText('2026-03-15');
+  fireEvent.click(await screen.findByRole('button', { name: 'Add attempt' }));
+  change('Exam date', '2026-03-15');
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  await screen.findByText('March 15, 2026');
   await waitFor(() =>
-    expect(screen.getByRole('heading', { level: 2, name: '응시·취득 기록' })).toHaveFocus(),
+    expect(screen.getByRole('heading', { level: 2, name: 'Exam attempts' })).toHaveFocus(),
   );
 });
 
 test('the list stays on screen with the reason when reloading it fails', async () => {
   await openDetail({ attempts: [attempt({ id: 1, score: 800 })], reloadFails: true });
-  fireEvent.click(await screen.findByRole('button', { name: '기록 추가' }));
-  change('시험일', '2026-05-05');
-  fireEvent.click(screen.getByRole('button', { name: '저장' }));
-  expect(await screen.findByText('다시 읽지 못했습니다')).toBeInTheDocument();
+  fireEvent.click(await screen.findByRole('button', { name: 'Add attempt' }));
+  change('Exam date', '2026-05-05');
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  expect(await screen.findByText('Could not reload')).toBeInTheDocument();
   // The saved record shows anyway, newest first.
   expect(
     screen
-      .getAllByRole('button', { name: /기록 수정$/ })
+      .getAllByRole('button', { name: /^Edit attempt on / })
       .map((button) => button.getAttribute('aria-label')),
-  ).toEqual(['2026-05-05 기록 수정', '2026-03-15 기록 수정']);
+  ).toEqual(['Edit attempt on May 5, 2026', 'Edit attempt on March 15, 2026']);
 });
 
 test('a failed status change keeps the question open and says why', async () => {
-  await openDetail({ goalUpdateFails: '목표를 저장하지 못했습니다' });
-  fireEvent.click(await screen.findByRole('button', { name: '기록 추가' }));
-  change('시험일', '2026-03-15');
-  change('결과', 'passed');
-  fireEvent.click(screen.getByRole('button', { name: '저장' }));
-  const dialog = await screen.findByRole('dialog', { name: '목표 상태를 합격으로 바꿀까요?' });
-  fireEvent.click(within(dialog).getByRole('button', { name: '바꾸기' }));
-  expect(await screen.findByText('목표를 저장하지 못했습니다')).toBeInTheDocument();
+  await openDetail({ goalUpdateFails: 'Could not update the goal' });
+  fireEvent.click(await screen.findByRole('button', { name: 'Add attempt' }));
+  change('Exam date', '2026-03-15');
+  change('Result', 'passed');
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  const dialog = await screen.findByRole('dialog', { name: 'Change the goal status to Passed?' });
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Change' }));
+  expect(await screen.findByText('Could not update the goal')).toBeInTheDocument();
   expect(
-    screen.getByRole('dialog', { name: '목표 상태를 합격으로 바꿀까요?' }),
+    screen.getByRole('dialog', { name: 'Change the goal status to Passed?' }),
   ).toBeInTheDocument();
 });
 
 test('a saved pass with no date stays empty until the offered date is chosen', async () => {
   const api = await openDetail({ attempts: [attempt({ id: 1, outcome: 'passed' })] });
-  fireEvent.click(await screen.findByRole('button', { name: '2026-03-15 기록 수정' }));
-  expect(screen.getByLabelText('만료일')).toHaveValue('');
-  fireEvent.click(screen.getByRole('button', { name: /2028-03-15.*채우기/ }));
-  expect(screen.getByLabelText('만료일')).toHaveValue('2028-03-15');
-  expect(screen.getByLabelText('만료일')).toHaveFocus();
-  expect(screen.queryByRole('button', { name: /채우기/ })).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: '저장' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit attempt on March 15, 2026' }));
+  expect(screen.getByLabelText('Expiry date')).toHaveValue('');
+  fireEvent.click(screen.getByRole('button', { name: /Fill in.*March 15, 2028/ }));
+  expect(screen.getByLabelText('Expiry date')).toHaveValue('2028-03-15');
+  expect(screen.getByLabelText('Expiry date')).toHaveFocus();
+  expect(screen.queryByRole('button', { name: /Fill in/ })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
   await waitFor(() => expect(sentBody(api, 'PUT')?.expiresOn).toBe('2028-03-15'));
 });
 
@@ -426,13 +422,13 @@ test('a goal with no known validity saves what was typed, or nothing', async () 
   const api = await openDetail({
     goal: { ...toeic, validityKind: 'unknown', validityMonths: null },
   });
-  fireEvent.click(await screen.findByRole('button', { name: '기록 추가' }));
-  change('시험일', '2026-03-15');
-  change('결과', 'scored');
-  expect(screen.getByLabelText('만료일')).toHaveValue('');
-  expect(screen.queryByRole('button', { name: /채우기/ })).not.toBeInTheDocument();
-  change('만료일', '2027-01-01');
-  fireEvent.click(screen.getByRole('button', { name: '저장' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Add attempt' }));
+  change('Exam date', '2026-03-15');
+  change('Result', 'scored');
+  expect(screen.getByLabelText('Expiry date')).toHaveValue('');
+  expect(screen.queryByRole('button', { name: /Fill in/ })).not.toBeInTheDocument();
+  change('Expiry date', '2027-01-01');
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
   await waitFor(() => expect(sentBody(api, 'POST')?.expiresOn).toBe('2027-01-01'));
 });
 
@@ -444,23 +440,27 @@ test('a deleted attempt leaves the list even if reloading fails, and focus goes 
     ],
     reloadFails: true,
   });
-  fireEvent.click(await screen.findByRole('button', { name: '2026-05-05 기록 삭제' }));
-  const dialog = await screen.findByRole('dialog', { name: '기록을 지울까요?' });
+  fireEvent.click(await screen.findByRole('button', { name: 'Delete attempt on May 5, 2026' }));
+  const dialog = await screen.findByRole('dialog', { name: 'Delete this attempt?' });
   fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
-  expect(await screen.findByText('다시 읽지 못했습니다')).toBeInTheDocument();
+  expect(await screen.findByText('Could not reload')).toBeInTheDocument();
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-  expect(screen.queryByRole('button', { name: '2026-05-05 기록 수정' })).not.toBeInTheDocument();
-  expect(screen.getByRole('button', { name: '2026-03-15 기록 수정' })).toBeInTheDocument();
+  expect(
+    screen.queryByRole('button', { name: 'Edit attempt on May 5, 2026' }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.getByRole('button', { name: 'Edit attempt on March 15, 2026' }),
+  ).toBeInTheDocument();
   await waitFor(() =>
-    expect(screen.getByRole('heading', { level: 2, name: '응시·취득 기록' })).toHaveFocus(),
+    expect(screen.getByRole('heading', { level: 2, name: 'Exam attempts' })).toHaveFocus(),
   );
 });
 
 test('deleting the only attempt still offers adding one when reloading fails', async () => {
   await openDetail({ attempts: [attempt({ id: 1, score: 800 })], reloadFails: true });
-  fireEvent.click(await screen.findByRole('button', { name: '2026-03-15 기록 삭제' }));
-  const dialog = await screen.findByRole('dialog', { name: '기록을 지울까요?' });
+  fireEvent.click(await screen.findByRole('button', { name: 'Delete attempt on March 15, 2026' }));
+  const dialog = await screen.findByRole('dialog', { name: 'Delete this attempt?' });
   fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
-  expect(await screen.findByText('다시 읽지 못했습니다')).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: '기록 추가' })).toBeInTheDocument();
+  expect(await screen.findByText('Could not reload')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Add attempt' })).toBeInTheDocument();
 });

@@ -65,16 +65,16 @@ test('a new action fills omitted fields and answers 201', async () => {
 test('invalid actions are a Korean 400 and never reach the database', async () => {
   const { pool, queries } = fakePool(() => ({ rows: [] }));
   const cases: [unknown, string][] = [
-    [{ remindFrom: '2027-03-08' }, '할 일을 입력해 주세요'],
-    [{ ...valid, title: '   ' }, '할 일을 입력해 주세요'],
-    [{ ...valid, title: 'a'.repeat(201) }, '할 일은 200자 이하로 입력해 주세요'],
-    [{ title: '실기 접수' }, '알림 시작일은 YYYY-MM-DD'],
-    [{ ...valid, remindFrom: '2027-02-30' }, '알림 시작일이 실제 날짜가 아닙니다'],
-    [{ ...valid, dueDate: '2027-03-07' }, '마감일은 알림 시작일 이후여야 합니다'],
-    [{ ...valid, linkUrl: 'javascript:alert(1)' }, '링크는 http 또는 https 주소여야 합니다'],
-    [{ ...valid, linkUrl: 'www.q-net.or.kr' }, '링크는 http 또는 https 주소여야 합니다'],
-    [{ ...valid, linkUrl: 'https://' }, '링크는 http 또는 https 주소여야 합니다'],
-    [[1], '요청 본문은 JSON 객체여야 합니다'],
+    [{ remindFrom: '2027-03-08' }, 'Task is required'],
+    [{ ...valid, title: '   ' }, 'Task is required'],
+    [{ ...valid, title: 'a'.repeat(201) }, 'Task must be 200 characters or fewer'],
+    [{ title: '실기 접수' }, 'Reminder start date must be in YYYY-MM-DD'],
+    [{ ...valid, remindFrom: '2027-02-30' }, 'Reminder start date is not a real date'],
+    [{ ...valid, dueDate: '2027-03-07' }, 'Due date must be on or after the reminder start date'],
+    [{ ...valid, linkUrl: 'javascript:alert(1)' }, 'Link must be an http or https address'],
+    [{ ...valid, linkUrl: 'www.q-net.or.kr' }, 'Link must be an http or https address'],
+    [{ ...valid, linkUrl: 'https://' }, 'Link must be an http or https address'],
+    [[1], 'Request body must be a JSON object'],
   ];
   await withApi(pool, async (call) => {
     for (const [body, message] of cases) {
@@ -94,7 +94,7 @@ test('an array in place of the title answers one message, not one per check', as
       body: { ...valid, title: [] },
     });
     assert.equal(status, 400);
-    assert.deepEqual(data, { error: '할 일을 입력해 주세요' });
+    assert.deepEqual(data, { error: 'Task is required' });
   });
   assert.equal(queries.length, 0);
 });
@@ -104,7 +104,7 @@ test('completion needs a boolean, and a missing action is a 404', async () => {
   await withApi(pool, async (call) => {
     const bad = await call(`${path}/3/completion`, { method: 'PUT', body: { completed: 'yes' } });
     assert.equal(bad.status, 400);
-    assert.deepEqual(bad.data, { error: '완료 여부는 true나 false여야 합니다' });
+    assert.deepEqual(bad.data, { error: 'Completed must be true or false' });
     assert.equal(queries.length, 0);
 
     const missing = await call(`${path}/9/completion`, {
@@ -112,12 +112,12 @@ test('completion needs a boolean, and a missing action is a 404', async () => {
       body: { completed: true },
     });
     assert.equal(missing.status, 404);
-    assert.deepEqual(missing.data, { error: '직접 할 일을 찾을 수 없습니다' });
+    assert.deepEqual(missing.data, { error: 'Custom task not found' });
     const removed = await call(`${path}/9`, { method: 'DELETE' });
     assert.equal(removed.status, 404);
     const badId = await call(`${path}/abc`, { method: 'DELETE' });
     assert.equal(badId.status, 400);
-    assert.deepEqual(badId.data, { error: 'Invalid 직접 할 일 ID' });
+    assert.deepEqual(badId.data, { error: 'Invalid custom task ID' });
   });
 });
 

@@ -66,33 +66,34 @@ export function SongList({ paths }: { paths: SongPaths }) {
   return (
     <section aria-labelledby="page-title" className="flex flex-col gap-6">
       <header className="flex flex-col gap-2">
-        <h1 id="page-title">팝송 가사</h1>
+        <h1 id="page-title">Song lyrics</h1>
         <p className="text-body break-keep text-muted-foreground">
-          팝송 가사 원문과 번역을 줄 단위로 봅니다.
+          Read song lyrics and their translations line by line.
         </p>
         {progress.total > 0 ? (
           <p role="status" className="text-caption text-muted-foreground">
-            {progress.total}곡 · 가사 {progress.withLyrics}곡 · 번역 {progress.translated}곡
+            {progress.total} songs · {progress.withLyrics} with lyrics · {progress.translated}{' '}
+            translated
           </p>
         ) : null}
       </header>
       {loaded.state === 'loading' ? <SkeletonList rows={4} /> : null}
       {loaded.state === 'error' ? (
         <Notice
-          notice={{ kind: 'error', text: errorText(loaded.error, '곡 목록을 불러오지 못했습니다') }}
+          notice={{ kind: 'error', text: errorText(loaded.error, 'Could not load the song list') }}
         />
       ) : null}
       {loaded.state === 'ok' && albums.length === 0 ? (
         <EmptyState
           className="break-keep"
           icon={<Music />}
-          title="아직 곡 목록이 없습니다"
-          description="곡 목록을 받는 스크립트를 실행하면 앨범별로 보입니다."
+          title="No song list yet"
+          description="Run the script that downloads the song list and it shows up by album."
         />
       ) : null}
       {albums.length > 0 ? (
         <div className="flex max-w-md flex-col gap-2">
-          <Label htmlFor={searchId}>곡 검색</Label>
+          <Label htmlFor={searchId}>Search songs</Label>
           <div className="relative">
             <Search
               className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
@@ -106,14 +107,14 @@ export function SongList({ paths }: { paths: SongPaths }) {
               onChange={(event) =>
                 setParams(event.target.value ? { q: event.target.value } : {}, { replace: true })
               }
-              placeholder="곡 제목"
+              placeholder="Song title"
             />
           </div>
         </div>
       ) : null}
       {albums.length > 0 && shown.length === 0 ? (
         <p role="status" className="text-body-sm break-keep text-muted-foreground">
-          &apos;{search.trim()}&apos;이(가) 들어간 곡이 없습니다.
+          No songs match &apos;{search.trim()}&apos;.
         </p>
       ) : null}
       {shown.map((album) => (
@@ -191,11 +192,11 @@ function PasteForm({
         : songApi.saveTranslation(song.id, text);
     request.then(
       ({ song: saved }) => {
-        toast.success(kind === 'lyrics' ? '가사를 저장했습니다' : '번역을 저장했습니다');
+        toast.success(kind === 'lyrics' ? 'Saved the lyrics' : 'Saved the translation');
         onSaved(saved);
       },
       (error: unknown) => {
-        notice.error(error, '저장하지 못했습니다');
+        notice.error(error, 'Could not save');
         setPending(false);
       },
     );
@@ -208,7 +209,9 @@ function PasteForm({
       aria-busy={pending || undefined}
     >
       <div className="flex flex-col gap-2">
-        <Label htmlFor={`${id}-text`}>{kind === 'lyrics' ? '가사 원문' : '한국어 번역'}</Label>
+        <Label htmlFor={`${id}-text`}>
+          {kind === 'lyrics' ? 'Original lyrics' : 'Korean translation'}
+        </Label>
         <textarea
           id={`${id}-text`}
           rows={12}
@@ -224,20 +227,20 @@ function PasteForm({
         />
         <p id={`${id}-hint`} className="text-caption break-keep text-muted-foreground">
           {kind === 'lyrics'
-            ? `${typed}줄입니다. 내용이 바뀐 줄의 번역은 지워집니다.`
-            : `원문 ${originals}줄과 같은 수로 한 줄씩 씁니다. 지금 ${typed}줄입니다. 빈 줄은 세지 않습니다.`}
+            ? `${typed} lines. Translations of lines whose text changed are cleared.`
+            : `Write one line per original line (${originals}). Currently ${typed} lines. Blank lines are not counted.`}
         </p>
       </div>
       <Notice notice={notice.notice} />
       <DialogFooter>
         <DialogClose asChild>
           <Button type="button" variant="outline" disabled={pending}>
-            취소
+            Cancel
           </Button>
         </DialogClose>
         <Button type="submit" disabled={pending} aria-busy={pending || undefined}>
-          {pending ? <Spinner size="sm" label="저장하는 중" /> : null}
-          저장
+          {pending ? <Spinner size="sm" label="Saving" /> : null}
+          Save
         </Button>
       </DialogFooter>
     </form>
@@ -271,7 +274,8 @@ function SongPage({ id, paths }: { id: string; paths: SongPaths }) {
       to={listSearch ? `${paths.list}?${listSearch}` : paths.list}
       className="inline-flex min-h-9 w-fit items-center gap-1 rounded-md text-body-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 pointer-coarse:min-h-11"
     >
-      <ArrowLeft className="size-4" aria-hidden />곡 목록
+      <ArrowLeft className="size-4" aria-hidden />
+      Song list
     </Link>
   );
 
@@ -279,7 +283,7 @@ function SongPage({ id, paths }: { id: string; paths: SongPaths }) {
     return (
       <section aria-labelledby="page-title" className="flex flex-col gap-6">
         {back}
-        <h1 id="page-title">곡</h1>
+        <h1 id="page-title">Song</h1>
         {loaded.state === 'loading' ? (
           <SkeletonList rows={4} />
         ) : (
@@ -288,8 +292,8 @@ function SongPage({ id, paths }: { id: string; paths: SongPaths }) {
               kind: 'error',
               text:
                 loaded.error instanceof RequestError && loaded.error.status === 404
-                  ? '곡을 찾을 수 없습니다.'
-                  : errorText(loaded.error, '곡을 불러오지 못했습니다'),
+                  ? 'Song not found.'
+                  : errorText(loaded.error, 'Could not load the song'),
             }}
           />
         )}
@@ -338,12 +342,12 @@ function SongPage({ id, paths }: { id: string; paths: SongPaths }) {
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" onClick={(event) => openPaste(event, 'lyrics')}>
           <ClipboardPaste aria-hidden />
-          가사 붙여 넣기
+          Paste lyrics
         </Button>
         {hasLyrics ? (
           <Button variant="outline" onClick={(event) => openPaste(event, 'translation')}>
             <ClipboardPaste aria-hidden />
-            번역 붙여 넣기
+            Paste translation
           </Button>
         ) : null}
       </div>
@@ -351,13 +355,13 @@ function SongPage({ id, paths }: { id: string; paths: SongPaths }) {
         <EmptyState
           className="break-keep"
           icon={<Music />}
-          title="아직 가사가 없습니다"
-          description="가사를 붙여 넣으면 줄 단위로 보입니다. 가사는 이 PC의 앱에만 저장됩니다."
+          title="No lyrics yet"
+          description="Paste the lyrics and they show line by line. Lyrics are stored only in the app on this PC."
         />
       ) : (
         <section aria-labelledby={titleId} className="flex flex-col gap-3">
           <h2 id={titleId} className="sr-only">
-            가사
+            Lyrics
           </h2>
           <ol className="flex flex-col rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
             {song.lines.map((line) =>
@@ -372,7 +376,7 @@ function SongPage({ id, paths }: { id: string; paths: SongPaths }) {
                     {line.original}
                   </p>
                   <p className="text-body-sm wrap-anywhere text-muted-foreground">
-                    {line.translation ?? <span className="sr-only">번역 없음</span>}
+                    {line.translation ?? <span className="sr-only">No translation</span>}
                   </p>
                 </li>
               ),
@@ -385,7 +389,7 @@ function SongPage({ id, paths }: { id: string; paths: SongPaths }) {
               rel="noreferrer"
               className="w-fit text-caption text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
-              가사 출처 LRCLIB
+              Lyrics source: LRCLIB
             </a>
           ) : null}
         </section>
@@ -403,10 +407,10 @@ function SongPage({ id, paths }: { id: string; paths: SongPaths }) {
         >
           <DialogHeader>
             <DialogTitle>
-              {paste.kind === 'lyrics' ? '가사 붙여 넣기' : '번역 붙여 넣기'}
+              {paste.kind === 'lyrics' ? 'Paste lyrics' : 'Paste translation'}
             </DialogTitle>
             <DialogDescription className="break-keep">
-              {song.title}. 이 PC의 앱에만 저장됩니다.
+              {song.title}. Stored only in the app on this PC.
             </DialogDescription>
           </DialogHeader>
           {paste.open ? (

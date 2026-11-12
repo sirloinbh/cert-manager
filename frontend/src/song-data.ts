@@ -44,9 +44,9 @@ export type SongPaths = {
 };
 
 export const statusLabels: Record<LyricsStatus, string> = {
-  none: '가사 없음',
-  untranslated: '번역 전',
-  translated: '번역 있음',
+  none: 'No lyrics',
+  untranslated: 'Not translated',
+  translated: 'Translated',
 };
 
 // Song titles use a curly apostrophe, which a keyboard does not type.

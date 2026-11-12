@@ -37,7 +37,7 @@ export function SourceNote({ sources }: { sources: WordSource[] }) {
   return (
     <footer className="flex flex-col gap-1 border-t pt-4 text-caption break-keep text-muted-foreground">
       <p>
-        단어 목록:{' '}
+        Word list:{' '}
         <a
           href="https://www.newgeneralservicelist.com/new-general-service-list"
           target="_blank"
@@ -49,7 +49,7 @@ export function SourceNote({ sources }: { sources: WordSource[] }) {
         (Browne, Culligan, Phillips), {license('ngsl')}
       </p>
       <p>
-        어원 자료:{' '}
+        Etymology data:{' '}
         <a href="https://en.wiktionary.org/" target="_blank" rel="noreferrer" className={linkClass}>
           Wiktionary
         </a>{' '}
@@ -57,7 +57,7 @@ export function SourceNote({ sources }: { sources: WordSource[] }) {
         <a href="https://kaikki.org/" target="_blank" rel="noreferrer" className={linkClass}>
           kaikki.org
         </a>{' '}
-        추출본), {license('wiktionary')}
+        extract), {license('wiktionary')}
       </p>
     </footer>
   );
@@ -82,33 +82,33 @@ export function WordList({ paths }: { paths: WordPaths }) {
   return (
     <section aria-labelledby="page-title" className="flex flex-col gap-6">
       <header className="flex flex-col gap-2">
-        <h1 id="page-title">단어장</h1>
+        <h1 id="page-title">Vocabulary</h1>
         <p className="text-body break-keep text-muted-foreground">
-          자주 쓰는 영어 단어를 빈도 순으로 보고 어원을 분석합니다.
+          Browse common English words by frequency and analyze their etymology.
         </p>
         {words.length > 0 ? (
           <p role="status" className="text-caption text-muted-foreground">
-            {words.length}단어 · 뜻 {filled}단어
+            {words.length} words · {filled} with meanings
           </p>
         ) : null}
       </header>
       {loaded.state === 'loading' ? <SkeletonList rows={4} /> : null}
       {loaded.state === 'error' ? (
         <Notice
-          notice={{ kind: 'error', text: errorText(loaded.error, '단어를 불러오지 못했습니다') }}
+          notice={{ kind: 'error', text: errorText(loaded.error, 'Could not load the words') }}
         />
       ) : null}
       {loaded.state === 'ok' && words.length === 0 ? (
         <EmptyState
           className="break-keep"
           icon={<BookOpenText />}
-          title="아직 단어가 없습니다"
-          description="단어 목록을 받는 스크립트를 실행하면 빈도 순으로 보입니다."
+          title="No words yet"
+          description="Run the script that downloads the word list and it shows up by frequency."
         />
       ) : null}
       {words.length > 0 ? (
         <div className="flex max-w-md flex-col gap-2">
-          <Label htmlFor={searchId}>단어 검색</Label>
+          <Label htmlFor={searchId}>Search words</Label>
           <div className="relative">
             <Search
               className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
@@ -122,14 +122,14 @@ export function WordList({ paths }: { paths: WordPaths }) {
               onChange={(event) =>
                 setParams(event.target.value ? { q: event.target.value } : {}, { replace: true })
               }
-              placeholder="영어 철자나 한국어 뜻"
+              placeholder="English spelling or Korean meaning"
             />
           </div>
         </div>
       ) : null}
       {words.length > 0 && matching.length === 0 ? (
         <p role="status" className="text-body-sm break-keep text-muted-foreground">
-          &apos;{search.trim()}&apos;이(가) 들어간 단어가 없습니다.
+          No words match &apos;{search.trim()}&apos;.
         </p>
       ) : null}
       {shown.length > 0 ? (
@@ -148,7 +148,7 @@ export function WordList({ paths }: { paths: WordPaths }) {
                   {word.lemma}
                 </span>
                 <span className="min-w-0 flex-1 text-body-sm break-keep text-muted-foreground">
-                  {word.meaningKo ?? '뜻 아직 없음'}
+                  {word.meaningKo ?? 'No meaning yet'}
                 </span>
               </Link>
             </li>
@@ -161,7 +161,7 @@ export function WordList({ paths }: { paths: WordPaths }) {
           className="w-fit self-center"
           onClick={() => setPaging({ search, pages: pages + 1 })}
         >
-          더 보기 ({matching.length - shown.length}단어 남음)
+          Show more ({matching.length - shown.length} words left)
         </Button>
       ) : null}
       {loaded.state === 'ok' && words.length > 0 ? (
@@ -184,7 +184,7 @@ function MorphemeWords({
 }) {
   return (
     <section
-      aria-label={`${morphemeForm(morpheme)}이(가) 들어간 단어`}
+      aria-label={`Words containing ${morphemeForm(morpheme)}`}
       className="flex flex-col gap-2"
     >
       <p className="text-body-sm break-keep">
@@ -196,7 +196,7 @@ function MorphemeWords({
       </p>
       {morpheme.words.length === 0 ? (
         <p className="text-body-sm break-keep text-muted-foreground">
-          아직 이 요소가 들어간 다른 단어가 없습니다.
+          No other words contain this part yet.
         </p>
       ) : (
         <ul className="flex flex-col gap-1">
@@ -223,7 +223,7 @@ function Etymology({ word, paths, state }: { word: Word; paths: WordPaths; state
 
   return (
     <section aria-labelledby={titleId} className="flex flex-col gap-3">
-      <h2 id={titleId}>어원</h2>
+      <h2 id={titleId}>Etymology</h2>
       {word.morphemes.length > 0 ? (
         <>
           <div className="flex flex-wrap gap-2">
@@ -245,30 +245,30 @@ function Etymology({ word, paths, state }: { word: Word; paths: WordPaths; state
             <MorphemeWords morpheme={selected} paths={paths} state={state} />
           ) : (
             <p className="text-caption break-keep text-muted-foreground">
-              요소를 누르면 그 요소가 들어간 다른 단어가 보입니다.
+              Select a part to see other words that contain it.
             </p>
           )}
         </>
       ) : null}
       {word.etymologySource === null ? (
         <p className="text-body-sm break-keep text-muted-foreground">
-          아직 어원을 찾아보지 않았습니다.
+          The etymology has not been looked up yet.
         </p>
       ) : null}
       {word.etymologySource === '' ? (
-        <p className="text-body-sm break-keep text-muted-foreground">어원 자료 없음</p>
+        <p className="text-body-sm break-keep text-muted-foreground">No etymology data</p>
       ) : null}
       {word.etymologySource ? (
         <details className="text-body-sm">
           <summary className="w-fit cursor-pointer rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50">
-            Wiktionary 어원 원문
+            Wiktionary etymology text
           </summary>
           <p lang="en" className="mt-2 wrap-anywhere whitespace-pre-wrap text-muted-foreground">
             {word.etymologySource}
           </p>
           {word.etymologyUrl ? (
             <a href={word.etymologyUrl} target="_blank" rel="noreferrer" className={linkClass}>
-              Wiktionary 항목 보기
+              View Wiktionary entry
             </a>
           ) : null}
         </details>
@@ -296,7 +296,7 @@ function WordPage({ id, paths }: { id: string; paths: WordPaths }) {
       className="inline-flex min-h-9 w-fit items-center gap-1 rounded-md text-body-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 pointer-coarse:min-h-11"
     >
       <ArrowLeft className="size-4" aria-hidden />
-      단어 목록
+      Word list
     </Link>
   );
 
@@ -304,7 +304,7 @@ function WordPage({ id, paths }: { id: string; paths: WordPaths }) {
     return (
       <section aria-labelledby="page-title" className="flex flex-col gap-6">
         {back}
-        <h1 id="page-title">단어</h1>
+        <h1 id="page-title">Word</h1>
         {loaded.state === 'loading' ? (
           <SkeletonList rows={4} />
         ) : (
@@ -313,8 +313,8 @@ function WordPage({ id, paths }: { id: string; paths: WordPaths }) {
               kind: 'error',
               text:
                 loaded.error instanceof RequestError && loaded.error.status === 404
-                  ? '단어를 찾을 수 없습니다.'
-                  : errorText(loaded.error, '단어를 불러오지 못했습니다'),
+                  ? 'Word not found.'
+                  : errorText(loaded.error, 'Could not load the words'),
             }}
           />
         )}
@@ -331,18 +331,18 @@ function WordPage({ id, paths }: { id: string; paths: WordPaths }) {
           <h1 id="page-title" lang="en" className="wrap-anywhere">
             {word.lemma}
           </h1>
-          {word.aiGenerated ? <Badge variant="secondary">AI 정리</Badge> : null}
+          {word.aiGenerated ? <Badge variant="secondary">AI summary</Badge> : null}
         </div>
         <p className="text-body-sm break-keep text-muted-foreground">
-          {[`빈도 ${word.rank}위`, word.partOfSpeech].filter(Boolean).join(' · ')}
+          {[`Rank ${word.rank}`, word.partOfSpeech].filter(Boolean).join(' · ')}
         </p>
       </header>
       {word.meaningKo === null ? (
         <p className="text-body-sm break-keep text-muted-foreground">
-          아직 뜻과 예문을 채우지 않았습니다.
+          The meaning and example are not filled in yet.
         </p>
       ) : (
-        <section aria-label="뜻과 예문" className="flex flex-col gap-2">
+        <section aria-label="Meaning and examples" className="flex flex-col gap-2">
           <p className="text-body break-keep">{word.meaningKo}</p>
           {word.exampleEn ? (
             <blockquote className="flex flex-col gap-0.5 border-l-2 pl-3">

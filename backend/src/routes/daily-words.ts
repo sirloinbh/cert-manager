@@ -11,8 +11,8 @@ import { readWordSources } from './words.js';
 const wordsPerDay = 5;
 
 const learnedInput = z.object(
-  { learned: z.boolean({ error: '외웠는지는 true나 false여야 합니다' }) },
-  { error: '요청 본문은 JSON 객체여야 합니다' },
+  { learned: z.boolean({ error: 'Learned must be true or false' }) },
+  { error: 'Request body must be a JSON object' },
 );
 
 /**
@@ -47,7 +47,7 @@ export function registerDailyWordRoutes(app: Express, pool: Pool, today: () => s
   app.get('/api/daily-words', async (req, res) => {
     const current = today();
     const day = dayQuery.parse(req.query).day ?? current;
-    if (day > current) throw new HttpError(400, '아직 오지 않은 날짜의 단어는 볼 수 없습니다');
+    if (day > current) throw new HttpError(400, 'Words for a future date are not available');
     if (day === current) await chooseWords(pool, day);
     const { rows } = await pool.query<{ id: string }>(
       `SELECT w.id::text AS id, w.lemma, w.frequency_rank AS rank, w.part_of_speech AS "partOfSpeech",
@@ -78,7 +78,7 @@ export function registerDailyWordRoutes(app: Express, pool: Pool, today: () => s
 
   // Marking it learned again keeps the first time; undoing clears it.
   app.put('/api/words/:id/learned', async (req, res) => {
-    const id = parseId(req.params.id, '단어');
+    const id = parseId(req.params.id, 'word');
     const input = learnedInput.parse(body(req.body));
     const { rows } = await pool.query<{ learnedAt: Date | null }>(
       `UPDATE words
@@ -88,7 +88,7 @@ export function registerDailyWordRoutes(app: Express, pool: Pool, today: () => s
        RETURNING learned_at AS "learnedAt"`,
       [id, input.learned],
     );
-    if (!rows[0]) throw new HttpError(404, '단어를 찾을 수 없습니다');
+    if (!rows[0]) throw new HttpError(404, 'Word not found');
     res.json({ word: { id, learnedAt: rows[0].learnedAt } });
   });
 }

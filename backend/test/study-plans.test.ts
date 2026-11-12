@@ -79,7 +79,7 @@ test('the plan of a goal that does not exist is a 404', async () => {
   await withApi(pool, async (call) => {
     const { status, data } = await call('/api/certifications/404/plan');
     assert.equal(status, 404);
-    assert.deepEqual(data, { error: '자격증 목표를 찾을 수 없습니다' });
+    assert.deepEqual(data, { error: 'Certification goal not found' });
   });
   assert.equal(queries.length, 1);
 });
@@ -137,7 +137,7 @@ test('an array in place of the title answers one message, not one per check', as
       body: { title: [] },
     });
     assert.equal(status, 400);
-    assert.deepEqual(data, { error: '단계 이름을 입력해 주세요' });
+    assert.deepEqual(data, { error: 'Stage name is required' });
   });
   assert.equal(queries.length, 0);
 });
@@ -145,18 +145,26 @@ test('an array in place of the title answers one message, not one per check', as
 test('invalid input is a Korean 400 and never reaches the database', async () => {
   const { pool, queries } = fakePool(() => ({ rows: [] }));
   const cases: [string, unknown, string][] = [
-    ['/api/certifications/7/stages', {}, '단계 이름을 입력해 주세요'],
-    ['/api/certifications/7/stages', { title: '   ' }, '단계 이름을 입력해 주세요'],
-    ['/api/certifications/7/stages', { title: 'x'.repeat(201) }, '200자 이하'],
-    ['/api/certifications/7/stages', { title: 'a', startDate: '2026-02-30' }, '시작일이 실제 날짜'],
+    ['/api/certifications/7/stages', {}, 'Stage name is required'],
+    ['/api/certifications/7/stages', { title: '   ' }, 'Stage name is required'],
+    ['/api/certifications/7/stages', { title: 'x'.repeat(201) }, '200 characters or fewer'],
+    [
+      '/api/certifications/7/stages',
+      { title: 'a', startDate: '2026-02-30' },
+      'Start date is not a real date',
+    ],
     [
       '/api/certifications/7/stages',
       { title: 'a', startDate: '2026-02-02', endDate: '2026-02-01' },
-      '종료일은 시작일 이후',
+      'End date must be on or after the start date',
     ],
-    ['/api/study-stages/4/tasks', {}, '할 일을 입력해 주세요'],
-    ['/api/study-stages/4/tasks', { title: 'a', dueDate: '2026/11/01' }, '마감일은 YYYY-MM-DD'],
-    ['/api/study-stages/4/tasks', [1], '요청 본문은 JSON 객체여야 합니다'],
+    ['/api/study-stages/4/tasks', {}, 'Task is required'],
+    [
+      '/api/study-stages/4/tasks',
+      { title: 'a', dueDate: '2026/11/01' },
+      'Due date must be in YYYY-MM-DD',
+    ],
+    ['/api/study-stages/4/tasks', [1], 'Request body must be a JSON object'],
   ];
   await withApi(pool, async (call) => {
     for (const [path, body, message] of cases) {
@@ -169,7 +177,7 @@ test('invalid input is a Korean 400 and never reaches the database', async () =>
       body: { completed: 'yes' },
     });
     assert.equal(completion.status, 400);
-    assert.match(String(completion.data.error), /완료 여부/);
+    assert.match(String(completion.data.error), /Completed must be/);
   });
   assert.equal(queries.length, 0);
 });
@@ -179,13 +187,13 @@ test('missing rows are a 404 naming what is missing, and a bad id a 400', async 
   const title = { title: 'a' };
   await withApi(pool, async (call) => {
     const missing: [string, string, object | undefined, string][] = [
-      ['POST', '/api/certifications/7/stages', title, '자격증 목표를 찾을 수 없습니다'],
-      ['PUT', '/api/study-stages/4', title, '공부 단계를 찾을 수 없습니다'],
-      ['DELETE', '/api/study-stages/4', undefined, '공부 단계를 찾을 수 없습니다'],
-      ['POST', '/api/study-stages/4/tasks', title, '공부 단계를 찾을 수 없습니다'],
-      ['PUT', '/api/study-tasks/9', title, '할 일을 찾을 수 없습니다'],
-      ['PATCH', '/api/study-tasks/9/completion', { completed: true }, '할 일을 찾을 수 없습니다'],
-      ['DELETE', '/api/study-tasks/9', undefined, '할 일을 찾을 수 없습니다'],
+      ['POST', '/api/certifications/7/stages', title, 'Certification goal not found'],
+      ['PUT', '/api/study-stages/4', title, 'Study stage not found'],
+      ['DELETE', '/api/study-stages/4', undefined, 'Study stage not found'],
+      ['POST', '/api/study-stages/4/tasks', title, 'Study stage not found'],
+      ['PUT', '/api/study-tasks/9', title, 'Task not found'],
+      ['PATCH', '/api/study-tasks/9/completion', { completed: true }, 'Task not found'],
+      ['DELETE', '/api/study-tasks/9', undefined, 'Task not found'],
     ];
     for (const [method, path, body, error] of missing) {
       const { status, data } = await call(path, { method, body });
@@ -194,7 +202,7 @@ test('missing rows are a 404 naming what is missing, and a bad id a 400', async 
     }
     const badId = await call('/api/study-tasks/abc', { method: 'DELETE' });
     assert.equal(badId.status, 400);
-    assert.deepEqual(badId.data, { error: 'Invalid 할 일 ID' });
+    assert.deepEqual(badId.data, { error: 'Invalid task ID' });
   });
 });
 

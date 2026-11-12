@@ -157,7 +157,7 @@ test('a 503 without Retry-After waits the backoff, not a minute', async () => {
   await withLrclib(
     (_url, res) => json(res, 503, {}),
     async (source, waits) => {
-      await assert.rejects(requestLyrics(query, source), /LRCLIB 503, 5번 시도/);
+      await assert.rejects(requestLyrics(query, source), /LRCLIB 503, 5 attempts/);
       assert.deepEqual(waits, [700, 5000, 700, 10_000, 700, 20_000, 700, 40_000, 700]);
     },
   );
@@ -173,7 +173,7 @@ test('a 503 asking for a very long wait stops the run', async () => {
     async (source) => {
       const result = await fetchMissingLyrics(fakePool(3), source);
       assert.deepEqual(result.failed, ['곡 1']);
-      assert.equal(result.stopped, 'LRCLIB 503, 대기 3600초 요청');
+      assert.equal(result.stopped, 'LRCLIB 503, asked to wait 3600 seconds');
     },
   );
   assert.equal(calls, 1);
@@ -184,8 +184,8 @@ test('503s and 429s mixed still end, counted apart', { timeout: 10_000 }, async 
   const cases = [
     { statuses: [503, 503, 503], then: 429, error: /LRCLIB 429/, calls: 6 },
     { statuses: [503, 503, 503, 503], then: 429, error: /LRCLIB 429/, calls: 7 },
-    { statuses: [429, 429], then: 503, error: /LRCLIB 503, 5번 시도/, calls: 7 },
-    { statuses: [503, 429, 503, 429], then: 503, error: /LRCLIB 503, 5번 시도/, calls: 7 },
+    { statuses: [429, 429], then: 503, error: /LRCLIB 503, 5 attempts/, calls: 7 },
+    { statuses: [503, 429, 503, 429], then: 503, error: /LRCLIB 503, 5 attempts/, calls: 7 },
   ];
   for (const { statuses, then, error, calls: expected } of cases) {
     let calls = 0;
@@ -211,7 +211,7 @@ test('a busy 503 waits longer each time, and after five tries fails that song', 
     },
     async (source, waits) => {
       await assert.rejects(requestLyrics(query, source), (error: Error) => {
-        assert.equal(error.message, 'LRCLIB 503, 5번 시도');
+        assert.equal(error.message, 'LRCLIB 503, 5 attempts');
         assert.equal(
           error.constructor.name,
           'ServiceError',
@@ -240,7 +240,7 @@ test('a song that stays busy fails alone, and the run goes on', async () => {
       assert.equal(result.stopped, null);
     },
   );
-  assert.deepEqual(logged, ['실패: 곡 1 (LRCLIB 503, 5번 시도)', '없음: 곡 2']);
+  assert.deepEqual(logged, ['Failed: 곡 1 (LRCLIB 503, 5 attempts)', 'Not found: 곡 2']);
 });
 
 test('a very long wait is not waited for', async () => {
@@ -385,7 +385,7 @@ test('an unreadable answer fails that song without printing the answer', async (
       assert.equal(result.stopped, null);
     },
   );
-  assert.deepEqual(logged, ['실패: 곡 1 (연결 실패 또는 잘못된 응답)']);
+  assert.deepEqual(logged, ['Failed: 곡 1 (connection failed or invalid response)']);
 });
 
 test('a database error stops the run', async () => {

@@ -103,12 +103,12 @@ function parseBatch(content: string) {
   try {
     value = JSON.parse(content.replace(/^\uFEFF/, ''));
   } catch {
-    throw new RejectedBatch('JSON으로 읽을 수 없습니다');
+    throw new RejectedBatch('Cannot be read as JSON');
   }
   const parsed = batchSchema.safeParse(value);
   if (parsed.success) return parsed.data;
   const issue = parsed.error.issues[0];
-  throw new RejectedBatch(`파일 형식이 맞지 않습니다: ${issue?.path.join('.') ?? ''}`);
+  throw new RejectedBatch(`The file format is invalid: ${issue?.path.join('.') ?? ''}`);
 }
 
 type WordRow = {
@@ -122,11 +122,12 @@ type WordRow = {
 function batchProblem(batch: Batch, found: Map<string, WordRow>) {
   for (const word of batch.words) {
     const row = found.get(word.lemma);
-    if (!row) return `목록에 없는 단어입니다: ${word.lemma}`;
-    if (row.meaningKo !== null) return `이미 채운 단어입니다: ${word.lemma}`;
-    if (row.etymologySource === null) return `어원을 아직 찾아보지 않은 단어입니다: ${word.lemma}`;
+    if (!row) return `Word is not in the list: ${word.lemma}`;
+    if (row.meaningKo !== null) return `Word is already filled in: ${word.lemma}`;
+    if (row.etymologySource === null)
+      return `Etymology has not been looked up for this word yet: ${word.lemma}`;
     if (row.etymologySource === '' && word.morphemes.length > 0) {
-      return `어원 자료가 없는 단어에는 어원 요소를 넣을 수 없습니다: ${word.lemma}`;
+      return `A word with no etymology data cannot have etymology parts: ${word.lemma}`;
     }
     for (const part of word.morphemes) {
       const name = `${part.kind}:${part.form}`;
@@ -134,16 +135,16 @@ function batchProblem(batch: Batch, found: Map<string, WordRow>) {
         part.key !== name &&
         !(part.key.startsWith(`${name}:`) && part.key.length > name.length + 1)
       ) {
-        return `어원 요소 이름이 규칙과 다릅니다: ${part.key}`;
+        return `Etymology part key does not follow the rule: ${part.key}`;
       }
     }
     if (new Set(word.morphemes.map((part) => part.key)).size !== word.morphemes.length) {
-      return `한 단어에 같은 어원 요소가 두 번 있습니다: ${word.lemma}`;
+      return `The same etymology part appears twice in one word: ${word.lemma}`;
     }
   }
   return new Set(batch.words.map((word) => word.lemma)).size === batch.words.length
     ? null
-    : '같은 단어가 두 번 있습니다';
+    : 'The same word appears twice';
 }
 
 /** Saves each batch whole, marked as AI-made, then moves it to imported/. Bad ones stay and are named with the reason. */
@@ -196,7 +197,7 @@ export async function importWordBatches(pool: Pool, dir: string) {
       const refused = /^2[23]/.test((error as { code?: string }).code ?? '');
       if (!(error instanceof RejectedBatch || refused)) throw error;
       const reason = refused
-        ? `데이터베이스가 받지 않는 값이 있습니다 (${(error as { code: string }).code})`
+        ? `The database rejected a value (${(error as { code: string }).code})`
         : (error as Error).message;
       result.rejected.push({ file: name, reason });
       continue;

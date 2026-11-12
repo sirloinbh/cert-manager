@@ -52,9 +52,9 @@ test.each([
 });
 
 test('the countdown names the last valid day and counts past it', () => {
-  expect(deadlineCountdown(10)).toBe('10일 남음');
-  expect(deadlineCountdown(0)).toBe('오늘까지');
-  expect(deadlineCountdown(-3)).toBe('3일 지남');
+  expect(deadlineCountdown(10)).toBe('10 days left');
+  expect(deadlineCountdown(0)).toBe('Due today');
+  expect(deadlineCountdown(-3)).toBe('3 days overdue');
 });
 
 test('the goal is reached only when both numbers exist and the score meets the target', () => {
