@@ -1,70 +1,70 @@
-# #37 오늘의 영어 단어
+# #37 English word of the day
 
-이슈: [#37](https://github.com/sirloinbh/cert-manager/issues/37)
+Issue: [#37](https://github.com/sirloinbh/cert-manager/issues/37)
 
-## 목적
+## Purpose
 
-단어장은 직접 열어야만 보인다. 매일 정해진 단어를 대시보드에 보여 주고, 외운 단어를 기록해 꾸준히 외울 수 있게 한다.
+The word list is only seen if you open it yourself. Show a fixed set of words on the dashboard every day, and record the words you memorized, so you can keep memorizing steadily.
 
-## 정한 규칙
+## Rules decided
 
-사용자가 추천안대로 진행하라고 했다(2026-11-01). 이슈에도 같은 내용을 적었다.
+The user said to go with the recommendation (2026-11-01). The same content is written in the issue.
 
-- 하루 5단어. 그날 처음 열 때 정하고, 그날은 같은 단어를 보여 준다.
-- 외운 단어는 고르지 않는다.
-- 고르는 순서: 아직 안 나온 단어 → 가장 오래전에 나온 단어. 같으면 뜻을 채운 단어 → 빈도 순.
-- 안 나온 단어 중에서 뜻을 채운 단어를 앞세워, 뜻 채우기(#70)가 끝나기 전에도 뜻을 볼 수 있는 단어가 먼저 나온다.
-- 남은 단어가 모자라 5개보다 적게 정해진 날은 나중에 단어가 늘어도 채우지 않는다.
-- 안 본 단어가 다 떨어지면 외우지 않은 단어가 오래된 순으로 다시 나온다.
-- 지난 날은 그날을 연 적이 있을 때만 기록이 있다. 지난 날을 열어도 새로 고르지 않는다.
+- 5 words a day. They are decided the first time it is opened that day, and the same words are shown for that day.
+- Memorized words are not picked.
+- Picking order: words that have not appeared yet → the word that appeared longest ago. For a tie, words with a filled-in meaning → frequency order.
+- Among words that have not appeared, words with a filled-in meaning come first, so words whose meaning can be seen come out first even before filling in meanings (#70) is finished.
+- A day decided with fewer than 5 words because not enough words were left is not refilled even if words are added later.
+- When the words that were not seen run out, words that were not memorized come back in order of oldest first.
+- A past day has a record only if it was opened. Opening a past day does not pick new words.
 
-## 변경 내용
+## Changes
 
-- `database/migrations/009_daily_words.sql`: `daily_words` 테이블과 `words.learned_at` 열.
+- `database/migrations/009_daily_words.sql`: the `daily_words` table and the `words.learned_at` column.
 - `backend/src/routes/daily-words.ts`:
-  - `GET /api/daily-words`: 오늘의 단어. `?day=YYYY-MM-DD`로 지난 날을 본다. 오늘 이후는 400이다.
-  - `PUT /api/words/:id/learned`: 외웠어요 표시와 취소. 다시 표시해도 처음 시점을 유지한다.
-- `backend/src/routes/words.ts`: 출처를 읽는 함수를 내보냈다.
-- `frontend/src/daily-words.tsx`: 대시보드 카드. 뜻·예문·어원은 눌러서 펼치고, 단어를 누르면 상세로 간다. 화살표로 지난 날을 본다.
-- `frontend/src/words.tsx`: 라이선스 표기(`SourceNote`)를 카드에서도 쓰도록 내보냈다.
-- 대시보드를 그리는 기존 테스트의 가짜 API에 `words: []`를 넣었다.
-- `docs/design/scope-and-data-model.md` 6절에 규칙을 적었다.
+  - `GET /api/daily-words`: the word of the day. Use `?day=YYYY-MM-DD` to see a past day. A day after today is 400.
+  - `PUT /api/words/:id/learned`: mark and unmark "I memorized it". Marking again keeps the first time.
+- `backend/src/routes/words.ts`: exported the function that reads the source.
+- `frontend/src/daily-words.tsx`: the dashboard card. Meaning, example, and etymology expand when pressed, and pressing a word goes to the detail. Arrows show past days.
+- `frontend/src/words.tsx`: exported the license notice (`SourceNote`) so the card uses it too.
+- Added `words: []` to the fake API of the existing tests that draw the dashboard.
+- Wrote the rules in section 6 of `docs/design/scope-and-data-model.md`.
 
-## 테스트
+## Tests
 
-- `backend/test/words.integration.test.ts`: 동시 요청, 같은 날 같은 단어, 다음 날 새 단어, 외운 단어 제외, 취소, 뜻 있는 단어 우선, 모두 외운 경우. 단어 표 전체를 보는 #36 테스트와 동시에 돌지 않도록 같은 파일에 넣었다.
-- `backend/test/daily-words.test.ts`: 서울 자정 경계, 잘못된 날짜, 오늘만 단어를 고르는 것, 입력 검사.
-- `frontend/src/daily-words.test.tsx`: 접기와 펼치기, 뜻 없는 단어, 외웠어요와 취소, 저장 실패, 지난 날 이동, 빈 상태, 불러오기 실패.
+- `backend/test/words.integration.test.ts`: simultaneous requests, the same words on the same day, new words the next day, excluding memorized words, undo, words with a meaning first, and the case where all are memorized. I put it in the same file so it does not run at the same time as the #36 test that looks at the whole word table.
+- `backend/test/daily-words.test.ts`: the Seoul midnight boundary, a wrong date, picking words only for today, and input checks.
+- `frontend/src/daily-words.test.tsx`: collapse and expand, a word with no meaning, memorized and undo, save failure, moving to a past day, empty state, and load failure.
 
-## 검증
+## Verification
 
-`TEST_DATABASE_URL`을 `cert_test`로 지정하고 실행했다. 마이그레이션은 `cert`, `cert_test`에 모두 적용했다.
+Ran with `TEST_DATABASE_URL` set to `cert_test`. Applied the migration to both `cert` and `cert_test`.
 
-- `npm run check`: 통과. 백엔드 108개 통과, 프런트엔드 234개 통과·2개 건너뜀(`DARK_ONLY`), 스킬 4개 통과, 빌드 성공.
-- `npm run knip`: 결과 없음.
-- `node .standards/check.mjs`: 통과.
-- `node .standards/secret-scan.mjs`: 의심 항목 없음.
-- 화면: 헤드리스 Edge로 `cert_test`에 지어낸 단어 7개를 넣어 390×844, 1440×900에서 확인했다. 가로 넘침 없음, 긴 단어 줄바꿈 정상, 콘솔 오류·경고 없음. 외웠어요가 새로고침 뒤에도 유지되고, 지난 날 이동과 상세 이동이 동작했다. 터치 환경을 흉내 내지 않아 `pointer-coarse`의 큰 터치 영역은 확인하지 못했다. 리뷰 반영 뒤 최종 코드로 다시 확인했고, 확인 뒤 임시 데이터를 지웠다.
+- `npm run check`: pass. Backend 108 passed, frontend 234 passed and 2 skipped (`DARK_ONLY`), skills 4 passed, build succeeded.
+- `npm run knip`: no findings.
+- `node .standards/check.mjs`: pass.
+- `node .standards/secret-scan.mjs`: no suspicious items.
+- Screen: put 7 made-up words in `cert_test` and checked with headless Edge at 390×844 and 1440×900. No horizontal overflow, long words wrap correctly, and no console errors or warnings. "Memorized" stays after a refresh, and moving to a past day and moving to the detail work. I did not imitate a touch environment, so I could not check the large touch area of `pointer-coarse`. I checked again with the final code after applying the review, and deleted the temporary data after the check.
 
-## 1차 리뷰 반영
+## Applied the 1st review
 
-독립 읽기 전용 리뷰의 지적 8건을 이 PR에서 고쳤다.
+I fixed 8 findings of the independent read-only review in this PR.
 
-- 중간: 오늘의 단어가 정해지지 않으면 지난 날에서 오늘로 돌아올 수 없었다. 지난 날의 `nextDay`는 이제 최소한 오늘이다.
-- 중간: 다른 날로 옮기다 실패하면 같은 화살표로 다시 시도할 수 없었다. 누를 때마다 다시 요청한다.
-- 중간: 밤새 열어 둔 화면이 어제 단어를 오늘의 단어로 보여 줬다. 화면으로 돌아왔을 때 서울 날짜가 바뀌었으면 다시 읽는다.
-- 중간: 뜻을 채운 단어가 빈도와 상관없이 매일 반복될 수 있었다. 처음 순서는 뜻을 채운 단어가 앞이었으나, "다음 날 새 단어" 기준에 맞춰 안 나온 단어를 앞세웠다.
-- 낮음: 끝에 닿은 화살표가 `disabled`로 키보드 초점을 잃었다. `aria-disabled`로 바꿨다.
-- 낮음: 날짜 변경 안내가 화면 낭독기에 잘 전달되지 않았다. 안내 요소를 항상 두고 내용만 바꾼다.
-- 낮음: 어원을 아직 찾아보지 않은 단어도 "어원 자료 없음"으로 보였다. 단어 상세와 같은 문구로 나눴다.
-- 낮음: 5개보다 적게 정해진 날을 채우지 않는 규칙과 카드의 출처 표기를 설계 문서에 적었다.
+- Medium: if the word of the day was not decided, you could not return from a past day to today. `nextDay` of a past day is now at least today.
+- Medium: if moving to another day failed, you could not try again with the same arrow. It requests again each time you press.
+- Medium: a screen left open overnight showed yesterday's words as the word of the day. When you come back to the screen, it reads again if the Seoul date changed.
+- Medium: words with a filled-in meaning could repeat every day regardless of frequency. At first, words with a filled-in meaning came first, but to match the "new words the next day" criterion I put words that have not appeared first.
+- Low: the arrow at the end was `disabled` and lost keyboard focus. Changed it to `aria-disabled`.
+- Low: the date change notice did not reach screen readers well. The notice element is always present and only its content changes.
+- Low: a word whose etymology was not looked up yet also showed "no etymology data". Separated it with the same wording as the word detail.
+- Low: wrote the rule of not refilling a day decided with fewer than 5 words and the source notice on the card in the design document.
 
-## 2차 리뷰 반영
+## Applied the 2nd review
 
-독립 읽기 전용 리뷰의 지적 1건(낮음)을 고쳤다. 다른 날로 옮기다 실패한 채 자정이 지나면, 화면으로 돌아왔을 때 오늘이 아니라 실패한 날을 다시 읽었다. 오늘을 보던 중이면 오늘을 읽는다. 다른 수정 7건과 문서는 지적이 없었다. 리뷰는 2차까지이므로 이후는 CI로 넘어간다.
+I fixed 1 finding (low) of the independent read-only review. If midnight passed after a failed move to another day, coming back to the screen read the failed day again instead of today. If you were looking at today, it reads today. The other 7 fixes and the docs had no findings. The review is up to the 2nd round, so after this it goes to CI.
 
-## 제한·후속 작업
+## Limits and follow-up
 
-- 뜻과 예문은 아직 비어 있어(#70) 지금은 단어와 어원만 보인다.
-- 외운 단어를 단어장이나 상세 화면에서 표시하고 모아 보는 기능은 범위 밖이다.
-- 푸시 알림은 이슈 범위 밖이다.
+- The meanings and examples are still empty (#70), so for now only the word and etymology are shown.
+- A feature to mark memorized words in the word list or detail screen and view them together is out of scope.
+- Push notifications are out of the issue scope.

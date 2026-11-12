@@ -1,29 +1,29 @@
-# #22 모바일 빈 화면 안내 문구 단어 단위 줄바꿈
+# #22 Word-level line wrapping for the empty-state message on mobile
 
-이슈: [#22](https://github.com/sirloinbh/cert-manager/issues/22)
+Issue: [#22](https://github.com/sirloinbh/cert-manager/issues/22)
 
-## 목적
+## Purpose
 
-390×844 화면에서 빈 화면 안내 문구가 "추가합니 / 다."처럼 단어 중간에서 끊겼다.
+On a 390×844 screen the empty-state message broke in the middle of a word, as in "추가합니 / 다." (Korean text split mid-word).
 
-## 변경 내용
+## Changes
 
-- `EmptyState`를 부르는 7곳에 `className="break-keep"`을 넣었다. `app.tsx`, `certifications.tsx`, `exam-attempts.tsx`, `songs.tsx` 2곳, `study-plan.tsx`, `words.tsx`다.
-- 이슈는 `app.tsx`만 적었지만, 그 뒤 기능이 생겨 같은 컴포넌트를 쓰는 다른 화면에도 같은 문제가 생길 수 있어 함께 고쳤다.
-- 중앙 관리 파일 `components/ui/empty-state.tsx`는 바꾸지 않았다.
-- `frontend/src/app.test.tsx`: 안내 문구에 `break-keep`이 붙는지 확인한다.
-- `docs/next-steps/README.md`: #22를 빼고 #70 상태를 고쳤다.
+- Added `className="break-keep"` at the 7 places that call `EmptyState`: `app.tsx`, `certifications.tsx`, `exam-attempts.tsx`, `songs.tsx` (2 places), `study-plan.tsx`, and `words.tsx`.
+- The issue named only `app.tsx`, but features built since then use the same component on other screens and could have the same problem, so I fixed them together.
+- Did not change the centrally managed file `components/ui/empty-state.tsx`.
+- `frontend/src/app.test.tsx`: checks that `break-keep` is attached to the message.
+- `docs/next-steps/README.md`: removed #22 and fixed the state of #70.
 
-## 검증
+## Verification
 
-`TEST_DATABASE_URL`을 `cert_test`로 지정하고 실행했다.
+Ran with `TEST_DATABASE_URL` set to `cert_test`.
 
-- `npm run check`: 통과. 백엔드 108개 통과, 프런트엔드 236개 통과·2개 건너뜀(`DARK_ONLY`), 스킬 4개 통과, 빌드 성공.
-- `npm run knip`: 결과 없음.
-- `node .standards/check.mjs`: 통과.
-- `node .standards/secret-scan.mjs`: 의심 항목 없음.
-- 화면: 헤드리스 Edge로 `/settings`, `/certifications`, `/songs`, `/words`의 빈 화면을 390×844, 1440×900에서 확인했다. 네 화면 모두 계산된 `word-break`가 `keep-all`이고 가로 넘침이 없다. 390×844의 `/settings`는 스크린샷을 눈으로 확인했다.
+- `npm run check`: pass. Backend 108 passed, frontend 236 passed and 2 skipped (`DARK_ONLY`), skills 4 passed, build succeeded.
+- `npm run knip`: no findings.
+- `node .standards/check.mjs`: pass.
+- `node .standards/secret-scan.mjs`: no suspicious items.
+- Screen: checked the empty states of `/settings`, `/certifications`, `/songs`, and `/words` at 390×844 and 1440×900 with headless Edge. On all four screens the computed `word-break` is `keep-all` and there is no horizontal overflow. For `/settings` at 390×844, I checked the screenshot by eye.
 
-## 제한·후속 작업
+## Limits and follow-up
 
-- 다른 앱의 같은 문제는 확인하지 않았다. 그래서 project-standards에 `EmptyState` 기본값 변경을 제안하지 않았다.
+- I did not check the same problem in other apps. So I did not propose changing the `EmptyState` default in project-standards.

@@ -1,77 +1,77 @@
-# #80 테스트의 시간 초과와 간헐 실패 고치기
+# #80 Fix test timeouts and intermittent failures
 
-이슈: [#80](https://github.com/sirloinbh/cert-manager/issues/80)
+Issue: [#80](https://github.com/sirloinbh/cert-manager/issues/80)
 
-## 목적
+## Purpose
 
-`npm run check`가 코드와 상관없이 가끔 실패했다. 프론트엔드의 시간 초과와 백엔드의 간헐 실패 두 가지를 나눠 다뤘다. 프론트엔드의 원인은 확정하지 못했고, 백엔드는 `bad port` 하나를 확인했다.
+`npm run check` sometimes failed regardless of the code. I handled two things separately: the frontend timeout and the backend intermittent failure. I could not determine the cause of the frontend one, and for the backend I confirmed one, `bad port`.
 
-## 프론트엔드: 5초 제한
+## Frontend: the 5 second limit
 
-처음 본 실패 때의 부하는 재지 않았으므로 원인을 확정하지는 못했다. 다만 부하를 걸면 같은 시간 초과가 여러 파일에서 재현돼, [#54](54-study-plan-test-timeout.md)처럼 테스트를 나누는 방법으로는 해결되지 않는다.
+I did not measure the load at the time of the first failure, so I could not determine the cause. But when I add load, the same timeout reproduces in several files, so splitting tests as in [#54](54-study-plan-test-timeout.md) does not solve it.
 
-프론트엔드 테스트만, CPU 코어 12개인 PC에 바쁜 프로세스 24개를 띄우고 돌렸다.
+I ran only the frontend tests with 24 busy processes on a PC with 12 CPU cores.
 
-| 제한 | 실행 |      실패 | 가장 느린 테스트 |
-| ---- | ---: | --------: | ---------------: |
-| 5초  |  3회 | 회당 9~18 |          10~13초 |
-| 15초 |  3회 |       0개 |  최대 약 14.45초 |
+| Limit | Runs |     Failures |          Slowest test |
+| ----- | ---: | -----------: | --------------------: |
+| 5 s   |    3 | 9-18 per run |               10-13 s |
+| 15 s  |    3 |            0 | at most about 14.45 s |
 
-2026-11-01 사용자가 15초로 정했다. #54의 "제한을 늘리지 않음"을 바꾸는 결정이다. `frontend/vitest.config.ts`는 중앙 관리 파일이라 [project-standards#390](https://github.com/sirloinbh/project-standards/issues/390)에서 중앙 템플릿을 고쳤고, 동기화 PR #83으로 이 리포에 들어왔다.
+On 2026-11-01 the user set it to 15 seconds. It changes the "do not raise the limit" of #54. `frontend/vitest.config.ts` is a centrally managed file, so I fixed the central template in [project-standards#390](https://github.com/sirloinbh/project-standards/issues/390), and it came into this repository with sync PR #83.
 
-## 백엔드: fetch가 거부하는 포트
+## Backend: ports that fetch refuses
 
-완료 기준대로 `npm run check`를 10회 돌리자 7회째에 `songs.test.ts`의 한 테스트가 `fetch failed`, 원인 `bad port`로 실패했다.
+When I ran `npm run check` 10 times as the done criterion, on the 7th run one test in `songs.test.ts` failed with `fetch failed`, cause `bad port`.
 
-- `fetch`는 표준에 따라 일부 포트(6000, 6666 등)로 보내는 요청을 거부한다.
-- 이 PC의 임시 포트 범위는 1024부터 13,977개다(`netsh int ipv4 show dynamicport tcp`). 테스트 서버가 `listen(0)`으로 받은 포트가 거부 목록에 걸릴 수 있다.
-- `listen(0)`을 5,000번 해 보니 거부 포트를 15번 받았고, 그때마다 `fetch`가 `bad port`로 실패했다. 포트를 차례로 내주므로 이 수는 시작 위치에 따라 달라지며, 일정한 비율은 아니다.
+- By the standard, `fetch` refuses requests to some ports (6000, 6666, and others).
+- This PC's ephemeral port range is 13,977 ports starting at 1024 (`netsh int ipv4 show dynamicport tcp`). The port a test server gets with `listen(0)` can land on the refused list.
+- When I did `listen(0)` 5,000 times, I got a refused port 15 times, and each time `fetch` failed with `bad port`. It hands out ports in order, so this count depends on the starting position and is not a fixed rate.
 
-테스트 서버를 띄우는 다섯 곳이 `backend/test/helpers.ts`의 `listenLocally`를 쓰게 했다. 거부 포트를 받으면 닫고 다시 받는다. 이 PC는 포트를 차례로 내주어 "10080보다 큰 포트"를 기다리는 방법은 쓸 수 없었다.
+I made the five places that start a test server use `listenLocally` in `backend/test/helpers.ts`. If it gets a refused port, it closes and gets another. This PC hands out ports in order, so I could not use the method of waiting for a "port above 10080".
 
-`backend/test/helpers.test.ts`를 더했다. 거부 포트를 받은 것처럼 만들어 다시 받는지 확인하고, `fetch`가 6000번을 여전히 거부하는지 확인한다.
+I added `backend/test/helpers.test.ts`. It makes it look as if a refused port was received and checks that it gets another, and checks that `fetch` still refuses port 6000.
 
-이슈에 적힌 `word-list.test.ts:118`의 1회 실패와 다른 3건은 그때 로그가 없어 같은 원인인지 확인하지 못했다. 그 파일도 같은 방식으로 포트를 받았으므로 같은 원인일 수 있다.
+For the 1 failure at `word-list.test.ts:118` written in the issue and the 3 others, there was no log at the time, so I could not confirm that it was the same cause. That file also got ports the same way, so it may be the same cause.
 
-## 문서 정리
+## Docs cleanup
 
-다음 작업 문서에 남아 있던 PR #15와 zod 설명을 지금 상태로 고치고 `npm audit` 결과를 적었다. `docs/daily/README.md` 목록에 빠진 11월 1일과 2일을 더했다.
+I fixed the PR #15 and zod description left in the next steps document to the current state and wrote the `npm audit` result. I added the missing November 1 and 2 to the `docs/daily/README.md` list.
 
-## 검증
+## Verification
 
-완료 기준인 `npm run check` 10회 연속을 실행했다. 부하를 일부러 걸지 않았고, 시작 때 CPU 사용률은 11~100%였다.
+I ran `npm run check` 10 times in a row, the done criterion. I did not add load on purpose, and the CPU usage at the start was 11-100%.
 
-| 코드                  | 실행 | 실패                 | 결과                                                |
-| --------------------- | ---: | -------------------- | --------------------------------------------------- |
-| 15초 제한만           | 10회 | 7회째 `bad port` 1건 | 나머지 9회 통과                                     |
-| 15초 제한 + 포트 수정 | 10회 | 없음                 | 백엔드 118개, 프론트엔드 239개·건너뜀 2개, 스킬 4개 |
+| Code                  |     Runs | Failures                | Result                                             |
+| --------------------- | -------: | ----------------------- | -------------------------------------------------- |
+| 15 s limit only       | 10 times | 1 `bad port` on the 7th | The other 9 runs passed                            |
+| 15 s limit + port fix | 10 times | None                    | Backend 118, frontend 239 with 2 skipped, skills 4 |
 
-- `npm run knip`, `node .standards/check.mjs`, `node .standards/secret-scan.mjs`: 통과.
-- 테스트 코드만 고쳐 앱 동작과 화면은 그대로다. 브라우저 확인은 하지 않았다.
+- `npm run knip`, `node .standards/check.mjs`, `node .standards/secret-scan.mjs`: pass.
+- Only test code changed, so app behavior and screens stay the same. I did not do a browser check.
 
-## 1차 리뷰 반영
+## Applied the 1st review
 
-독립 읽기 전용 리뷰의 지적을 반영했다.
+I applied the findings of the independent read-only review.
 
-- 완료 기준(10회 연속)을 실행하지 않은 채 이슈를 닫으려 했다. 실행해서 위 `bad port`를 찾았다.
-- 백엔드 실패가 기록에서 빠져 있었다. 위 절에 적었다.
-- 15초 측정 결과가 이슈에 없었다. 요약을 #80 코멘트로 남겼다. 실행별 원본 출력은 저장하지 않았다.
-- 원인을 단정한 문장을 "확정하지 못했다"로 고쳤다.
-- `npm audit` 설명을 "안전한 자동 수정이 없다"로 고쳤다.
-- `docs/daily/README.md` 목록을 채웠다.
+- I was about to close the issue without running the done criterion (10 runs in a row). I ran it and found the `bad port` above.
+- The backend failure was missing from the record. I wrote it in the section above.
+- The 15 second measurement result was not in the issue. I left a summary as a #80 comment. I did not keep the raw output of each run.
+- Changed the sentence that asserted the cause to "could not determine".
+- Changed the `npm audit` description to "there is no safe automatic fix".
+- Filled in the `docs/daily/README.md` list.
 
-## 2차 리뷰 반영
+## Applied the 2nd review
 
-차단할 결함은 없었다. 낮은 등급의 표현 지적 2건을 고쳤다(원인을 단정한 문장, "원자료"라는 표현). 고치지 않은 참고 사항은 두 가지다.
+There were no blocking defects. I fixed 2 low-level wording findings (the sentence that asserted the cause, and the expression "raw data"). I did not fix two notes.
 
-- `refusedPorts`의 빠진 값은 테스트가 잡지 못한다. Node 버전이 고정돼 있고 지금 목록은 정확하다.
-- `listenLocally`를 쓰는 테스트 파일이 `src/app.ts`도 불러와, pg의 날짜 파서 설정이 그 프로세스에 적용된다. 지금 영향은 없다.
+- A missing value in `refusedPorts` is not caught by a test. The Node version is pinned and the current list is exact.
+- A test file that uses `listenLocally` also imports `src/app.ts`, so the date parser setting of pg applies to that process. There is no effect now.
 
-마지막 커밋은 문서만 고쳤으므로 10회 반복은 다시 하지 않았다. 리뷰는 2차까지이므로 이후는 CI로 넘어간다.
+The last commit fixed only docs, so I did not repeat the 10 runs. The review is up to the 2nd round, so after this it goes to CI.
 
-## 제한·후속 작업
+## Limits and follow-up
 
-- 15초 측정 때는 측정 스크립트가 정리하지 못한 프로세스 때문에 부하가 24개보다 컸고, 첫 실행의 시간 기록이 이상했다. 그래서 위 표의 15초 줄은 부하를 똑같이 맞춘 비교가 아니다.
-- 그 부하에서 가장 느린 테스트가 15초에 가까웠다. 더 큰 부하에서는 다시 실패할 수 있다.
-- 수정 전 `bad port`는 10회 중 1회였으므로, 10회 통과만으로 사라졌다고 볼 수는 없다. 근거는 원인을 찾아 없앴다는 점이다.
-- 다른 앱은 측정하지 않았다. 중앙 템플릿의 시간 제한 값이 들어갈 뿐이며, `bad port` 수정은 이 리포에만 있다.
+- During the 15 second measurement, the load was bigger than 24 because of processes the measuring script did not clean up, and the time record of the first run was odd. So the 15 second row in the table above is not a comparison with the load matched exactly.
+- Under that load the slowest test was close to 15 seconds. It may fail again under a bigger load.
+- Before the fix, `bad port` happened in 1 of 10 runs, so passing 10 runs alone does not show that it is gone. The basis is that I found the cause and removed it.
+- I did not measure other apps. Only the time limit value of the central template goes in, and the `bad port` fix is only in this repository.

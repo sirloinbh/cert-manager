@@ -1,58 +1,58 @@
-# CI 통과 PR 에이전트 병합 정책으로 변경 (#1)
+# Change to the policy where the agent merges PRs that pass CI (#1)
 
-- 이슈: https://github.com/sirloinbh/english-study/issues/1
-- 일자: 2026-10-21 (Asia/Seoul)
+- Issue: https://github.com/sirloinbh/english-study/issues/1
+- Date: 2026-10-21 (Asia/Seoul)
 
-## 목적
+## Purpose
 
-저장소 소유자 요청(2026-10-21)에 따라 PR 병합 정책을 "사용자만 병합"에서 "필수 CI 통과 시 에이전트가 merge commit으로 병합"으로 바꾼다.
+At the request of the repository owner (2026-10-21), change the PR merge policy from "only the user merges" to "the agent merges with a merge commit when the required CI passes".
 
-## 변경
+## Changes
 
-- 새 정책: 필수 CI 검사가 모두 통과하면 에이전트(주 에이전트·로컬 워커)가 `scripts/gh-project.ps1 pr merge <url> --merge --match-head-commit <검증한 head SHA>`로 merge commit 병합하고 연결된 이슈가 닫혔는지 확인한다.
-- 순차·스택 PR은 앞 PR 병합 후 다음 브랜치에 `origin/main`을 병합해 충돌을 해결하고 관련 테스트를 다시 실행한 뒤 일반 푸시(force 금지), CI 통과 후 병합한다.
-- 계속 금지: 실패·실행 중 검사 상태의 병합, `--admin`·브랜치 보호 우회, 자기 PR 승인으로 검토 대체, `main` 직접 푸시, force push.
-- 현재 `main` 병합은 자동 배포와 연결되어 있지 않음을 명시하고, 배포가 연결되면 병합 후 결과를 확인하도록 적었다.
-- 수정 파일: `AGENTS.md`(절차 5), `README.md`(진행 순서), `docs/project-setup.md`(절대 규칙 2, Git 전략 순서·병합, 파일 역할 표, AGENTS 템플릿), `skills/english-study-{implementation,foundation,testing}/SKILL.md`(implementation의 YAML description 포함), `npm run skills:sync`로 갱신한 `.claude/skills/` 복제본.
-- `docs/project-setup.md`의 "squash merge 추천"은 새 정책에 맞춰 merge commit 병합으로 바꿨다.
-- 이력 기록(`docs/changes/bootstrap.md`, `docs/daily`)은 변경하지 않았다.
+- New policy: when all required CI checks pass, the agent (main agent or local worker) merges with a merge commit using `scripts/gh-project.ps1 pr merge <url> --merge --match-head-commit <verified head SHA>` and checks that the linked issue is closed.
+- For sequential and stacked PRs, after the earlier PR merges, merge `origin/main` into the next branch, resolve conflicts, run the related tests again, push normally (no force), and merge after CI passes.
+- Still forbidden: merging while checks are failing or running, `--admin` or bypassing branch protection, replacing review by approving your own PR, pushing directly to `main`, and force push.
+- Stated that a merge to `main` is not connected to automatic deploy now, and wrote that when deploy is connected the result must be checked after merging.
+- Files changed: `AGENTS.md` (step 5), `README.md` (order of work), `docs/project-setup.md` (absolute rule 2, Git strategy order and merge, the file role table, the AGENTS template), `skills/english-study-{implementation,foundation,testing}/SKILL.md` (including the YAML description of implementation), and the `.claude/skills/` copies refreshed with `npm run skills:sync`.
+- Changed "squash merge recommended" in `docs/project-setup.md` to merge commit to match the new policy.
+- Did not change the history records (`docs/changes/bootstrap.md`, `docs/daily`).
 
-## 검증
+## Verification
 
-- `npm run skills:sync`: `.claude/skills/` 갱신.
+- `npm run skills:sync`: refreshed `.claude/skills/`.
 - `npm run test:skills`: **4 pass / 0 fail / 0 skip**.
-- skill-creator `quick_validate.py`(`PYTHONUTF8=1`)를 `skills/` 3종과 `.claude/skills/` 3종에 실행: 모두 `Skill is valid!`.
-- 포맷: 이 저장소에 `node_modules`가 없어(설치는 사용자 재확인 대상) 같은 버전 Prettier 3.9.10(workout-memo 설치본)으로 변경 파일에 `prettier --check` 실행: 통과.
-- 로컬 `npm run check`: `node_modules` 미설치로 `format:check` 단계에서 `prettier` 명령을 찾지 못해 실행 불가. 앱 코드 변경이 없어 앱 테스트는 추가하지 않았고, 전체 검사는 PR의 GitHub Actions `verify`·`docker-build`로 확인한다.
-- 링크: 변경 문구에 새 링크를 추가하지 않았다.
+- skill-creator `quick_validate.py` (`PYTHONUTF8=1`) on the 3 skills in `skills/` and the 3 in `.claude/skills/`: all `Skill is valid!`.
+- Format: this repository has no `node_modules` (installing is subject to user reconfirmation), so I ran `prettier --check` on the changed files with the same version, Prettier 3.9.10 (the workout-memo install): pass.
+- Local `npm run check`: could not run because `node_modules` is not installed, so the `prettier` command was not found at the `format:check` step. There is no app code change, so I added no app tests, and the full check is confirmed by `verify` and `docker-build` of GitHub Actions on the PR.
+- Links: I did not add new links in the changed text.
 
-## 제한·후속
+## Limits and follow-up
 
-- 이 PR 자체는 요청에 따라 사용자가 검토·병합한다.
+- As requested, the user reviews and merges this PR itself.
 
-## 2026-10-21 — PR 후 자동 리뷰(최대 2회)
+## 2026-10-21: automatic review after the PR (up to 2 rounds)
 
-### 변경
+### Changes
 
-- PR을 올린 뒤 자동 코드 리뷰를 최대 2회 거치는 단계를 병합 앞에 추가했다. 리뷰 → 보완 커밋 → 2차 리뷰 → 보완 커밋 순서이며, 2차 보완 커밋 뒤에는 더 리뷰하지 않는다. 보완점이 없으면 바로 CI 확인과 병합으로 간다.
-- 이 PR에서 고치기에 큰 수정(범위 밖 기능, 설계·데이터 구조 변경, 여러 모듈 수정, 별도 검증이 필요한 작업)은 새 이슈카드로 분리한다. 분리하면 main이 깨지거나 보안·데이터 손상 위험이 남는 결함은 병합을 보류하고 사용자에게 알린다.
-- 각 리뷰 차수의 결과(지적, 반영 커밋, 분리 이슈, 보완점 없음)는 PR 코멘트와 docs 작업 기록에 남긴다. 리뷰 중 새 커밋이 생기면 이전 CI 결과로 병합하지 않고 최종 head의 필수 CI 통과 후 병합한다.
-- `skills/english-study-implementation/SKILL.md`: 새 "5. PR 후 자동 코드 리뷰(최대 2회)" 단계를 추가하고 병합 단계를 "6. CI 통과 후 병합"으로 바꿨다. YAML description도 갱신했다.
-- 짧은 요약 반영: `AGENTS.md` 절차(5 리뷰, 6 병합), `README.md`, `docs/project-setup.md`(절대 규칙 2·Git 전략 순서·리뷰·병합·파일 역할 표·AGENTS 템플릿), `skills/english-study-{foundation,testing}/SKILL.md`. `.claude/skills/`는 `npm run skills:sync`로 갱신했다.
-- 기존 금지 사항(실패·실행 중 검사 상태 병합, `--admin`·브랜치 보호 우회, 자기 PR 승인, `main` 직접 푸시, force push)과 순차·스택 PR 처리는 유지했다.
+- Added a step before merging where the PR goes through automatic code review up to 2 rounds. The order is review → fix commit → 2nd review → fix commit, and there is no more review after the 2nd fix commit. If there are no findings, go straight to checking CI and merging.
+- Changes too big to fix in this PR (a feature outside the scope, a change to the design or data structure, a fix across several modules, work that needs separate verification) are split into a new issue card. For a defect where splitting would break main, or that leaves a security or data corruption risk, hold the merge and tell the user.
+- Leave the result of each review round (findings, the commit that applied them, split issues, no findings) in a PR comment and in the docs work record. If a new commit appears during review, do not merge with the earlier CI result; merge after the required CI passes on the final head.
+- `skills/english-study-implementation/SKILL.md`: added the new "5. Automatic code review after the PR (up to 2 rounds)" step and renamed the merge step "6. Merge after CI passes". Also updated the YAML description.
+- Short summary changes: the `AGENTS.md` steps (5 review, 6 merge), `README.md`, `docs/project-setup.md` (absolute rule 2, Git strategy order, review, merge, the file role table, the AGENTS template), and `skills/english-study-{foundation,testing}/SKILL.md`. The `.claude/skills/` copies were refreshed with `npm run skills:sync`.
+- Kept the existing prohibitions (merging with checks failing or running, `--admin` or bypassing branch protection, approving your own PR, pushing directly to `main`, force push) and the handling of sequential and stacked PRs.
 
-### 이유
+### Reason
 
-사용자가 PR 후 자동 리뷰 깊이를 최대 2회로 제한하고, 큰 수정은 새 이슈로 분리한 뒤, CI 통과 후 병합하도록 요청했다.
+The user asked to limit the depth of automatic review after the PR to at most 2 rounds, split big changes into new issues, and merge after CI passes.
 
-### 검증
+### Verification
 
-| 명령                                                                                          | 결과                                     |
-| --------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| `npm run skills:sync` → `npm run skills:check`                                                | pass (`.claude/skills matches skills/.`) |
-| `npm run test:skills`                                                                         | pass 4/0/0 (pass/fail/skip)              |
-| `PYTHONUTF8=1 py -3 quick_validate.py` (skill-creator) — `skills/` 3종, `.claude/skills/` 3종 | pass 6/6 (`Skill is valid!`)             |
-| Prettier 3.9.10(workout-memo 설치본) `--check` — 변경한 Markdown 파일                         | pass                                     |
-| `npm run check`                                                                               | 미실행: `node_modules` 미설치            |
+| Command                                                                                                      | Result                                   |
+| ------------------------------------------------------------------------------------------------------------ | ---------------------------------------- |
+| `npm run skills:sync` → `npm run skills:check`                                                               | pass (`.claude/skills matches skills/.`) |
+| `npm run test:skills`                                                                                        | pass 4/0/0 (pass/fail/skip)              |
+| `PYTHONUTF8=1 py -3 quick_validate.py` (skill-creator): 3 skills in `skills/`, 3 skills in `.claude/skills/` | pass 6/6 (`Skill is valid!`)             |
+| Prettier 3.9.10 (the workout-memo install) `--check`: the changed Markdown files                             | pass                                     |
+| `npm run check`                                                                                              | Not run: `node_modules` not installed    |
 
-앱 코드 변경이 없어 앱 테스트는 추가하지 않았다. 이 저장소는 `node_modules`가 없고 설치는 사용자 확인 대상이라 설치하지 않았다. 전체 검사는 PR의 GitHub Actions `verify`·`docker-build`로 확인한다.
+There is no app code change, so I added no app tests. This repository has no `node_modules` and installing is subject to user confirmation, so I did not install. The full check is confirmed by `verify` and `docker-build` of GitHub Actions on the PR.

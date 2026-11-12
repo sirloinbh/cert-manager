@@ -1,56 +1,56 @@
-# #34 목표 자격증 6개의 세부 공부 계획 작성하기
+# #34 Write detailed study plans for the 6 goal certifications
 
-- 이슈: [#34](https://github.com/sirloinbh/cert-manager/issues/34)
-- 브랜치: `docs/34-certification-study-plans`
-- 결과: [자격증 세부 공부 계획](../plans/README.md)
+- Issue: [#34](https://github.com/sirloinbh/cert-manager/issues/34)
+- Branch: `docs/34-certification-study-plans`
+- Result: [Detailed certification study plans](../plans/README.md)
 
-## 목적
+## Purpose
 
-공부 계획 기능(#33)에 넣을 실제 내용을 만든다.
+Make the real content to put into the study plan feature (#33).
 
-## 사용자 결정 — 2026-10-31
+## User decisions: 2026-10-31
 
-- 공부 시간은 공휴일에 2시간씩만이다. 가진 교재·강의는 없다.
-- 순서와 시기는 추천을 따른다.
-- 모든 등급이 목표이고, 여러 번 응시해 등급을 점차 올린다.
+- Study time is only 2 hours per public holiday. There are no textbooks or courses owned.
+- Follow the recommendation for order and timing.
+- All grades are goals, and the grade is raised step by step by taking exams several times.
 
-## 판단
+## Judgments
 
-- 2027년 공휴일 24일, 48시간을 시험 5개에 나눴다. 시간 배정은 작성자의 추정이다.
-- 2027년 공식 일정을 확인하지 못한 시험은 "잠정"으로 표시했다. 공고된 회차는 토익 2026-12-27 하나다.
-- 앱의 목표 등급은 값이 하나이므로 "다음에 노리는 등급"으로 쓴다. 앱을 바꾸지 않았다. 등급마다 목표를 관리하는 기능이 필요하면 새 이슈로 다룬다.
-- 앱 코드 변경이 없어 앱 테스트를 더하지 않았다.
+- Split the 24 public holidays of 2027, 48 hours, across 5 exams. The time assignment is the author's estimate.
+- Marked as "tentative" the exams whose official 2027 schedule I could not confirm. The only announced session is TOEIC 2026-12-27.
+- The app's target grade has one value, so it is used as "the grade to aim for next". I did not change the app. If a feature that manages a goal per grade is needed, handle it in a new issue.
+- There is no app code change, so I did not add app tests.
 
-## 변경 — 2026-10-31
+## Changes: 2026-10-31
 
-- `docs/plans/`: 전체 일정표와 자격증별 계획 6개.
-- `docs/design/scope-and-data-model.md`: 목표 등급의 뜻을 고쳤다.
-- `docs/next-steps/README.md`, `docs/daily/2026-10-31.md`: 다음 작업과 일일 기록.
-- 이 PC의 앱 DB `cert`에 API로 목표 6개, 단계 8개, 할 일 34개를 넣었다. 계획 문서 표의 36행 중 운전면허 응시와 정보처리 2028년 공부 배정 2행은 넣지 않았고, 정보처리의 나머지 2행은 마감일 없이 넣었다. 개인 데이터라 저장소에는 넣지 않았다(설계 5절). 다른 PC나 빈 DB에서는 이 문서를 보고 화면에서 넣는다.
+- `docs/plans/`: the overall schedule and 6 plans per certification.
+- `docs/design/scope-and-data-model.md`: fixed the meaning of the target grade.
+- `docs/next-steps/README.md`, `docs/daily/2026-10-31.md`: the next steps and the daily log.
+- Put 6 goals, 8 stages, and 34 tasks into this PC's app DB `cert` through the API. Of the 36 rows in the plan document tables, I did not put in 2 rows, the driver's license exam and the 2028 study assignment for information processing, and I put in the other 2 information processing rows without deadlines. It is personal data, so it is not in the repository (design section 5). On another PC or an empty DB, enter it on the screen by following this document.
 
-## 검증
+## Verification
 
-- 시간: 2027년 공부 날 24일이 시험 5개에 한 번씩 배정됐고 합계 48시간이다. 앱에 넣은 2027년 마감일은 28개로, 공부 날 24일과 시험·성적 확인일 4일을 더한 수와 같다.
-- 시험일 겹침: 날짜가 정해진 5건의 시험일이 모두 다르다. 운전면허와 정보처리는 날짜가 정해지면 확인한다.
-- 요일: 잠정 시험일(2027-03-13, 2027-05-22, 2027-08-29, 2028-03-11)의 요일을 달력으로 계산했다.
-- `TEST_DATABASE_URL=… npm run check`: 통과(exit 0). 백엔드 40개 통과(건너뜀 0), 프런트엔드 163개 통과, 스킬 4개 통과, 빌드 성공. 첫 실행은 `frontend/src/study-plan.test.tsx` 1건이 5초 시간 초과로 실패했고, 다른 작업 없이 다시 실행해 통과했다. 이 브랜치는 앱 코드를 바꾸지 않았다. 원인을 확정하지 못해 [#54](https://github.com/sirloinbh/cert-manager/issues/54)로 분리했다.
-- 상대 링크 검사: `docs/plans/`의 끊어진 링크 없음. `node .standards/secret-scan.mjs`: 의심 항목 없음. `node .standards/check.mjs`: 통과.
+- Time: the 24 study days of 2027 are assigned to the 5 exams once each, for 48 hours in total. The 2027 deadlines put in the app are 28, equal to the 24 study days plus the 4 days for exams and score checks.
+- Exam date overlap: the 5 exam dates that are decided are all different. For the driver's license and information processing, check once the dates are decided.
+- Day of the week: I computed the days of the week of the tentative exam dates (2027-03-13, 2027-05-22, 2027-08-29, 2028-03-11) with a calendar.
+- `TEST_DATABASE_URL=… npm run check`: pass (exit 0). Backend 40 passed (0 skipped), frontend 163 passed, skills 4 passed, build succeeded. On the first run, 1 test in `frontend/src/study-plan.test.tsx` failed with a 5 second timeout, and it passed when run again with no other work. This branch did not change app code. I could not determine the cause, so I split it into [#54](https://github.com/sirloinbh/cert-manager/issues/54).
+- Relative link check: no broken links in `docs/plans/`. `node .standards/secret-scan.mjs`: no suspicious items. `node .standards/check.mjs`: pass.
 
-## 한계
+## Limits
 
-- 토익 2026-12-27 말고는 2027~2028년 공식 시험 일정을 확인하지 못해 잠정이다.
-- 운전면허 절차와 금액은 공식 자료로 확인하지 못했다. 정보처리 과목 구성과 합격 기준도 Q-Net 원문으로 확인하지 못해 문서에 적지 않았다.
-- 응시료 일부(토익, 토익 스피킹, 정보처리기사)는 민간 자료 값이다. 문서에 표시했다.
-- 토익 공식 일정, 토익 스피킹 공식 일정, Q-Net 연간 일정 페이지는 도구로 본문을 읽지 못했다. 토익 제586회 날짜는 공식 페이지를 인용한 검색 결과로 확인했으므로 접수할 때 다시 본다.
-- 이슈 참고의 "공식 사이트에서 확인한 값만"을 응시료 3건과 토익 제586회 일정은 지키지 못했다. 응시료는 민간 자료 값, 일정은 공식 페이지를 인용한 검색 결과 값임을 문서에 표시하고 이슈에 한계로 기록했다.
-- 운전면허와 정보처리의 응시 예정일은 날짜가 아니라 시기(2027년 11월, 2028년 10월 무렵)다. 날짜가 정해지면 겹침을 다시 확인한다.
-- 정보처리기사 합격률은 인용할 출처를 찾지 못해 넣지 않았다.
-- 공휴일 날짜의 원문은 한국천문연구원 달력자료이고, 자료 자체에 공식 발표가 아니라고 적혀 있다.
+- Except for TOEIC 2026-12-27, I could not confirm the official exam schedule for 2027 and 2028, so it is tentative.
+- I could not confirm the driver's license procedure and amounts with official sources. I did not write the subject composition and passing criteria of information processing either, because I could not confirm them with the Q-Net original.
+- Some exam fees (TOEIC, TOEIC Speaking, Engineer Information Processing) are private source values. I marked them in the document.
+- I could not read the text of the official TOEIC schedule, the official TOEIC Speaking schedule, or the Q-Net annual schedule page with a tool. I confirmed the date of TOEIC session 586 with search results that quote the official page, so check it again when you register.
+- I could not keep "only values confirmed on the official site" in the issue notes for 3 exam fees and the TOEIC session 586 schedule. I marked in the document that the exam fees are private source values and the schedule is a value from search results that quote the official page, and recorded it as a limit in the issue.
+- The planned exam dates of the driver's license and information processing are periods (around November 2027 and October 2028), not dates. Check the overlap again once the dates are decided.
+- I did not include the pass rate of Engineer Information Processing because I could not find a source to quote.
+- The original source of the public holiday dates is the Korea Astronomy and Space Science Institute calendar data, and the data itself says it is not an official announcement.
 
-## 자동 코드 리뷰 — 2026-10-31
+## Automatic code review: 2026-10-31
 
-1차(읽기 전용 리뷰 에이전트): 높음 1건, 중간 6건, 낮음 6건. 12건을 처리했다. 정보처리 응시 시기 추가, 겹침 범위 축소, 출처에서 확인되지 않는 합격률 삭제, 추정 표시, 결과를 약속하는 표현 수정, 공고됨과 잠정 구분, 한계 기록이다. 앱 DB의 단계 이름과 메모도 고쳤다.
+1st (read-only review agent): 1 high, 6 medium, 6 low. I handled 12. They were adding the information processing exam period, narrowing the overlap scope, deleting a pass rate that is not confirmed in the source, marking estimates, fixing wording that promised a result, separating announced from tentative, and recording the limits. I also fixed the stage names and memos in the app DB.
 
-고치지 않은 것: 토익 RC 교재 링크의 빈 `step_2=`. 검색 결과에 나온 주소 그대로이고 동작 여부를 확인하지 못했다.
+Not fixed: the empty `step_2=` in the TOEIC RC textbook link. It is the address as it appeared in search results, and I could not confirm whether it works.
 
-2차(diff를 다시 본 리뷰 에이전트): 높음 0건, 중간 2건, 낮음 2건. 모두 고쳤고, 리뷰는 2회로 마쳤다. 공식 일정이 없다는 단정을 "확인하지 못했다"로 통일했고, 토익 일정도 검색 결과로 확인했다는 한계를 적었다. 겹침 범위와 "확정" 표현, 할 일 행 수 설명도 고쳤다.
+2nd (review agent that looked at the diff again): 0 high, 2 medium, 2 low. All were fixed, and the review ended after 2 rounds. I made the claim that there is no official schedule consistent as "could not confirm", and wrote the limit that the TOEIC schedule was also confirmed with search results. I also fixed the overlap scope, the "confirmed" wording, and the description of the number of task rows.

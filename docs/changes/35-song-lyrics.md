@@ -1,104 +1,104 @@
-# #35 팝송 가사 원문·번역 보기 화면 만들기
+# #35 Build the screens to view pop song lyrics and translations
 
-- 이슈: [#35](https://github.com/sirloinbh/cert-manager/issues/35)
-- 브랜치: `feat/35-song-lyrics`
-- 설계: [서비스 범위와 데이터 구조](../design/scope-and-data-model.md) 6절, 자료: [영어 공부 자료 출처](../research/english-content-sources.md)
+- Issue: [#35](https://github.com/sirloinbh/cert-manager/issues/35)
+- Branch: `feat/35-song-lyrics`
+- Design: section 6 of [Service scope and data model](../design/scope-and-data-model.md); material: [Sources of English study material](../research/english-content-sources.md)
 
-## 범위 나누기
+## Splitting the scope
 
-이슈의 첫 할 일대로 확인해 나눴다.
+I checked and split it as the first task of the issue says.
 
-- 이 이슈: 테이블, API, 곡 목록과 검색, 줄 단위 가사 화면, 화면에서 가사·번역 붙여 넣기, MusicBrainz 곡 목록 스크립트.
-- [#64](https://github.com/sirloinbh/cert-manager/issues/64)로 분리: LRCLIB 가사 받기 스크립트, 번역 파일 내보내기·들여오기.
+- This issue: the tables, the API, the song list and search, the line-by-line lyrics screen, pasting lyrics and translations on the screen, and the MusicBrainz song list script.
+- Split into [#64](https://github.com/sirloinbh/cert-manager/issues/64): the LRCLIB lyrics fetch script, and exporting and importing translation files.
 
-## #31 결정과 달라진 점
+## What differs from the #31 decision
 
-"Claude Code 세션에서 번역"은 할 수 없다. Claude Code는 저작권이 있는 가사 전문을 옮기거나 번역해 주지 않는다. 번역은 사용자가 화면에 붙여 넣거나 파일로 들여오는 방식으로 바꾸고, 조사 문서 결론과 2절을 고쳤다. 이 작업에서도 실제 가사를 받거나 읽지 않았고, 테스트와 브라우저 확인에는 직접 지은 문장만 썼다.
+"Translate in a Claude Code session" cannot be done. Claude Code does not copy or translate full copyrighted lyrics. I changed translation to the user pasting it on the screen or importing it from a file, and fixed the conclusion and section 2 of the survey document. In this work too I did not fetch or read real lyrics, and I used only sentences I wrote myself in the tests and the browser check.
 
-## 판단
+## Judgments
 
-| 항목               | 판단                                                                                                                                                                                                  |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 기본판 고르기      | 8곡 이상인 판 중 곡 수가 가장 적은 판, 같으면 가장 이른 판                                                                                                                                            |
-| Taylor's Version   | From the Vault 곡만 넣는다. 가사 영상 트랙과 같은 제목의 반복은 뺀다                                                                                                                                  |
-| 곡 제목            | "(Taylor's Version)", "(From the Vault)"는 뺀다                                                                                                                                                       |
-| 스크립트 다시 실행 | 앨범의 수록곡을 바꿔 넣는다. 어느 앨범에도 없는 곡은 지우되, 가사가 있는 곡은 남기고 그 수를 출력한다                                                                                                 |
-| 곡 수 확인         | `listAlbums`에 확인한 곡 수를 적어 둔다. 받은 곡 수가 다르면 아무것도 저장하지 않고 멈춘다. 판본 ID 고정 대신 택했다. 사람이 곡 수를 보고 목록을 고칠 기회를 준다                                     |
-| 곡 검색            | 곡이 200곡 안팎이라 화면에서 거른다                                                                                                                                                                   |
-| 번역 붙여 넣기     | 원문의 글자 있는 줄과 번역의 글자 있는 줄을 차례로 맞춘다. 빈 줄은 세지 않는다. 수가 다르면 저장하지 않는다                                                                                           |
-| 가사 고치기        | 내용이 같은 줄은 위치가 바뀌어도 번역을 유지한다. 같은 내용이 여러 번이면 번역을 하나씩 쓴다. 내용이 그대로면 아무것도 바꾸지 않아 출처가 유지된다. 복잡한 정렬(LCS) 대신 내용으로 찾아 단순하게 했다 |
-| 붙여 넣기 대화상자 | 저장 중에는 닫히지 않는다. 입력을 고친 뒤에는 Esc와 바깥 클릭으로 닫히지 않고, 취소·닫기 버튼으로만 닫힌다                                                                                            |
-| 검색어             | URL `?q=`에 둔다. 곡을 열었다 돌아와도 유지된다                                                                                                                                                       |
-| `lang`             | 원문 줄에 `lang="en"`을 넣어 스크린리더가 영어로 읽게 한다                                                                                                                                            |
+| Item                      | Judgment                                                                                                                                                                                                                                                                                                            |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Choosing the base edition | Among editions with 8 or more songs, the one with the fewest songs, and for a tie the earliest edition                                                                                                                                                                                                              |
+| Taylor's Version          | Include only the From the Vault songs. Leave out the lyric video tracks and repeats with the same title                                                                                                                                                                                                             |
+| Song title                | Remove "(Taylor's Version)" and "(From the Vault)"                                                                                                                                                                                                                                                                  |
+| Running the script again  | Replace the tracks of an album. Delete songs that are in no album, but keep songs that have lyrics and print their count                                                                                                                                                                                            |
+| Checking the song count   | Write the confirmed song count in `listAlbums`. If the count received differs, save nothing and stop. I chose it instead of pinning the edition ID. It gives a person the chance to look at the song count and fix the list                                                                                         |
+| Song search               | There are around 200 songs, so filter on the screen                                                                                                                                                                                                                                                                 |
+| Pasting a translation     | Match the lines with text in the original to the lines with text in the translation in order. Blank lines are not counted. If the counts differ, do not save                                                                                                                                                        |
+| Editing lyrics            | Lines with the same content keep their translation even if their position changes. If the same content appears several times, use the translations one each. If the content is unchanged, nothing is changed, so the source is kept. I kept it simple by looking up by content instead of a complex alignment (LCS) |
+| Paste dialog              | It does not close while saving. After the input is edited, it does not close with Esc or an outside click, only with the cancel and close buttons                                                                                                                                                                   |
+| Search term               | Kept in the URL `?q=`. It is kept when you open a song and come back                                                                                                                                                                                                                                                |
+| `lang`                    | Put `lang="en"` on the original lines so that screen readers read them in English                                                                                                                                                                                                                                   |
 
-## 변경 — 2026-10-31
+## Changes: 2026-10-31
 
 - DB: `database/migrations/007_songs.sql`. `artists`, `albums`, `songs`, `album_tracks`, `lyric_lines`, `import_sources`.
 - API: `backend/src/routes/songs.ts`. `GET /api/songs`, `GET /api/songs/:id`, `PUT /api/songs/:id/lyrics`, `PUT /api/songs/:id/translation`.
-- 스크립트: `backend/src/song-list.ts`(고르기 규칙), `backend/src/import-song-list.ts`, `npm run songs:import -w backend`. 곡 이름과 길이만 받는다(CC0). MusicBrainz가 `503`이면 기다렸다 다시 시도하고, 판본이 많으면 페이지를 넘긴다.
-- 화면: `frontend/src/songs.tsx`, `frontend/src/song-data.ts`, `frontend/src/app.tsx`의 `/songs`, `/songs/:id`.
-- 이 PC의 앱 DB `cert`: 곡 목록 198곡을 넣었다. 가사는 넣지 않았다.
+- Script: `backend/src/song-list.ts` (the choosing rules), `backend/src/import-song-list.ts`, and `npm run songs:import -w backend`. It fetches only song names and lengths (CC0). If MusicBrainz gives `503`, it waits and tries again, and if there are many editions it pages through them.
+- Screens: `frontend/src/songs.tsx`, `frontend/src/song-data.ts`, and `/songs` and `/songs/:id` in `frontend/src/app.tsx`.
+- This PC's app DB `cert`: put in the song list of 198 songs. I did not put in lyrics.
 
-## 1차 코드 리뷰 반영 — 2026-10-31
+## Applied the 1st code review: 2026-10-31
 
-독립 리뷰의 중간 5건, 낮음 8건, 불확실 2건을 확인했다.
+I checked 5 medium, 8 low, and 2 uncertain findings of the independent review.
 
-| 지적                                            | 처리                                                            |
-| ----------------------------------------------- | --------------------------------------------------------------- |
-| 대화상자를 닫으면 포커스가 사라짐               | `useSectionFocus`로 연 버튼에 되돌림                            |
-| 저장 중 닫을 수 있음, 입력이 확인 없이 사라짐   | 저장 상태를 화면으로 올려 막음(판단 표)                         |
-| 줄을 끼워 넣으면 뒤쪽 번역이 지워짐             | 내용으로 찾도록 바꿈                                            |
-| 다시 실행하면 판본이 바뀌어 곡이 사라질 수 있음 | 곡 수가 다르면 저장하지 않음. 남겨진 곡 수 출력                 |
-| 번역 저장의 경쟁, `updated_at`                  | 곡 행을 잠그는 트랜잭션으로 묶고 `updated_at`을 고침            |
-| 내용이 같아도 출처가 사라짐                     | 내용이 같으면 아무것도 바꾸지 않음                              |
-| 한 녹음이 다른 제목으로 실리면 실패             | 녹음 ID로도 중복 제거, 쓰이지 않는 `ON CONFLICT` 삭제           |
-| 쓰기 대상 DB를 확인하지 않음                    | `DATABASE_URL`이 없으면 멈추고 대상을 출력(비밀번호 제외)       |
-| 돌아오면 검색어가 초기화됨                      | URL에 둠. 스크롤 위치는 유지하지 않는다                         |
-| 문서 어긋남                                     | 다음 작업, 조사 문서, README 수정                               |
-| 저장 로직을 테스트할 수 없음                    | `song-list-save.ts`로 나누고 재실행 통합 테스트 추가            |
-| 불확실: 아포스트로피 검색                       | 실제 데이터의 제목이 `’`를 써서 실제 문제였다. 양쪽을 같게 맞춤 |
-| 불확실: 괄호 하나에 합친 표기                   | 실제 198곡 제목에 없음을 확인. 고치지 않음                      |
+| Finding                                                                      | Handling                                                                             |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Focus is lost when the dialog closes                                         | Returned focus to the button that opened it with `useSectionFocus`                   |
+| It can be closed while saving, and the input disappears without confirmation | Raised the save state to the screen to block it (judgment table)                     |
+| Inserting a line erases the later translations                               | Changed to look up by content                                                        |
+| Running again can change the edition and lose songs                          | Does not save if the song count differs. Prints the number of songs left             |
+| Races in saving translations, `updated_at`                                   | Wrapped in a transaction that locks the song row, and fixed `updated_at`             |
+| The source disappears even if the content is the same                        | If the content is the same, nothing is changed                                       |
+| It fails if one recording appears under another title                        | Also removes duplicates by recording ID, and deleted the unused `ON CONFLICT`        |
+| The target DB for writing is not checked                                     | Stops if `DATABASE_URL` is missing, and prints the target (without the password)     |
+| The search term is reset when you come back                                  | Kept in the URL. The scroll position is not kept                                     |
+| The docs do not match                                                        | Fixed the next steps, the survey document, and the README                            |
+| The save logic cannot be tested                                              | Split it into `song-list-save.ts` and added a rerun integration test                 |
+| Uncertain: apostrophe search                                                 | The titles in the real data use `’`, so it was a real problem. Made both sides equal |
+| Uncertain: notation merged into one parenthesis                              | Confirmed it is not in the real 198 song titles. Not fixed                           |
 
-## 2차 코드 리뷰 반영 — 2026-10-31
+## Applied the 2nd code review: 2026-10-31
 
-독립 리뷰의 중간 2건, 낮음 7건, 불확실 2건을 확인했다.
+I checked 2 medium, 7 low, and 2 uncertain findings of the independent review.
 
-| 지적                                              | 처리                                                                                                            |
-| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| 잘못된 연결 문자열이면 비밀번호가 출력될 수 있음  | URL로 읽을 수 없거나 `#`이 있으면 값을 보여 주지 않고 멈춤                                                      |
-| 검색창 값이 transition으로 갱신됨                 | `BrowserRouter`에 `useTransitions={false}`. 앱 전체에 적용되며, Suspense를 쓰는 곳이 없어 눈에 띄는 변화는 없다 |
-| 곡만 바뀌면 대화상자 상태가 남음                  | 곡 ID를 `key`로 준 화면으로 나눔                                                                                |
-| 저장 중에도 입력창을 고칠 수 있음                 | 저장 중 읽기 전용                                                                                               |
-| 포커스 대체 대상이 연결되지 않음                  | `h1`에 연결                                                                                                     |
-| 목록에서 뺀 앨범이 DB에 남음                      | 저장할 때 지움                                                                                                  |
-| 곡 수가 같으면 판본이 바뀌어도 멈추지 않음        | 숨겨지는 곡의 제목을 출력                                                                                       |
-| 아주 짧은 트랙이 저장 전체를 실패시킴             | 0초로 반올림되면 `NULL`                                                                                         |
-| 응답 없는 요청이면 대화상자를 닫을 수 없음        | 고치지 않음. 로컬 앱이고 새로고침으로 빠져나갈 수 있다                                                          |
-| 불확실: 출력 대상과 실제 접속 대상이 다를 수 있음 | 고치지 않음. `?host=`나 `PGHOST`를 쓰는 특수한 경우이고 이 프로젝트 설정은 쓰지 않는다                          |
-| 불확실: 한 응답의 상태와 줄이 잠시 어긋날 수 있음 | 고치지 않음. 사용자 한 명이고 다시 읽으면 맞다                                                                  |
+| Finding                                                                 | Handling                                                                                                                           |
+| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| A wrong connection string can print the password                        | If it cannot be read as a URL or has a `#`, it does not show the value and stops                                                   |
+| The search field value is updated by a transition                       | `useTransitions={false}` on `BrowserRouter`. It applies to the whole app, and nothing uses Suspense, so there is no visible change |
+| Dialog state stays when only the song changes                           | Split into a screen that gets the song ID as its `key`                                                                             |
+| The input can be edited while saving                                    | Read-only while saving                                                                                                             |
+| The focus fallback target is not connected                              | Connected it to the `h1`                                                                                                           |
+| An album removed from the list stays in the DB                          | Deleted when saving                                                                                                                |
+| It does not stop if the edition changes with the same song count        | Prints the titles of the songs that get hidden                                                                                     |
+| A very short track fails the whole save                                 | `NULL` if it rounds to 0 seconds                                                                                                   |
+| The dialog cannot be closed if a request gets no response               | Not fixed. It is a local app and you can get out by refreshing                                                                     |
+| Uncertain: the printed target and the real connection target can differ | Not fixed. It is a special case that uses `?host=` or `PGHOST`, and this project does not use them                                 |
+| Uncertain: the status and lines of one response can briefly disagree    | Not fixed. There is one user, and reading again makes it right                                                                     |
 
-## 테스트
+## Tests
 
-| 파일                                              | 검증한 동작                                                                                                                                                                      |
-| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `backend/test/song-list.test.ts`                  | 앨범 16장, 기본판 고르기, 여러 디스크 번호, 볼트 곡만 넣기, 가사 영상과 반복 제외, 제목 정리, 길이                                                                               |
-| `backend/test/songs.test.ts`                      | 줄 나누기, 앨범별 묶기, 404·400, 잘못된 입력의 한국어 400, 줄 수 불일치, 원문 없을 때, 저장 실패 시 되돌리기                                                                     |
-| `backend/test/song-list-save.integration.test.ts` | 다시 실행 시 수록곡 교체, 곡 ID 유지, 가사 없는 곡 삭제, 가사 있는 곡 유지와 보고, 실패 시 그대로                                                                                |
-| `backend/test/songs.integration.test.ts`          | 실제 DB에서 앨범 순서, 여러 앨범의 같은 곡, 저장과 줄 맞춤, 줄 수가 달라 저장 안 됨, 바뀐 줄만 번역 지움, 곡 삭제 시 줄 삭제, 곡 있는 아티스트 삭제 거부                         |
-| `frontend/src/songs.test.tsx`                     | 검색과 진행 상황 규칙, 목록과 상태, 검색 결과 없음, 빈 목록, 실패, 가사 없는 곡, 줄 맞춤 표시, 번역 없음 안내, 가사·번역 붙여 넣기, 거절 시 입력 유지, 없는 곡, LRCLIB 출처 링크 |
+| File                                              | Behavior verified                                                                                                                                                                                                                                                 |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `backend/test/song-list.test.ts`                  | 16 albums, choosing the base edition, several disc numbers, including only vault songs, excluding lyric videos and repeats, title cleanup, length                                                                                                                 |
+| `backend/test/songs.test.ts`                      | Splitting lines, grouping by album, 404 and 400, Korean 400 for wrong input, line count mismatch, when there is no original, rollback on save failure                                                                                                             |
+| `backend/test/song-list-save.integration.test.ts` | Replacing tracks on rerun, keeping the song ID, deleting songs without lyrics, keeping and reporting songs with lyrics, no change on failure                                                                                                                      |
+| `backend/test/songs.integration.test.ts`          | On a real DB: album order, the same song in several albums, saving and line matching, no save when line counts differ, clearing the translation of only the changed lines, deleting lines when a song is deleted, refusing to delete an artist that has songs     |
+| `frontend/src/songs.test.tsx`                     | Search and progress rules, list and status, no search results, empty list, failure, a song without lyrics, line matching display, no-translation message, pasting lyrics and translations, keeping the input on rejection, a missing song, the LRCLIB source link |
 
-## 검증
+## Verification
 
-- `TEST_DATABASE_URL=… npm run check`: 통과(exit 0). 포맷·lint·타입 통과, 백엔드 70개 통과(건너뜀 0), 프런트엔드 204개 통과·2개 건너뜀, 스킬 4개 통과, 빌드 성공. `npm run knip`: 결과 없음.
-- 곡 목록: `npm run songs:import -w backend`를 실제 MusicBrainz로 실행해 198곡을 받았다. 앨범별 곡 수는 11, 13, 14, 16, 13, 15, 18, 16, 15, 13, 16, 12곡과 볼트 6, 9, 6, 5곡이다. 첫 실행에서 `Red (Taylor's Version)`가 19곡으로 나와 가사 영상과 반복을 빼도록 고쳤다. 곡 수가 맞는지는 작성자가 알고 있는 수록곡 수와 비교했고, 공식 자료로 곡별 대조는 하지 않았다.
-- 브라우저: 헤드리스 Edge로 Vite 5206 + 백엔드 3106 + `cert_test`에서 직접 지은 문장으로 확인했다. 확인 뒤 테스트 DB의 곡을 지웠고, 스크린샷은 로컬에서만 봤다.
-  - 모바일 390×844: 앨범 16개, 검색과 결과 없음, 가사 없는 곡, 가사 붙여 넣기, 줄 수가 다른 번역 거절, 번역 저장. 원문과 번역이 위아래로 보인다.
-  - PC 1440×900: 같은 흐름. 원문과 번역이 나란히 보인다.
-  - 콘솔 오류·경고 없음, 가로 넘침 없음.
-- 프런트엔드 건너뜀 2건은 중앙 동기화로 들어온 `DARK_ONLY` 조건 테스트(`app-shell.test.tsx`, `theme.test.ts`)이고 이번 변경과 관계없다.
+- `TEST_DATABASE_URL=… npm run check`: pass (exit 0). Format, lint, and type checks pass, backend 70 passed (0 skipped), frontend 204 passed and 2 skipped, skills 4 passed, build succeeded. `npm run knip`: no findings.
+- Song list: ran `npm run songs:import -w backend` against the real MusicBrainz and received 198 songs. The song counts per album are 11, 13, 14, 16, 13, 15, 18, 16, 15, 13, 16, and 12, and the vault songs are 6, 9, 6, and 5. On the first run `Red (Taylor's Version)` came out with 19 songs, so I fixed it to leave out lyric videos and repeats. I compared whether the song counts are right with the number of tracks the author knows, and I did not check song by song against official sources.
+- Browser: checked with headless Edge on Vite 5206 + backend 3106 + `cert_test` using sentences I wrote myself. After the check I deleted the songs in the test DB, and I looked at the screenshots only locally.
+  - Mobile 390×844: 16 albums, search and no results, a song without lyrics, pasting lyrics, rejecting a translation with a different line count, and saving a translation. The original and translation are shown stacked.
+  - PC 1440×900: the same flow. The original and translation are shown side by side.
+  - No console errors or warnings and no horizontal overflow.
+- The 2 skipped frontend tests are the `DARK_ONLY` condition tests (`app-shell.test.tsx`, `theme.test.ts`) that came in with the central sync, and they are unrelated to this change.
 
-## 한계
+## Limits
 
-- 실제 가사와 번역은 넣지 않았다. 사용자가 화면에 붙여 넣거나 #64 스크립트로 넣는다. 이슈 완료 기준의 "원문과 번역이 줄 단위로 맞춰 보임"은 직접 지은 문장으로 확인했다.
-- 곡 200곡 안팎을 화면에서 하나씩 넣기는 어렵다. #64가 그 일을 줄인다.
-- 앱을 외부에 공개하기 전에 가사 화면을 인증 뒤에 두어야 한다(조사 문서 1절).
+- I did not put in real lyrics or translations. The user pastes them on the screen or puts them in with the #64 script. The issue done criterion "the original and translation line up line by line" was checked with sentences I wrote myself.
+- It is hard to enter around 200 songs one by one on the screen. #64 reduces that work.
+- Before the app is made public, the lyrics screen must be put behind authentication (section 1 of the survey document).

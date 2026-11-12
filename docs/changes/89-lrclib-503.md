@@ -1,90 +1,90 @@
-# #89 가사 받기가 LRCLIB 503 한 번에 전체를 멈춤
+# #89 The lyrics fetch stops entirely on a single LRCLIB 503
 
-- 이슈: [#89](https://github.com/sirloinbh/cert-manager/issues/89)
-- 브랜치: `fix/89-lrclib-503`
-- 앞선 작업: [#64 변경 기록](64-lyrics-scripts.md)
+- Issue: [#89](https://github.com/sirloinbh/cert-manager/issues/89)
+- Branch: `fix/89-lrclib-503`
+- Earlier work: [#64 change record](64-lyrics-scripts.md)
 
-## 문제
+## Problem
 
-사용자가 `npm run lyrics:import -w backend`를 처음 실행했다. 두 번 모두 몇 곡 만에 전체가 멈췄다.
+The user ran `npm run lyrics:import -w backend` for the first time. Both times the whole run stopped after a few songs.
 
-| 회차 | 저장 | 멈춘 곡                    | 출력                        |
-| ---- | ---- | -------------------------- | --------------------------- |
-| 1    | 6곡  | Tied Together With a Smile | `LRCLIB 503, 대기 1초 요청` |
-| 2    | 3곡  | Mary’s Song (Oh My My My)  | `LRCLIB 503, 대기 1초 요청` |
+| Run | Saved   | Song it stopped on         | Output                                                           |
+| --- | ------- | -------------------------- | ---------------------------------------------------------------- |
+| 1   | 6 songs | Tied Together With a Smile | `LRCLIB 503, 대기 1초 요청` (LRCLIB 503, asked to wait 1 second) |
+| 2   | 3 songs | Mary’s Song (Oh My My My)  | `LRCLIB 503, 대기 1초 요청` (LRCLIB 503, asked to wait 1 second) |
 
-두 곡 모두 정확 조회에서 맞는 결과가 없어 검색(`api/search`)으로 넘어간 곡이다. 같은 검색을 직접 3초 간격으로 6번 보내니 3번이 `503`과 `Retry-After: 1`이었다. 곡이 아니라 서버가 바빠서 생기는 일이다. 기존 코드는 503을 1초씩 쉬며 3번만 시도하고, 그래도 503이면 요청 제한으로 보고 전체를 멈췄다.
+Both songs had no matching result in the exact lookup and moved on to search (`api/search`). When I sent the same search 6 times by hand at 3 second intervals, 3 of them were `503` with `Retry-After: 1`. It happens because the server is busy, not because of the song. The old code rested 1 second each time and tried only 3 times on a 503, and if it was still 503 it treated it as a rate limit and stopped everything.
 
-## 변경 — 2026-11-03
+## Changes: 2026-11-03
 
-`backend/src/polite-fetch.ts`의 503 처리만 바꿨다.
+I changed only the 503 handling in `backend/src/polite-fetch.ts`.
 
-| 항목              | 전                      | 후                                                    |
-| ----------------- | ----------------------- | ----------------------------------------------------- |
-| 시도 횟수         | 3번                     | 5번                                                   |
-| 다시 시도 전 대기 | 요청한 시간(1초)        | 요청한 시간(없으면 0)과 5·10·20·40초 중 긴 쪽         |
-| 다 시도해도 503   | 요청 제한으로 전체 멈춤 | 그 곡만 실패(`LRCLIB 503, 5번 시도`)로 남기고 다음 곡 |
+| Item                      | Before                           | After                                                                                            |
+| ------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Number of attempts        | 3                                | 5                                                                                                |
+| Wait before retrying      | The requested time (1 second)    | The longer of the requested time (0 if none) and 5, 10, 20, 40 seconds                           |
+| Still 503 after all tries | Stops everything as a rate limit | Leaves only that song as failed (`LRCLIB 503, 5번 시도`, "5 attempts") and goes to the next song |
 
-바꾸지 않은 것: 429 처리(3번 시도 뒤 전체 멈춤), 300초 넘게 기다리라는 응답에 전체 멈춤, 연속 5곡 실패 시 멈춤. 서비스가 정말 멈췄으면 연속 실패 규칙이 전체를 멈춘다.
+Not changed: the 429 handling (stops everything after 3 attempts), stopping everything on a response that asks to wait over 300 seconds, and stopping after 5 failed songs in a row. If the service is really down, the consecutive failure rule stops everything.
 
-같은 함수를 쓰는 단어 어원 받기(`words:etymology`, kaikki.org)에도 똑같이 적용된다. 목록 받기(`words:import`)도 503이면 더 여러 번 시도한다(기다리는 시간은 아래 2차 리뷰 절). 요청이 한 번뿐이라 끝내 실패하면 지금처럼 오류로 끝난다.
+It applies the same way to the word etymology fetch (`words:etymology`, kaikki.org), which uses the same function. The list fetch (`words:import`) also tries more times on a 503 (the wait time is in the 2nd review section below). It has only one request, so if it finally fails, it ends with an error as it does now.
 
-요청 하나가 계속 바쁘면 약 75초(5+10+20+40초)를 더 쓴다.
+If one request stays busy, it spends about 75 more seconds (5+10+20+40 seconds).
 
-## 테스트
+## Tests
 
-| 파일                                | 추가한 테스트                                                                                        |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `backend/test/lyrics-fetch.test.ts` | `Retry-After: 1`인 503이 이어지면 5·10·20·40초를 기다리며 5번 시도하고, 요청 제한이 아닌 실패로 끝남 |
-| `backend/test/lyrics-fetch.test.ts` | 계속 503인 곡은 그 곡만 실패하고 다음 곡을 계속 받음                                                 |
+| File                                | Test added                                                                                                                                   |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `backend/test/lyrics-fetch.test.ts` | If 503 with `Retry-After: 1` continues, it waits 5, 10, 20, and 40 seconds and tries 5 times, and ends as a failure that is not a rate limit |
+| `backend/test/lyrics-fetch.test.ts` | A song that keeps getting 503 fails only that song, and the next songs keep being fetched                                                    |
 
-수정 전 코드에서 두 테스트가 실패하고(20개 통과, 2개 실패), 수정 후 통과함을 확인했다. 기존 503 테스트(`Retry-After: 5`를 5초 기다림)와 kaikki.org의 3600초 503에서 멈추는 테스트는 그대로 통과한다.
+I confirmed that the two tests fail on the code before the fix (20 passed, 2 failed) and pass after the fix. The existing 503 test (waits 5 seconds for `Retry-After: 5`) and the test that stops on the 3600 second 503 from kaikki.org still pass as they are.
 
-## 검증
+## Verification
 
-- `node ../node_modules/tsx/dist/cli.mjs --test test/lyrics-fetch.test.ts test/word-list.test.ts`(backend): 32개 통과.
-- `TEST_DATABASE_URL=… npm run check`: 통과(exit 0). 백엔드 120개 통과, 프런트엔드 240개 통과·2개 건너뜀, 스킬 4개 통과, 빌드 성공.
-- `npm run knip`: 결과 없음. `node .standards/check.mjs`, `node .standards/secret-scan.mjs`: 통과.
-- 화면 변경 없음.
+- `node ../node_modules/tsx/dist/cli.mjs --test test/lyrics-fetch.test.ts test/word-list.test.ts` (backend): 32 passed.
+- `TEST_DATABASE_URL=… npm run check`: pass (exit 0). Backend 120 passed, frontend 240 passed and 2 skipped, skills 4 passed, build succeeded.
+- `npm run knip`: no findings. `node .standards/check.mjs`, `node .standards/secret-scan.mjs`: pass.
+- No screen changes.
 
-## 1차 코드 리뷰 반영 — 2026-11-03
+## Applied the 1st code review: 2026-11-03
 
-독립 리뷰의 높음 1건, 중간 1건, 낮음 2건을 확인했다.
+I checked 1 high, 1 medium, and 2 low findings of the independent review.
 
-| 지적                                                                                                                                                 | 처리                                                                                                                                                        |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 503과 429가 섞이면 끝나지 않음 (높음). 시도 횟수 하나를 같이 써서 `=== 3`과 `=== 5`가 모두 빗나감. 503 세 번 뒤 429가 이어지면 1초마다 영원히 요청함 | 429와 503 횟수를 따로 세고 `>=`로 비교. 429는 3번째, 503은 5번째에 끝나므로 어떤 순서로 섞여도 한 요청은 최대 7번으로 끝남                                  |
-| `Retry-After` 없는 503이 60초씩 4번(240초) 기다리고 멈추지도 않음 (중간). 연속 5곡 실패까지 약 20분                                                  | `Retry-After` 없는 503은 5·10·20·40초(75초)만 기다림. 기다리는 시간은 300초를 넘지 않음                                                                     |
-| 기존 503 테스트가 전후를 구분하지 못하고 이름이 맞지 않음, 섞인 경우와 헤더 없는 경우 테스트 없음 (낮음)                                             | 기존 테스트를 `Retry-After: 30`으로 바꿔 요청 시간이 더 길면 그만큼 기다림을 확인. 헤더 없는 503, LRCLIB의 3600초 503에서 전체 멈춤, 섞인 경우 2가지를 추가 |
-| 섞인 응답 뒤 `5번 시도` 문구가 실제 503 횟수와 다름 (낮음)                                                                                           | 횟수를 따로 세면서 해결                                                                                                                                     |
+| Finding                                                                                                                                                                                       | Handling                                                                                                                                                                                                               |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| It does not end when 503 and 429 are mixed (high). One attempt counter was shared, so both `=== 3` and `=== 5` were missed. If 429 followed three 503s, it would request every second forever | Count 429 and 503 separately and compare with `>=`. 429 ends at the 3rd and 503 at the 5th, so however they are mixed, one request ends within at most 7 tries                                                         |
+| A 503 without `Retry-After` waited 60 seconds 4 times (240 seconds) and did not even stop (medium). About 20 minutes until 5 songs fail in a row                                              | A 503 without `Retry-After` waits only 5, 10, 20, and 40 seconds (75 seconds). The wait does not exceed 300 seconds                                                                                                    |
+| The existing 503 test could not tell before from after and its name did not fit, and there were no tests for the mixed case and the no-header case (low)                                      | Changed the existing test to `Retry-After: 30` to check that it waits that long when the requested time is longer. Added a 503 with no header, stopping everything on a 3600 second 503 from LRCLIB, and 2 mixed cases |
+| The `5번 시도` ("5 attempts") text after a mixed response differs from the real number of 503s (low)                                                                                          | Fixed by counting them separately                                                                                                                                                                                      |
 
-변경 표의 "다시 시도 전 대기"는 이제 "요청한 시간(없으면 0)과 5·10·20·40초 중 긴 쪽"이다. `Retry-After`가 300초 이하로 크면 그만큼 기다리므로, 곡 하나에 최대 약 20분(300초 × 4)까지 쓸 수 있다.
+"Wait before retrying" in the change table is now "the longer of the requested time (0 if none) and 5, 10, 20, 40 seconds". If `Retry-After` is large but at most 300 seconds, it waits that long, so one song can use up to about 20 minutes (300 seconds × 4).
 
-리뷰가 임시 스크립트로 503×3 뒤 429가 이어지면 끝나지 않음을 재현했다. 수정 후 섞인 경우 테스트에서 요청 수가 6번, 7번으로 끝남을 확인했다.
+The review reproduced with a temporary script that it does not end when 429 follows 503×3. After the fix, I confirmed in the mixed-case test that the number of requests ends at 6 and 7.
 
-- `node ../node_modules/tsx/dist/cli.mjs --test test/lyrics-fetch.test.ts test/word-list.test.ts`(backend): 35개 통과.
-- `TEST_DATABASE_URL=… npm run check`: 통과(exit 0). 백엔드 123개 통과, 프런트엔드 240개 통과·2개 건너뜀, 스킬 4개 통과. `npm run knip`, `node .standards/check.mjs`, `node .standards/secret-scan.mjs`: 통과.
+- `node ../node_modules/tsx/dist/cli.mjs --test test/lyrics-fetch.test.ts test/word-list.test.ts` (backend): 35 passed.
+- `TEST_DATABASE_URL=… npm run check`: pass (exit 0). Backend 123 passed, frontend 240 passed and 2 skipped, skills 4 passed. `npm run knip`, `node .standards/check.mjs`, `node .standards/secret-scan.mjs`: pass.
 
-## 2차 코드 리뷰 반영 — 2026-11-03
+## Applied the 2nd code review: 2026-11-03
 
-독립 리뷰는 1차 지적 4건이 모두 바르게 고쳐졌다고 확인했고, 낮음 5건을 냈다.
+The independent review confirmed that all 4 findings of the 1st were fixed correctly, and raised 5 low findings.
 
-| 지적                                                                                       | 처리                                    |
-| ------------------------------------------------------------------------------------------ | --------------------------------------- |
-| 섞인 경우 테스트는 예전 코드에서 실패하지 않고 멈춤. node:test에는 기본 시간 제한이 없음   | 테스트에 10초 시간 제한을 둠            |
-| 429 뒤 503, 번갈아 오는 경우 테스트 없음                                                   | 두 경우를 추가해 섞인 경우 4가지를 확인 |
-| `words:import`가 "더 오래" 기다린다는 문장이 1차 반영 뒤 일부만 맞음                       | 아래 "대기 시간"에서 고침               |
-| 75초, 20분은 곡이 아니라 요청 하나의 값. 곡 하나는 정확 조회와 검색, 요청 2번을 할 수 있음 | 아래 "대기 시간"에서 고침               |
-| 리뷰 전 테스트·검증 절은 예전 값(32개, `Retry-After: 5`)                                   | 그 시점의 기록이라 그대로 둠            |
+| Finding                                                                                                                           | Handling                                      |
+| --------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| The mixed-case test does not fail on the old code and just stops. node:test has no default time limit                             | Put a 10 second time limit on the test        |
+| No test for a 503 after a 429, or for them alternating                                                                            | Added both cases to check 4 mixed cases       |
+| The sentence that `words:import` waits "longer" is only partly right after the 1st fixes                                          | Fixed it in "Wait times" below                |
+| 75 seconds and 20 minutes are values for one request, not one song. One song can make 2 requests, the exact lookup and the search | Fixed it in "Wait times" below                |
+| The test and verification sections from before the review have the old values (32, `Retry-After: 5`)                              | They are records of that time, so I left them |
 
-### 대기 시간
+### Wait times
 
-- 503이 계속되면 요청 하나에 75초(5+10+20+40초)를 기다린 뒤 그 곡을 실패로 둔다. 곡 하나는 정확 조회와 검색을 하므로 최대 두 배다.
-- `Retry-After`가 300초 이하로 크면 그만큼 기다린다. 요청 하나에 최대 20분(300초 × 4)이고, 429 대기는 따로 더해진다. 서버가 매번 300초를 요청하면 연속 5곡 실패로 멈추기까지 길게는 1시간이 넘게 걸린다.
-- `words:import`: 예전에는 헤더 없는 503에 120초(60초 × 2), 지금은 75초를 기다린다. `Retry-After: 1`이면 예전 2초, 지금 75초다.
+- If 503 continues, one request waits 75 seconds (5+10+20+40 seconds) and then leaves that song as failed. One song does an exact lookup and a search, so at most double.
+- If `Retry-After` is large but at most 300 seconds, it waits that long. It is at most 20 minutes per request (300 seconds × 4), and the 429 wait is added separately. If the server asks for 300 seconds every time, it can take over 1 hour before it stops after 5 failed songs in a row.
+- `words:import`: it used to wait 120 seconds (60 seconds × 2) on a 503 without a header, and now waits 75 seconds. With `Retry-After: 1` it used to be 2 seconds and is now 75 seconds.
 
-- `node ../node_modules/tsx/dist/cli.mjs --test test/lyrics-fetch.test.ts test/word-list.test.ts`(backend): 35개 통과. `npm run check` 통과(백엔드 123개, 프런트엔드 240개 통과·2개 건너뜀, 스킬 4개), knip·표준 검사·비밀 검사 통과.
+- `node ../node_modules/tsx/dist/cli.mjs --test test/lyrics-fetch.test.ts test/word-list.test.ts` (backend): 35 passed. `npm run check` passed (backend 123, frontend 240 passed and 2 skipped, skills 4), and knip, the standards check, and the secret check passed.
 
-## 한계
+## Limits
 
-- 실제 LRCLIB로 다시 받는 것은 사용자가 한다. 남은 189곡을 받으며 503이 얼마나 줄었는지는 그 실행에서 드러난다.
+- Getting them again from the real LRCLIB is done by the user. How much the 503s decreased while fetching the remaining 189 songs will show up in that run.

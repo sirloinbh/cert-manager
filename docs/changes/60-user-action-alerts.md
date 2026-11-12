@@ -1,86 +1,86 @@
-# #60 직접 할 일을 앱 상단 알림으로 보여 주기
+# #60 Show things the user must do as notifications at the top of the app
 
-- 이슈: [#60](https://github.com/sirloinbh/cert-manager/issues/60)
-- 브랜치: `feat/60-user-action-alerts`
-- 설계: [서비스 범위와 데이터 구조](../design/scope-and-data-model.md) 5절(`user_actions`)
+- Issue: [#60](https://github.com/sirloinbh/cert-manager/issues/60)
+- Branch: `feat/60-user-action-alerts`
+- Design: section 5 (`user_actions`) of [Service scope and data model](../design/scope-and-data-model.md)
 
-## 목적
+## Purpose
 
-접수, 서류 확인처럼 앱이 대신할 수 없는 일을 앱을 쓰면서 놓치지 않게 한다. 정보처리기사 실기는 2027년 3회가 기한이고 접수 기간이 며칠뿐이다.
+Keep you from missing things the app cannot do for you, such as registration and checking documents, while you use the app. The deadline for the Engineer Information Processing practical exam is the 3rd session of 2027, and the registration period is only a few days.
 
-## 판단
+## Judgments
 
-| 항목        | 판단                                                                                                                             |
-| ----------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| 알림의 뜻   | 앱 안의 알림이다. 상단바 종 아이콘과 건수, 목록 패널, 앱을 열 때 한 번 나오는 토스트. 설계의 범위 밖인 푸시·메일은 만들지 않았다 |
-| 보이는 시점 | 알림 시작일(`remind_from`)부터 완료할 때까지. 내년 접수 알림이 지금 쌓이지 않는다                                                |
-| 정렬        | 마감이 가까운 순, 마감 없는 일은 뒤로. 지난 마감도 완료하기 전까지 보이고 빨간색이다                                             |
-| 저장 위치   | 새 테이블 `user_actions`. 공부 할 일(`study_tasks`)은 단계에 딸려 있고 진행률에 들어가므로 섞지 않았다                           |
-| 상단바      | 중앙 관리 파일 `app-shell.tsx`를 고치지 않고 `actions` 칸에 넣었다                                                               |
-| 링크        | `http`, `https` 주소만 받는다. 화면의 `href`가 되므로 `javascript:` 같은 값을 API와 테이블에서 막는다                            |
-| 화면 범위   | 보기와 완료 처리만 만들었다. 요구사항이 표시이기 때문이다. 등록, 완료 취소, 삭제는 API에만 있다                                  |
-| 개인 데이터 | 실제 할 일은 마이그레이션 시드로 넣지 않고 이 PC의 앱에 API로 넣었다                                                             |
+| Item              | Judgment                                                                                                                                                                                          |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Meaning of alerts | They are in-app notifications: a bell icon in the top bar with a count, a list panel, and a toast shown once when the app opens. I did not build push or email, which are out of the design scope |
+| When visible      | From the notification start date (`remind_from`) until it is completed. Next year's registration alerts do not pile up now                                                                        |
+| Sorting           | Nearest deadline first, with tasks that have no deadline last. A past deadline stays visible until it is completed and is red                                                                     |
+| Where stored      | A new table `user_actions`. Study tasks (`study_tasks`) belong to a stage and count in the progress, so I did not mix them                                                                        |
+| Top bar           | Put it in the `actions` slot without changing the centrally managed file `app-shell.tsx`                                                                                                          |
+| Link              | Accepts only `http` and `https` addresses. It becomes the `href` on the screen, so values like `javascript:` are blocked in the API and the table                                                 |
+| Screen scope      | Built only viewing and marking complete, because the requirement is display. Register, undo complete, and delete are only in the API                                                              |
+| Personal data     | I did not put the real tasks in a migration seed and put them into the app on this PC through the API                                                                                             |
 
-## 변경 — 2026-10-31
+## Changes: 2026-10-31
 
 - DB: `database/migrations/006_user_actions.sql`.
 - API: `backend/src/routes/user-actions.ts`. `GET /api/user-actions`, `POST`, `PUT /:id/completion`, `DELETE /:id`.
-- 화면: `frontend/src/user-actions.tsx`, `frontend/src/user-action-data.ts`, `frontend/src/app.tsx`.
-- 문서: 설계 5절과 이후 마이그레이션 예상 번호, `docs/plans/README.md`, 일일 기록.
-- 이 PC의 앱 DB `cert`에 직접 할 일 6건을 넣었다. 오늘 보이는 것은 2건이고 나머지는 알림 시작일에 나타난다.
+- Screens: `frontend/src/user-actions.tsx`, `frontend/src/user-action-data.ts`, `frontend/src/app.tsx`.
+- Docs: section 5 of the design and the estimated numbers of later migrations, `docs/plans/README.md`, and the daily log.
+- Put 6 things to do by hand into this PC's app DB `cert`. 2 are visible today, and the rest appear on their notification start dates.
 
-## 테스트
+## Tests
 
-| 파일                                            | 검증한 동작                                                                                                                                                                                                                          |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `backend/test/user-actions.test.ts`             | 목록 조건과 숫자 ID, 기본값, 잘못된 입력 10가지의 한국어 400(`javascript:` 링크 포함), 완료 입력, 없는 항목 404, 잘못된 ID 400, 삭제 204                                                                                             |
-| `backend/test/user-actions.integration.test.ts` | 실제 DB에서 알림 시작일 전후, 마감 순 정렬, 완료·재완료·취소·삭제, 대문자 링크 허용, 테이블 제약 3가지                                                                                                                               |
-| `frontend/src/user-actions.test.tsx`            | 건수와 패널 내용, 지난 마감, 토스트와 재표시 없음, 알림 없을 때, 완료 뒤 건수와 포커스, 마지막 항목, 중복 완료 방지, 완료 실패와 다시 읽기, 다시 읽기 실패, 첫 로드 실패와 재시도, 패널·탭 복귀 때 다시 읽기, 다른 행 대기, 99+ 배지 |
+| File                                            | Behavior verified                                                                                                                                                                                                                                                                                                                                                |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `backend/test/user-actions.test.ts`             | The list conditions and numeric IDs, defaults, Korean 400 for 10 kinds of wrong input (including a `javascript:` link), completion input, 404 for a missing item, 400 for a bad ID, delete 204                                                                                                                                                                   |
+| `backend/test/user-actions.integration.test.ts` | On a real DB: before and after the notification start date, sorting by deadline, complete, complete again, undo, and delete, allowing an uppercase link, and 3 table constraints                                                                                                                                                                                 |
+| `frontend/src/user-actions.test.tsx`            | The count and panel content, a past deadline, the toast and no showing again, when there are no alerts, the count and focus after completing, the last item, preventing duplicate completion, a failed completion and reload, a failed reload, a first load failure and retry, reloading when the panel or tab comes back, waiting on another row, the 99+ badge |
 
-다른 화면 테스트의 가짜 API에 `/api/user-actions`를 더했다.
+Added `/api/user-actions` to the fake API of the other screen tests.
 
-## 검증
+## Verification
 
-- `TEST_DATABASE_URL=… npm run check`: 통과(exit 0). 포맷·lint·타입 통과, 백엔드 46개 통과(건너뜀 0), 프런트엔드 183개 통과, 스킬 4개 통과, 빌드 성공.
-- `npm run knip`: 결과 없음.
-- 마이그레이션: 이 PC의 PostgreSQL 17에서 `006`을 `cert`, `cert_test`에 두 번씩 적용했고 오류가 없었다.
-- 브라우저: 헤드리스 Edge로 Vite 5206 + 백엔드 3106 + `cert_test`에서 확인했다. 임시 알림은 확인 뒤 지웠고, 스크린샷은 로컬에서만 봤다.
-  - 모바일 390×844, PC 1440×900 모두 같은 결과: 종 아이콘 "3건", 토스트 1번, 지난 마감이 맨 위에 빨간색, 시작일 전 항목은 숨김, 바로가기 링크, 완료하면 "2건"으로 줄고 포커스는 패널 제목, Esc로 닫으면 포커스는 종 아이콘.
-  - 콘솔 오류·경고 없음, 가로 넘침 없음.
-  - 1차 리뷰 보완 뒤: 모바일과 PC 모두 토스트가 종을 가리지 않고, 14건 목록을 스크롤해도 닫기 버튼이 보인다. 첫 로드 실패와 다시 불러오기, 2차 리뷰 보완은 테스트로만 확인했다.
+- `TEST_DATABASE_URL=… npm run check`: pass (exit 0). Format, lint, and type checks pass, backend 46 passed (0 skipped), frontend 183 passed, skills 4 passed, build succeeded.
+- `npm run knip`: no findings.
+- Migration: applied `006` twice each to `cert` and `cert_test` on this PC's PostgreSQL 17, and there were no errors.
+- Browser: checked with headless Edge on Vite 5206 + backend 3106 + `cert_test`. I deleted the temporary alerts after the check, and I looked at the screenshots only locally.
+  - Same result for mobile 390×844 and PC 1440×900: the bell icon "3건" ("3 items"), the toast once, the past deadline at the top in red, items before their start date hidden, the shortcut link, completing reduces it to "2건" ("2 items") with focus on the panel title, and closing with Esc puts focus on the bell icon.
+  - No console errors or warnings and no horizontal overflow.
+  - After the 1st review fixes: on both mobile and PC the toast does not cover the bell, and the close button stays visible even when you scroll a list of 14 items. The first load failure and reload, and the 2nd review fixes, were checked only by tests.
 
-## 자동 코드 리뷰 — 2026-10-31
+## Automatic code review: 2026-10-31
 
-1차(읽기 전용 리뷰 에이전트): 높음 0건, 중간 3건, 낮음 6건, 불확실 3건. 불확실 1건("알림 없음" 단언의 타이밍)을 뺀 나머지를 고쳤다.
+1st (read-only review agent): 0 high, 3 medium, 6 low, 3 uncertain. I fixed all except 1 uncertain one (the timing of the "no alerts" assertion).
 
-| 지적                                             | 처리                                                                  |
-| ------------------------------------------------ | --------------------------------------------------------------------- |
-| 대문자 스킴 링크가 500이 됨                      | 테이블 규칙을 API와 맞췄다. 이 PC의 두 DB에도 같은 제약을 다시 걸었다 |
-| 첫 로드 실패가 "알림 없음"과 구분되지 않음       | 종에 표시와 다른 라벨을 넣고 다시 불러오기 버튼을 만들었다            |
-| 앱을 켜 둔 채 날짜가 바뀌면 건수가 낡음          | 패널을 열 때, 탭이 다시 보일 때 다시 읽는다                           |
-| 진행 중 표시가 한 행뿐                           | 완료 요청 중에는 모든 행을 막는다                                     |
-| 완료 실패(404 포함) 뒤 행이 남음                 | 실패하면 목록을 다시 읽는다                                           |
-| 완료 실패 뒤 키보드 포커스가 빠질 수 있음        | `disabled` 대신 `aria-disabled`를 쓴다                                |
-| 모바일에서 토스트가 종을 가림(스크린샷으로 확인) | 이 토스트만 화면 아래에 띄운다                                        |
-| 긴 목록에서 닫기 버튼이 스크롤과 함께 사라짐     | 패널이 아니라 목록이 스크롤한다                                       |
-| 바로가기 링크 이름이 행마다 같음                 | 제목과 새 탭 안내를 넣었다                                            |
-| "한 번"과 큰 건수 표시를 지키는 테스트가 없음    | 테스트를 더했다                                                       |
+| Finding                                                           | Handling                                                                                   |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| A link with an uppercase scheme gives a 500                       | Matched the table rule to the API. I re-applied the same constraint to both DBs on this PC |
+| A first load failure is not told apart from "no alerts"           | Put a different label on the bell and made a reload button                                 |
+| If the date changes while the app stays on, the count is stale    | Read again when the panel opens and when the tab becomes visible                           |
+| The in-progress display is only one row                           | Block all rows while a completion request is running                                       |
+| The row stays after a failed completion (including 404)           | Read the list again if it fails                                                            |
+| Keyboard focus can be lost after a failed completion              | Use `aria-disabled` instead of `disabled`                                                  |
+| On mobile the toast covers the bell (confirmed with a screenshot) | Show only this toast at the bottom of the screen                                           |
+| In a long list the close button scrolls away                      | The list scrolls, not the panel                                                            |
+| The shortcut link name is the same on every row                   | Added the title and a new tab notice                                                       |
+| No test protects "once" and the big count display                 | Added tests                                                                                |
 
-"알림 없음" 테스트의 토스트 단언 타이밍은 1차에서 두었다가 2차 지적을 받아 고쳤다.
+The timing of the toast assertion in the "no alerts" test was left in the 1st round and fixed after a 2nd finding.
 
-2차(diff를 다시 본 리뷰 에이전트): 높음 0건, 중간 1건, 낮음 5건. 모두 고쳤고, 리뷰는 2회로 마쳤다.
+2nd (review agent that looked at the diff again): 0 high, 1 medium, 5 low. All were fixed, and the review ended after 2 rounds.
 
-| 지적                                                | 처리                                                                                     |
-| --------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| 1차의 `aria-disabled` 뒤 요청 중 버튼이 평소 모양임 | 흐리게 하고 누를 수 없게 했다                                                            |
-| 다시 읽는 동안 실패 표시가 사라짐                   | 다음 성공 때까지 마지막 오류를 유지한다                                                  |
-| 다시 불러오기를 누르면 포커스를 잃음                | 재시도 중에도 버튼을 유지한다                                                            |
-| 오류와 "없음" 문구가 함께 보임                      | 오류가 있으면 "없음"을 보이지 않는다                                                     |
-| 테스트가 이름이나 기록만큼 검증하지 않음            | 재시도 복구, 404로 사라지는 알림, 탭을 떠날 때, 토스트 대기 뒤 전체 개수 단언으로 고쳤다 |
-| 변경 기록의 근거가 사실과 다름                      | 위 문장으로 고쳤다                                                                       |
+| Finding                                                                 | Handling                                                                                                                        |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| After the 1st `aria-disabled`, the button while requesting looks normal | Dimmed it and made it unclickable                                                                                               |
+| The failure display disappears while reloading                          | Keep the last error until the next success                                                                                      |
+| Pressing reload loses focus                                             | Keep the button during the retry too                                                                                            |
+| The error and the "none" message show together                          | If there is an error, "none" is not shown                                                                                       |
+| The tests do not verify as much as the name or the record               | Changed to retry recovery, an alert that disappears by 404, leaving the tab, and the total count assertion after the toast wait |
+| The basis in the change record is wrong                                 | Fixed it with the sentence above                                                                                                |
 
-## 한계
+## Limits
 
-- 앱을 열어야 보인다. 앱이 꺼져 있으면 알려 주지 못한다.
-- 화면에서 알림을 추가하거나 날짜를 고칠 수 없다. 2027년 공고가 나와 날짜를 고칠 때는 API나 새 작업이 필요하다.
-- 알림의 접수 마감은 2026년 일정을 옮긴 잠정 값이다.
+- It is visible only when you open the app. If the app is off, it cannot notify you.
+- You cannot add alerts or edit dates on the screen. When the 2027 announcement comes out and you fix the dates, you need the API or new work.
+- The registration deadlines of the alerts are tentative values carried over from the 2026 schedule.

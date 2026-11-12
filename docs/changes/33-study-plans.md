@@ -1,73 +1,73 @@
-# #33 자격증별 공부 계획 기능 만들기
+# #33 Build the study plan feature per certification
 
-- 이슈: [#33](https://github.com/sirloinbh/cert-manager/issues/33)
-- 브랜치: `feat/33-study-plans`
-- 설계: [서비스 범위와 데이터 구조](../design/scope-and-data-model.md) 4절(순서 열)·5절(`study_stages`, `study_tasks`)
+- Issue: [#33](https://github.com/sirloinbh/cert-manager/issues/33)
+- Branch: `feat/33-study-plans`
+- Design: section 4 (order column) and section 5 (`study_stages`, `study_tasks`) of [Service scope and data model](../design/scope-and-data-model.md)
 
-## 목적
+## Purpose
 
-목표만 등록해서는 언제 무엇을 공부할지 알 수 없다. 목표마다 단계와 할 일을 적고, 진행률과 시험일까지 남은 날, 오늘 할 일을 볼 수 있게 한다. 실제 계획 내용은 [#34](https://github.com/sirloinbh/cert-manager/issues/34)에서 쓴다.
+Registering only goals does not tell you when to study what. Write stages and tasks for each goal, and make it possible to see the progress, the days left until the exam, and today's tasks. The real plan content is written in [#34](https://github.com/sirloinbh/cert-manager/issues/34).
 
-## 변경 — 2026-10-30
+## Changes: 2026-10-30
 
-- DB: `database/migrations/004_study_plans.sql`로 `study_stages`, `study_tasks`를 만들었다. 열은 설계 5절 그대로다. 순서 UNIQUE는 설계 4절대로 `DEFERRABLE INITIALLY DEFERRED`인 표 제약이다.
+- DB: created `study_stages` and `study_tasks` with `database/migrations/004_study_plans.sql`. The columns are exactly as in section 5 of the design. The order UNIQUE is a table constraint that is `DEFERRABLE INITIALLY DEFERRED`, as in section 4 of the design.
 - API: `backend/src/routes/study-plans.ts`
-  - `GET /api/certifications/:id/plan`: 단계를 순서대로, 단계마다 할 일을 순서대로 묶어 준다. 없는 목표는 404.
-  - `POST /api/certifications/:id/stages`, `PUT`·`DELETE /api/study-stages/:id`. 단계를 지우면 그 할 일도 지워진다.
+  - `GET /api/certifications/:id/plan`: returns the stages in order, with the tasks of each stage grouped in order. 404 for a missing goal.
+  - `POST /api/certifications/:id/stages`, `PUT` and `DELETE /api/study-stages/:id`. Deleting a stage deletes its tasks.
   - `POST /api/study-stages/:id/tasks`, `PUT`·`DELETE /api/study-tasks/:id`.
-  - `PATCH /api/study-tasks/:id/completion`: `{ completed }`. 이미 끝낸 할 일을 다시 끝내도 처음 끝낸 시점을 지킨다.
-  - `GET /api/study-tasks/today`: 끝내지 않았고 마감이 오늘이거나 지난 할 일을 마감 빠른 순으로, 목표 이름과 함께 준다.
-  - 새 단계와 할 일은 맨 뒤에 붙는다(`MAX(position) + 1`). 응답마다 `daysUntilDue`(오늘부터 마감까지 날 수, 지났으면 음수)를 넣는다.
-- 화면
-  - 목표 상세에 "공부 계획" 절을 넣었다. 전체 진행률, 목표 시험일까지 남은 날, 단계별 기간과 진행률, 할 일 체크, 마감일과 남은 날을 보여 준다. 끝내지 않고 마감이 지난 할 일은 빨간색으로 표시한다. 할 일이 없는 단계는 진행률을 표시하지 않는다.
-  - 단계·할 일 추가·수정 대화상자, 삭제 확인. 단계를 지울 때는 함께 지워지는 할 일 수를 적는다.
-  - 대시보드 "오늘 할 일" 카드. 할 일을 누르면 그 목표의 상세로 간다.
-- 공통으로 옮긴 코드: 응시 기록 화면에 있던 "다시 읽는 동안 목록 유지"를 `useReloading`(`frontend/src/use-load.ts`)으로, 포커스 복원을 `useSectionFocus`(`frontend/src/use-section-focus.ts`)로, 남은 날 문구를 `deadlineCountdown`(`frontend/src/certification-data.ts`)으로 옮겨 두 화면이 함께 쓴다.
+  - `PATCH /api/study-tasks/:id/completion`: `{ completed }`. Even if you finish an already finished task again, the first completion time is kept.
+  - `GET /api/study-tasks/today`: tasks that are not finished and whose deadline is today or past, earliest deadline first, with the goal name.
+  - New stages and tasks are added at the end (`MAX(position) + 1`). Every response includes `daysUntilDue` (days from today to the deadline, negative if past).
+- Screens
+  - Added a "Study plan" section to the goal detail. It shows the overall progress, the days left until the target exam date, the period and progress of each stage, task checkboxes, and deadlines with days left. A task that is not finished and past its deadline is shown in red. A stage with no tasks does not show progress.
+  - Add and edit dialogs for stages and tasks, and a delete confirmation. When deleting a stage, it says how many tasks are deleted with it.
+  - Dashboard "today's tasks" card. Pressing a task goes to the detail of that goal.
+- Code moved to be shared: moved "keep the list while reloading" from the attempt record screen to `useReloading` (`frontend/src/use-load.ts`), the focus restore to `useSectionFocus` (`frontend/src/use-section-focus.ts`), and the days-left text to `deadlineCountdown` (`frontend/src/certification-data.ts`), so both screens share them.
 
-고치지 않은 것: 단계와 할 일의 순서 바꾸기 화면은 만들지 않았다. 이슈의 할 일에 없고, 지금은 추가한 순서대로 보인다. 지연 UNIQUE는 설계대로 넣어 두었고, 두 행을 맞바꾸는 트랜잭션이 통과하는 것을 통합 테스트로 확인했다.
+Not fixed: I did not build a screen for reordering stages and tasks. It is not in the issue tasks, and for now they are shown in the order added. The deferred UNIQUE is in as designed, and an integration test confirmed that a transaction that swaps two rows passes.
 
-탭 두 개에서 같은 순간에 추가하면 순서 번호가 겹쳐 409 "이미 등록된 항목입니다"가 나올 수 있다. 사용자가 한 명이고 같은 탭에서는 저장 중 잠금이 막으며, 다시 저장하면 성공하므로 잠금이나 재시도를 넣지 않았다.
+If you add at the same moment in two tabs, the order numbers can collide and give a 409 "이미 등록된 항목입니다" ("This item is already registered"). There is one user, the lock during saving blocks it within the same tab, and saving again succeeds, so I added no lock or retry.
 
-## 테스트
+## Tests
 
-| 파일                                           | 검증한 동작                                                                                                                                                                                                                             |
-| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `backend/test/study-plans.test.ts`             | 계획 묶기와 숫자 ID, 오늘 날짜 전달, 제목 다듬기와 날짜 기본값, 잘못된 입력 9가지가 한국어 400이고 DB에 닿지 않음, 없는 항목 404 7가지, 잘못된 ID 400, 삭제 204                                                                         |
-| `backend/test/study-plans.integration.test.ts` | 실제 DB에서 순서 번호, 묶기, 오늘 할 일(지남·오늘 포함, 내일·날짜 없음 제외), 완료와 취소, 처음 끝낸 시점 유지, 수정 뒤 순서·완료 유지, 순서 맞바꾸기, 함께 삭제, 테이블 제약                                                           |
-| `frontend/src/study-plan-data.test.ts`         | 진행률, 할 일 없는 단계, 지남 판정(끝낸 일 제외), 기간 문구                                                                                                                                                                             |
-| `frontend/src/study-plan.test.tsx`             | 첫 단계·할 일 추가, 체크하면 응답 전에 단계·전체 진행률이 바뀜, 연속 클릭 한 번만 전송, 체크 실패와 되돌리기, 다시 읽기 실패 뒤 저장한 내용 표시, 시험일 표시, 지남 표시, 수정, 날짜 지우기, 삭제와 포커스, 저장 중 닫기, 대시보드 카드 |
+| File                                           | Behavior verified                                                                                                                                                                                                                                                                                                                               |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `backend/test/study-plans.test.ts`             | Plan grouping and numeric IDs, passing today's date, trimming titles and date defaults, 9 kinds of wrong input that give a Korean 400 and do not reach the DB, 7 kinds of 404 for a missing item, 400 for a bad ID, delete 204                                                                                                                  |
+| `backend/test/study-plans.integration.test.ts` | On a real DB: order numbers, grouping, today's tasks (including past and today, excluding tomorrow and no date), complete and undo, keeping the first completion time, keeping order and completion after an edit, swapping the order, deleting together, and the table constraints                                                             |
+| `frontend/src/study-plan-data.test.ts`         | Progress, a stage with no tasks, the past-due judgment (excluding finished tasks), period text                                                                                                                                                                                                                                                  |
+| `frontend/src/study-plan.test.tsx`             | Adding the first stage and task, checking changes the stage and overall progress before the response, a rapid second click is sent once, a failed check and the revert, showing the saved content after a failed reload, showing the exam date, showing past due, edit, clearing a date, delete and focus, closing while saving, dashboard card |
 
-`frontend/src/app.test.tsx`, `frontend/src/certifications.test.tsx`, `frontend/src/exam-attempts.test.tsx`의 가짜 API는 계획 요청에 빈 목록을 돌려주도록 고쳤다.
+The fake API of `frontend/src/app.test.tsx`, `frontend/src/certifications.test.tsx`, and `frontend/src/exam-attempts.test.tsx` was changed to return an empty list for plan requests.
 
-## 검증
+## Verification
 
-- 마이그레이션: 빈 테스트 DB(Docker `postgres:17-alpine`)에 자동 적용한 뒤 `004`를 다시 실행했다. `already exists, skipping` 알림만 나오고 오류가 없었다.
-- `TEST_DATABASE_URL=… npm run check`: 통과(exit 0). 포맷·lint·타입 통과, 백엔드 28개 통과(건너뜀 0), 프런트엔드 139개 통과, 스킬 4개 통과, 빌드 성공.
-- `npm run knip`: 결과 없음. `node .standards/check.mjs`: 통과. `node .standards/secret-scan.mjs`: 의심 항목 없음.
-- 브라우저(Playwright, Vite 5206 + 백엔드 3106 + 임시 DB). 콘솔 오류·경고 없음, 가로 넘침 없음.
-  - 모바일 390×844: 단계 추가, 할 일 4개 추가, 체크하면 전체·단계 진행률 0% → 25%, 2일 지남 빨간색, "목표 시험일까지: 44일 남음". 대시보드 "오늘 할 일"에 지난 일과 오늘 일만 나옴.
-  - PC 1440×900: 대시보드 할 일 링크로 상세 이동, 둘째 단계 추가, 할 일 수정, 체크로 50%, 단계 삭제 뒤 포커스가 "공부 계획" 제목, 끝낸 할 일이 대시보드에서 빠짐.
+- Migration: applied it automatically to an empty test DB (Docker `postgres:17-alpine`) and then ran `004` again. Only `already exists, skipping` notices appeared and there were no errors.
+- `TEST_DATABASE_URL=… npm run check`: pass (exit 0). Format, lint, and type checks pass, backend 28 passed (0 skipped), frontend 139 passed, skills 4 passed, build succeeded.
+- `npm run knip`: no findings. `node .standards/check.mjs`: pass. `node .standards/secret-scan.mjs`: no suspicious items.
+- Browser (Playwright, Vite 5206 + backend 3106 + temporary DB). No console errors or warnings and no horizontal overflow.
+  - Mobile 390×844: added a stage, added 4 tasks, checking changed the overall and stage progress from 0% to 25%, 2 days past due in red, "목표 시험일까지: 44일 남음" ("Until the target exam date: 44 days left"). The dashboard "today's tasks" showed only past and today tasks.
+  - PC 1440×900: moved to the detail from the dashboard task link, added a second stage, edited a task, checking gave 50%, after deleting a stage the focus went to the "Study plan" title, and the finished task disappeared from the dashboard.
 
-## 자동 코드 리뷰 — 2026-10-30
+## Automatic code review: 2026-10-30
 
-1차(읽기 전용 리뷰 에이전트): 막는 결함 없음. 중간 2건, 낮음 3건.
+1st (read-only review agent): no blocking defects. 2 medium and 3 low.
 
-| 지적                                                      | 처리                                                                                                                 |
-| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| 체크와 진행률이 서버 응답을 기다려서 "바로" 바뀌지 않음   | 누르는 즉시 반영하고 실패하면 되돌린다. 저장 중에는 체크 상자를 흐리게 보여 준다. 응답을 붙잡아 두는 테스트를 더했다 |
-| 저장 뒤 다시 읽기가 실패하면 저장한 내용이 안 보임        | 저장 응답을 바로 화면에 넣는다. 같은 코드인 응시 기록 화면도 함께 고쳤다                                             |
-| 마지막 단계를 지운 뒤 다시 읽기가 실패하면 추가 버튼 없음 | 빈 안내를 데이터 기준으로 보여 준다. 응시 기록 화면도 함께 고쳤다                                                    |
-| 띄어쓰기 없는 긴 제목이 넘칠 수 있음                      | 제목·진행률 문구·대화상자 설명에 `wrap-anywhere`를 넣었다                                                            |
-| 탭 두 개에서 동시에 추가하면 충돌 문구가 나옴             | 고치지 않았다. 이유는 위 "고치지 않은 것"에 적었다                                                                   |
+| Finding                                                                           | Handling                                                                                                                        |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Checking and progress wait for the server response and do not change "right away" | Reflect it the moment it is pressed and revert if it fails. Dim the checkbox while saving. Added a test that holds the response |
+| If the reload after saving fails, the saved content is not shown                  | Put the save response on the screen right away. Fixed the attempt record screen too, since it is the same code                  |
+| If the reload fails after deleting the last stage, there is no add button         | Show the empty message based on the data. Fixed the attempt record screen too                                                   |
+| A long title with no spaces can overflow                                          | Added `wrap-anywhere` to the title, the progress text, and the dialog description                                               |
+| Adding at the same time in two tabs shows a conflict message                      | Not fixed. The reason is in "Not fixed" above                                                                                   |
 
-2차(diff를 다시 본 리뷰 에이전트): 높음·중간 0건, 낮음 3건. 모두 고쳤고, 리뷰는 2회로 마쳤다.
+2nd (review agent that looked at the diff again): 0 high or medium, 3 low. All were fixed, and the review ended after 2 rounds.
 
-- 대시보드의 지난 할 일 글자가 오늘 할 일보다 큼. 중앙 `cn()`의 tailwind-merge가 `text-body-sm`을 색상으로 보고 지운다 → 호출부에서 `cn()`을 쓰지 않게 했다. 근본 수정은 [project-standards#357](https://github.com/sirloinbh/project-standards/issues/357)로 분리했다.
-- 할 일 제목이 줄바꿈되면 줄 간격이 1이고 체크 상자 위치가 어긋남 → 줄 간격을 지정했다.
-- 저장 중 클릭이 무시되는 것을 보조 기술이 알 수 없음 → `aria-disabled`를 넣었다.
+- The text of a past-due task on the dashboard is bigger than today's task. The tailwind-merge in the central `cn()` treats `text-body-sm` as a color and removes it → stopped using `cn()` at the call site. The root fix was split into [project-standards#357](https://github.com/sirloinbh/project-standards/issues/357).
+- When a task title wraps, the line spacing is 1 and the checkbox position is off → set the line spacing.
+- Assistive technology cannot tell that a click during saving is ignored → added `aria-disabled`.
 
-## main 병합 — 2026-10-31
+## Merge main: 2026-10-31
 
-- CodeQL js/missing-rate-limiting 경고 9건은 사용자 결정으로 닫지 않고 [#49](49-api-rate-limit.md)의 `express-rate-limit`로 고쳤다. #49 병합 뒤 이 브랜치에 `origin/main`을 병합했다. 충돌은 `docs/next-steps/README.md` 표 한 곳이고, #33이 끝난 쪽의 표를 택했다.
-- `TEST_DATABASE_URL=… npm run check`: 통과(exit 0). 백엔드 33개 통과(건너뜀 0), 프런트엔드 139개 통과, 스킬 4개 통과, 빌드 성공. `npm run knip`: 결과 없음.
-- 이 PC의 PostgreSQL 17에서 `004`를 `cert`, `cert_test`에 두 번씩 적용했고 오류가 없었다.
+- The 9 CodeQL js/missing-rate-limiting warnings were not closed but fixed with `express-rate-limit` in [#49](49-api-rate-limit.md) by user decision. After #49 was merged, I merged `origin/main` into this branch. The conflict was one place in the `docs/next-steps/README.md` table, and I chose the table from the side where #33 is done.
+- `TEST_DATABASE_URL=… npm run check`: pass (exit 0). Backend 33 passed (0 skipped), frontend 139 passed, skills 4 passed, build succeeded. `npm run knip`: no findings.
+- On this PC's PostgreSQL 17, applied `004` twice each to `cert` and `cert_test`, and there were no errors.
