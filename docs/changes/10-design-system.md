@@ -1,51 +1,51 @@
-# #10 공통 디자인 시스템으로 화면 전환
+# #10 Switch the screens to the common design system
 
-- 이슈: [#10](https://github.com/sirloinbh/english-study/issues/10) (중앙 추적 이슈 sirloinbh/project-standards#126)
-- 브랜치: `feat/10-design-system`
+- Issue: [#10](https://github.com/sirloinbh/english-study/issues/10) (central tracking issue sirloinbh/project-standards#126)
+- Branch: `feat/10-design-system`
 
-## 목적
+## Purpose
 
-8개 앱이 같은 토큰·컴포넌트·레이아웃·PWA 설정을 쓰기로 했다(중앙 ADR-0007, ADR-0008). 방법은 중앙 `docs/design-system.md` "기존 앱 전환"을 따랐다(workout-memo#160이 먼저 적용).
+The 8 apps decided to use the same tokens, components, layout, and PWA settings (central ADR-0007, ADR-0008). The method followed "Converting an existing app" in the central `docs/design-system.md` (workout-memo#160 applied it first).
 
-## 변경 — 2026-10-26
+## Changes: 2026-10-26
 
-### 패키지
+### Packages
 
-사용자가 직접 설치했다. 중앙 ADR-0007 표의 패키지(2026-10-22 사전 승인)와 react-router·vitest·jsdom·Testing Library(2026-10-26 승인)다. 모두 고정 버전, 게시 14일 경과, `--ignore-scripts`.
+The user installed them directly. They are the packages in the central ADR-0007 table (pre-approved 2026-10-22) and react-router, vitest, jsdom, and Testing Library (approved 2026-10-26). All have pinned versions, were published at least 14 days earlier, and use `--ignore-scripts`.
 
 - dependencies: `@sirloinbh/design-tokens` 1.0.0, `class-variance-authority` 0.7.1, `clsx` 2.1.1, `radix-ui` 1.7.0, `react-router` 8.4.0, `sonner` 2.0.8, `tailwind-merge` 3.7.0, `tw-animate-css` 1.4.0, `vaul` 1.1.2, `lucide-react` 0.468.0 → 1.52.0
 - devDependencies: `tailwindcss`·`@tailwindcss/vite` 4.3.3, `vitest` 5.0.3, `jsdom` 30.1.2, `@testing-library/react` 16.3.3, `@testing-library/dom` 10.4.2, `@testing-library/jest-dom` 7.0.1
-- lockfile 두 개(루트, `frontend/`): 지워진 패키지 없음, 버전이 바뀐 것은 `lucide-react`뿐. 새 항목은 모두 공식 레지스트리·무결성 값 있음·설치 스크립트 없음. `ioc-scan`: 의심 항목 없음
+- Two lockfiles (root, `frontend/`): no packages removed, and `lucide-react` is the only one whose version changed. All new entries come from the official registry, have integrity values, and have no install scripts. `ioc-scan`: no suspicious items
 
-### 공통 파일 (중앙 관리)
+### Shared files (centrally managed)
 
-중앙에서 이 앱의 `features.ui`·`features.vitest`를 켠 동기화 미리보기에서 뽑은 그대로다: `frontend/src/components/ui/` 15개와 테스트, `components/layout/`, `lib/utils.ts`·`theme.ts`, `public/theme-init.js`, `frontend/vitest.config.ts`.
+These are exactly what came out of the sync preview where the center turned on `features.ui` and `features.vitest` for this app: 15 files in `frontend/src/components/ui/` with their tests, `components/layout/`, `lib/utils.ts` and `theme.ts`, `public/theme-init.js`, and `frontend/vitest.config.ts`.
 
-### 앱 코드
+### App code
 
-- **화면:** 자체 셸(사이드바·헤더)을 `AppShell`로 바꾸고 페이지 주소를 붙였다(`/`, `/settings`). 자체 `style.css`는 지우고 공통 토큰과 `EmptyState`를 쓴다.
-- **진입점:** `app.tsx`(화면), `main.tsx`(렌더링과 운영 빌드에서만 서비스 워커 등록), `index.css`(Tailwind, `tw-animate-css`, 공통 토큰).
-- **PWA:** 아이콘 4개(중앙 `scripts/pwa-icons.mjs`), `index.html`의 manifest·아이콘·라이트/다크 `theme-color`·`viewport-fit=cover`·깜빡임 방지 스크립트.
-- **테스트·빌드:** `frontend`에 `test`(vitest) 스크립트와 `src/test/setup.ts`를 넣고, 루트 `npm test`가 프론트엔드 테스트도 돌린다. 운영 빌드는 `tsconfig.build.json`으로 테스트 파일을 뺀다. `vite.config.ts`에 Tailwind 플러그인.
-- **백엔드의 화면 테스트 삭제:** `backend/test/app-ui.test.ts`는 Vitest가 없을 때 가짜 React로 `main.tsx`를 실행해 보던 임시 테스트다. 같은 내용(제목·서버 상태·오류 알림·메뉴 이동)을 프론트엔드 Vitest 테스트가 실제 React로 검사하므로 지웠다.
-- **화면 테스트(`app.test.tsx`):** 서버 날짜 표시, 서버 오류 알림, 메뉴로 페이지 이동과 현재 페이지 표시, 알 수 없는 주소 처리.
+- **Screens:** replaced the own shell (sidebar and header) with `AppShell` and added page addresses (`/`, `/settings`). Deleted the own `style.css` and use the shared tokens and `EmptyState`.
+- **Entry points:** `app.tsx` (screens), `main.tsx` (rendering, and service worker registration only in the production build), `index.css` (Tailwind, `tw-animate-css`, shared tokens).
+- **PWA:** 4 icons (the central `scripts/pwa-icons.mjs`), and in `index.html` the manifest, icons, light and dark `theme-color`, `viewport-fit=cover`, and the flash prevention script.
+- **Tests and build:** added a `test` (vitest) script and `src/test/setup.ts` to `frontend`, and the root `npm test` also runs the frontend tests. The production build leaves out test files with `tsconfig.build.json`. Added the Tailwind plugin to `vite.config.ts`.
+- **Removed the screen test in the backend:** `backend/test/app-ui.test.ts` was a temporary test that ran `main.tsx` with a fake React when Vitest was not available. The frontend Vitest test checks the same things (title, server status, error alert, menu navigation) with the real React, so it was deleted.
+- **Screen test (`app.test.tsx`):** shows the server date, the server error alert, page navigation by menu and the current page display, and handling of an unknown address.
 
-## 검증
+## Verification
 
-- Prettier, ESLint, `tsc`(전체), 프론트엔드 테스트 40개 통과, `vite build`, `ioc-scan`
-- 백엔드 테스트는 DB가 필요해 CI에서 확인한다.
+- Prettier, ESLint, `tsc` (all), 40 frontend tests pass, `vite build`, `ioc-scan`
+- The backend tests need a DB, so they are confirmed in CI.
 
-## 검증 보완 — 2026-10-29 ([#20](https://github.com/sirloinbh/english-study/issues/20))
+## Verification supplement: 2026-10-29 ([#20](https://github.com/sirloinbh/english-study/issues/20))
 
-PR #11 병합 때 빠진 `npm run check` 전체 결과와 실제 브라우저 확인을 사후에 채웠다. 확인 시점의 main에는 #11 뒤에 중앙 표준 동기화(#12·#13·#16·#17, 브라우저 확인은 #18까지)와 보안 업데이트 #14가 더해져 있어, #11 직후 화면과 완전히 같지는 않다.
+Filled in after the fact the full `npm run check` result and the real browser check that were missing when PR #11 was merged. The main at the time of the check had central standards syncs after #11 (#12, #13, #16, #17, and #18 for the browser check) and security update #14 added, so it is not exactly the same as the screen right after #11.
 
-- `npm run check` (Node 24.21.0 / npm 11.19.0, main `0f1f171`): 통과. 백엔드 테스트 5개 중 4개 통과·1개 건너뜀(`TEST_DATABASE_URL` 미설정으로 DB 통합 테스트 건너뜀, 성공으로 세지 않음). 프론트엔드 Vitest 20개 파일·52개 통과. 스킬 테스트 4개 통과. 빌드 성공.
-- 브라우저 확인 (main `3e56615`): 임시 PostgreSQL 17 컨테이너(마이그레이션 `001` 적용)와 `npm run dev`의 API·Vite 서버를 띄우고, 설치된 Chrome headless를 DevTools 프로토콜로 화면 크기를 지정해 `/`와 `/settings`를 열었다.
+- `npm run check` (Node 24.21.0 / npm 11.19.0, main `0f1f171`): pass. Of 5 backend tests, 4 passed and 1 was skipped (the DB integration test was skipped because `TEST_DATABASE_URL` was not set, and it is not counted as success). Frontend Vitest 20 files and 52 tests passed. 4 skill tests passed. The build succeeded.
+- Browser check (main `3e56615`): started a temporary PostgreSQL 17 container (migration `001` applied) and the API and Vite servers from `npm run dev`, and opened `/` and `/settings` with the installed Chrome headless, setting the screen size through the DevTools protocol.
 
-| 화면   | 크기     | 결과                                                                                                |
-| ------ | -------- | --------------------------------------------------------------------------------------------------- |
-| 모바일 | 390×844  | 가로 넘침 없음(문서 너비 390). 헤더에 메뉴·테마 버튼, "서버 연결됨 · 2026-10-29", 빈 화면 안내 표시 |
-| PC     | 1440×900 | 가로 넘침 없음. 사이드바에서 현재 페이지 강조, 헤더 테마 버튼, 서버 상태, 빈 화면 안내 표시         |
+| Screen | Size     | Result                                                                                                                                                    |
+| ------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mobile | 390×844  | No overflow (document width 390). Menu and theme buttons in the header, "서버 연결됨 · 2026-10-29" ("Server connected") and the empty-state message shown |
+| PC     | 1440×900 | No overflow. The current page is highlighted in the sidebar, theme button in the header, server status, and empty-state message shown                     |
 
-- 관찰: 모바일에서 빈 화면 안내 문구가 "추가합니 / 다."처럼 단어 중간에서 줄바꿈된다. `EmptyState`는 중앙 관리 파일이지만 호출부 `app.tsx`에서 `className`으로 고칠 수 있어 [#22](https://github.com/sirloinbh/english-study/issues/22)로 분리했다.
-- 한계: Chrome 창 크기 옵션(`--window-size`)만으로는 headless 창이 최소 504px로 잡혀 390px 확인이 되지 않았다. 그래서 DevTools 프로토콜의 화면 크기 지정(`Emulation.setDeviceMetricsOverride`)으로 다시 확인했다. 다크 모드와 메뉴 열기 동작은 확인하지 않았다.
+- Observation: on mobile the empty-state message breaks in the middle of a word, as in "추가합니 / 다." (Korean text split mid-word). `EmptyState` is a centrally managed file, but it can be fixed with `className` in the caller `app.tsx`, so I split it into [#22](https://github.com/sirloinbh/english-study/issues/22).
+- Limit: with only the Chrome window size option (`--window-size`), the headless window had a minimum of 504px, so the 390px check was not possible. So I checked again with the DevTools protocol screen size override (`Emulation.setDeviceMetricsOverride`). I did not check dark mode or opening the menu.

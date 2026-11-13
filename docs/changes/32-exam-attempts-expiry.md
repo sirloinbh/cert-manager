@@ -1,90 +1,90 @@
-# #32 자격증 취득 기록과 만료일 관리 만들기
+# #32 Build certification acquisition records and expiry date management
 
-- 이슈: [#32](https://github.com/sirloinbh/cert-manager/issues/32)
-- 브랜치: `feat/32-exam-attempts-expiry`
-- 설계: [서비스 범위와 데이터 구조](../design/scope-and-data-model.md) 5절(`exam_attempts`)
+- Issue: [#32](https://github.com/sirloinbh/cert-manager/issues/32)
+- Branch: `feat/32-exam-attempts-expiry`
+- Design: section 5 (`exam_attempts`) of [Service scope and data model](../design/scope-and-data-model.md)
 
-## 목적
+## Purpose
 
-유효기간이 있는 어학 점수와 클라우드 자격증은 놓치면 다시 응시해야 한다. 응시·취득 기록을 남기고, 만료일을 자동으로 채워 만료가 가까운 자격증을 눈에 띄게 보여 준다.
+If you miss the expiry of a language score or a cloud certification that has a validity period, you have to take the exam again. Keep exam attempt and acquisition records, fill in the expiry date automatically, and make certifications that are close to expiring easy to see.
 
-## 결정 — 마지막 유효일은 "더한 날"
+## Decision: the last valid day is "the added day"
 
-설계 문서가 #32에서 정하기로 한 항목이다. 시험일에 유효기간을 더한 그날까지 유효한 것으로 계산한다(2026-10-30 확인).
+The design document left this item to be decided in #32. It is computed as valid through the day you get by adding the validity period to the exam date (confirmed 2026-10-30).
 
-| 대상        | 공식 안내                                                                                                                                                     | 판단                                                          |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| 토익        | "성적 유효 기간은 시험 시행일로부터 2년 뒤 해당 시험 일자까지입니다." ([한국토익위원회 토익스토리](https://www.toeicstory.co.kr/1041))                        | 더한 날로 확인                                                |
-| 토익 스피킹 | 토익과 같다는 안내를 검색 결과의 공식 사이트 FAQ 요약에서만 봤다. [FAQ 페이지](https://m.toeicswt.co.kr/customer/csFaq.php)는 본문을 읽지 못해 원문은 못 봤다 | 토익과 같은 계산                                              |
-| AWS         | "valid for three years from the date it was earned" ([AWS Recertification](https://aws.amazon.com/certification/policies/recertification/))                   | 날짜 단위 안내가 없다. 같은 계산을 쓰고 사용자가 고칠 수 있다 |
-| 운전면허    | 공식 문서로 확인하지 못했다. 2026년부터 갱신 기간이 생일 기준으로 바뀌었다는 보도·블로그가 있다                                                               | 기본값은 참고값이다. 실제 기한은 사용자가 확인해 고친다       |
+| Target           | Official guide                                                                                                                                                                                                                    | Judgment                                                                         |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| TOEIC            | "성적 유효 기간은 시험 시행일로부터 2년 뒤 해당 시험 일자까지입니다." ("The score is valid for 2 years from the exam date, through the same exam date.") ([Korea TOEIC Committee TOEIC Story](https://www.toeicstory.co.kr/1041)) | Confirmed as the added day                                                       |
+| TOEIC Speaking   | I saw that it is the same as TOEIC only in a summary of the official site FAQ in search results. I could not read the text of the [FAQ page](https://m.toeicswt.co.kr/customer/csFaq.php), so I did not see the original          | Same calculation as TOEIC                                                        |
+| AWS              | "valid for three years from the date it was earned" ([AWS Recertification](https://aws.amazon.com/certification/policies/recertification/))                                                                                       | There is no day-level guide. Use the same calculation, and the user can fix it   |
+| Driver's license | I could not confirm it with an official document. There are news reports and blogs saying that from 2026 the renewal period changed to be based on the birthday                                                                   | The default is a reference value. The user checks the real deadline and fixes it |
 
-## 변경 — 2026-10-30
+## Changes: 2026-10-30
 
-- DB: `database/migrations/003_exam_attempts.sql`로 `exam_attempts` 테이블을 만들었다. 열은 설계 5절 그대로이고, 목표별 조회 인덱스를 넣었다. 설계에 없던 제약 `exam_attempts_expires_after_exam`(만료일은 시험일 이후)을 추가해 설계 문서에도 적었다.
+- DB: created the `exam_attempts` table with `database/migrations/003_exam_attempts.sql`. The columns are exactly as in section 5 of the design, and I added an index for lookup by goal. I added a constraint that was not in the design, `exam_attempts_expires_after_exam` (the expiry date is after the exam date), and wrote it in the design document too.
 - API: `backend/src/routes/exam-attempts.ts`
-  - `GET /api/certifications/:id/attempts`: 시험일 늦은 순. 없는 목표는 404.
-  - `POST`(201), `PUT /:attemptId`(전체 교체), `DELETE /:attemptId`(204). 다른 목표의 기록은 404.
-  - `GET /api/exam-attempts/latest`: 목표마다 `passed`·`scored` 기록 중 시험일이 가장 늦은 것 하나. 대시보드 카드가 쓴다.
-  - 응답마다 `daysUntilExpiry`(오늘부터 만료일까지 날 수, 지났으면 음수)를 넣는다.
-  - 만료일 저장 규칙: `expiresOn`을 빼면 목표의 유효기간으로 SQL이 계산하고(`date + make_interval`, 말일 보정), 날짜는 그대로, `null`은 "모름"이다. 결과가 `waiting`·`failed`이거나 목표가 `none`이면 항상 `NULL`이다.
-  - 결과 전(`waiting`)에는 점수·등급을 받지 않는다. 결과 전 등급은 `NULL`, 결과 후 등급이 없으면 `''`이다.
-- `backend/src/routes/certifications.ts`: 목표를 `none`으로 바꾸면 기록의 `expires_on`을 함께 비운다. 한 SQL 문(CTE)이라 함께 성공하거나 함께 실패한다.
-- `backend/src/validation.ts`: 날짜·문자열 검사와 `body`, `toId`를 목표와 기록 라우트가 함께 쓰도록 옮겼다. 날짜 오류 문구가 칸 이름을 받는다.
-- 화면
-  - 목표 상세에 "응시·취득 기록" 절을 넣었다. 기록마다 결과, 점수·등급, 목표 달성, 만료 상태와 남은 날 수를 보여 준다. 이전 기록에는 "새 기록 있음"을 보여 준다.
-  - 기록 추가·수정 대화상자: 결과 전에는 점수·등급·만료일 칸을 숨긴다. 만료일은 시험일에서 유효기간 뒤로 미리 채우고, 시험일을 바꾸면 따라간다. 직접 고치거나 비우면 그 값을 지키고, 계산값과 다르면 "채우기" 버튼을 보여 준다.
-  - 결과를 새로 "합격"으로 저장하면 "목표 상태를 합격으로 바꿀까요?"를 묻는다. 답하면 목표 수정 API를 따로 부른다.
-  - 대시보드 "만료 임박" 카드: 만료됐거나 90일 이하로 남은 목표를 만료일 빠른 순으로 보여 준다.
-  - 표시 규칙은 `frontend/src/exam-attempt-data.ts`, 화면은 `frontend/src/exam-attempts.tsx`에 나눴다. `useLoad`는 `frontend/src/use-load.ts`로, 폼 공통 값은 `frontend/src/form-fields.ts`로, `CertificationPaths` 타입은 `frontend/src/certification-data.ts`로 옮겼다.
+  - `GET /api/certifications/:id/attempts`: latest exam date first. 404 for a missing goal.
+  - `POST` (201), `PUT /:attemptId` (full replace), `DELETE /:attemptId` (204). 404 for a record of another goal.
+  - `GET /api/exam-attempts/latest`: for each goal, the one record with the latest exam date among the `passed` and `scored` records. The dashboard card uses it.
+  - Every response includes `daysUntilExpiry` (days from today to the expiry date, negative if past).
+  - Expiry date save rule: if `expiresOn` is left out, SQL computes it from the goal's validity (`date + make_interval`, with end-of-month adjustment), a date is kept as it is, and `null` means "unknown". It is always `NULL` if the result is `waiting` or `failed` or the goal is `none`.
+  - Before the result (`waiting`), a score and grade are not accepted. The grade before the result is `NULL`, and a grade missing after the result is `''`.
+- `backend/src/routes/certifications.ts`: when a goal is changed to `none`, the `expires_on` of its records is cleared too. It is one SQL statement (a CTE), so both succeed or both fail together.
+- `backend/src/validation.ts`: moved the date and string checks and `body` and `toId` so that the goal and record routes share them. The date error message takes the field name.
+- Screens
+  - Added an "Exam attempt and acquisition records" section to the goal detail. Each record shows the result, the score and grade, goal achieved, and the expiry state with days left. Earlier records show "newer record exists".
+  - Add and edit record dialog: before the result, the score, grade, and expiry date fields are hidden. The expiry date is pre-filled as the validity period after the exam date, and follows when the exam date changes. If the user edits or clears it, that value is kept, and a "Fill" button is shown when it differs from the computed value.
+  - When a result is newly saved as "passed", it asks "Change the goal status to passed?". If answered, the goal update API is called separately.
+  - Dashboard "expiring soon" card: shows goals that have expired or have 90 days or fewer left, earliest expiry first.
+  - Split the display rules into `frontend/src/exam-attempt-data.ts` and the screen into `frontend/src/exam-attempts.tsx`. Moved `useLoad` to `frontend/src/use-load.ts`, the shared form values to `frontend/src/form-fields.ts`, and the `CertificationPaths` type to `frontend/src/certification-data.ts`.
 
-고치지 않은 것: 만료 임박 기록을 목표 목록(`/certifications`)에는 표시하지 않는다. 이슈는 "만료일 순 목록 또는 대시보드 카드"라서 카드로 했다. 저장된 결과의 시험일을 고쳐도 만료일은 저절로 바뀌지 않는다. 수정 화면에 나오는 "채우기" 버튼으로 다시 채운다.
+Not fixed: records that are expiring soon are not shown in the goal list (`/certifications`). The issue says "a list ordered by expiry date or a dashboard card", so I made a card. Editing the exam date of a saved result does not change the expiry date by itself. Fill it again with the "Fill" button that appears on the edit screen.
 
-## 테스트
+## Tests
 
-| 파일                                             | 검증한 동작                                                                                                                                                                                 |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `backend/test/exam-attempts.test.ts`             | 숫자 ID, 만료일 생략·`null`·날짜의 구분, 결과 전 등급, 잘못된 입력 9가지가 한국어 400이고 DB에 닿지 않음, 없는 목표·기록 404, 잘못된 ID 400, 삭제 204                                       |
-| `backend/test/exam-attempts.integration.test.ts` | 실제 DB에서 시험일 + 2년, 윤년 말일 보정(2024-02-29 → 2026-02-28), 남은 날 수(136, -244, 31), 정렬, 결과 입력 뒤 채움, 다른 목표 404, 최신 기록 고르기, `none` 전환, 함께 삭제, 테이블 제약 |
-| `frontend/src/exam-attempt-data.test.ts`         | 개월 더하기(윤년·말일·연도 넘김), 만료 상태(90일과 91일, 오늘, 지남, 모름, 없음), 남은 날 문구, 목표 달성, 기준 기록 고르기, 카드 정렬                                                      |
-| `frontend/src/exam-attempts.test.tsx`            | 미리 채움과 시험일 따라가기, 고치기·비우기, 만료 없는 목표, 최신 기록에만 만료 표시, 합격 질문(바꾸기·그대로 두기·이미 합격이면 안 물음), 서버 오류, 삭제 확인, 대시보드 카드               |
+| File                                             | Behavior verified                                                                                                                                                                                                                                                                           |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `backend/test/exam-attempts.test.ts`             | Numeric ID, telling apart an omitted expiry date, `null`, and a date, the grade before the result, 9 kinds of wrong input that give a Korean 400 and do not reach the DB, 404 for a missing goal or record, 400 for a bad ID, delete 204                                                    |
+| `backend/test/exam-attempts.integration.test.ts` | On a real DB: exam date + 2 years, leap-year end-of-month adjustment (2024-02-29 → 2026-02-28), days left (136, -244, 31), sorting, filling after the result is entered, 404 for another goal, picking the latest record, switching to `none`, deleting together, and the table constraints |
+| `frontend/src/exam-attempt-data.test.ts`         | Adding months (leap year, end of month, crossing a year), expiry state (90 and 91 days, today, past, unknown, none), days-left text, goal achieved, picking the reference record, card sorting                                                                                              |
+| `frontend/src/exam-attempts.test.tsx`            | Pre-fill and following the exam date, editing and clearing, a goal with no expiry, expiry shown only on the latest record, the passed question (change, leave as is, not asked if already passed), server error, delete confirmation, dashboard card                                        |
 
-1차 리뷰 뒤 `frontend/src/exam-attempts.test.tsx`와 `frontend/src/exam-attempt-data.test.ts`에 저장 중 닫기, 포커스 복원, 다시 읽기 실패, 상태 변경 실패, 채우기 버튼, 유효기간 모르는 목표, 범위 밖 연도 테스트를 더했다. 저장 중 닫기 방지와 포커스 복원은 코드를 잠시 되돌려 해당 테스트가 실패하는 것을 확인했다.
+After the 1st review, I added tests for closing while saving, focus restore, a failed reload, a failed status change, the Fill button, a goal with unknown validity, and an out-of-range year to `frontend/src/exam-attempts.test.tsx` and `frontend/src/exam-attempt-data.test.ts`. For the block on closing while saving and the focus restore, I briefly reverted the code and confirmed that the matching test fails.
 
-`frontend/src/app.test.tsx`, `frontend/src/certifications.test.tsx`의 가짜 API는 기록 요청에 빈 목록을 돌려주도록 고쳤다.
+The fake API of `frontend/src/app.test.tsx` and `frontend/src/certifications.test.tsx` was changed to return an empty list for record requests.
 
-## 검증
+## Verification
 
-- 마이그레이션: 빈 테스트 DB(Docker `postgres:17-alpine`)에 자동 적용한 뒤 `003`을 다시 실행했다. `already exists, skipping` 알림만 나오고 오류가 없었다.
-- `TEST_DATABASE_URL=… npm run check`: 통과. 포맷·lint·타입 통과, 백엔드 20개 통과(건너뜀 0), 프런트엔드 110개 통과, 스킬 4개 통과, 빌드 성공.
-- `npm run knip`: 결과 없음. `node .standards/check.mjs`: 통과.
-- 브라우저(Playwright, Vite 5206 + 백엔드 3106 + 임시 DB). 콘솔 오류·경고 없음, 가로 넘침 없음.
-  - 모바일 390×844: 토익 점수 910 등록(윤년 시험일에 2026-02-28, 2025-03-15에 2027-03-15로 채움, 목표 달성, 유효 136일). 합격 기록 → 질문 → 바꾸기로 목표 상태 "합격", 이전 기록 "새 기록 있음". 정보처리기사(만료 없음)는 만료일 칸 없음. 대시보드에 AWS CP "만료 임박 · 51일 남음".
-  - PC 1440×900: 결과 전 기록은 점수 칸 없음, 수정에서 결과를 넣으면 2029-10-20으로 채움, 삭제 확인 뒤 빈 안내. 대시보드 2열.
-  - 브라우저 확인에서 고친 것: 수정 대화상자가 닫히는 동안 제목이 "추가"로 바뀌고 폼이 사라지던 문제. 닫히는 동안 기록을 유지하도록 고치고 제목이 그대로인 것을 확인했다.
+- Migration: applied it automatically to an empty test DB (Docker `postgres:17-alpine`) and then ran `003` again. Only `already exists, skipping` notices appeared and there were no errors.
+- `TEST_DATABASE_URL=… npm run check`: pass. Format, lint, and type checks pass, backend 20 passed (0 skipped), frontend 110 passed, skills 4 passed, build succeeded.
+- `npm run knip`: no findings. `node .standards/check.mjs`: pass.
+- Browser (Playwright, Vite 5206 + backend 3106 + temporary DB). No console errors or warnings and no horizontal overflow.
+  - Mobile 390×844: registered a TOEIC score of 910 (filled 2026-02-28 for a leap-year exam date and 2027-03-15 for 2025-03-15, goal achieved, valid 136 days). Passed record → question → choosing change set the goal status to "passed" ("합격"), and the earlier record shows "newer record exists" ("새 기록 있음"). Engineer Information Processing (no expiry) has no expiry date field. The dashboard shows AWS CP "expiring soon · 51 days left" ("만료 임박 · 51일 남음").
+  - PC 1440×900: a record before the result has no score field, entering the result in edit filled 2029-10-20, and after the delete confirmation the empty message showed. The dashboard has 2 columns.
+  - Fixed in the browser check: while the edit dialog was closing, the title changed to "Add" and the form disappeared. I fixed it to keep the record while closing and confirmed that the title stays.
 
-## 자동 코드 리뷰 — 2026-10-30
+## Automatic code review: 2026-10-30
 
-1차(읽기 전용 리뷰 에이전트): 높음 0건, 중간 2건, 낮음 2건. 4건 모두 확인해 이 PR에서 고쳤다.
+1st (read-only review agent): 0 high, 2 medium, 2 low. I confirmed all 4 and fixed them in this PR.
 
-| 지적                                                                  | 처리                                                                                         |
-| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| 저장 중에 Esc·닫기로 대화상자를 닫으면 오류가 사라지고 중복 저장 가능 | 저장 중에는 닫히지 않게 했다                                                                 |
-| 대화상자를 닫으면 포커스가 사라짐(트리거 없는 Radix Dialog)           | `onCloseAutoFocus`로 연 버튼, 없으면 절 제목으로 돌렸다. 다시 읽는 동안 기존 목록을 유지한다 |
-| 만료일이 빈 저장 기록에서 안내 문구와 실제 동작이 다름                | 문구를 고치고, 계산값과 다르면 "채우기" 버튼을 보여 준다                                     |
-| 범위 밖 연도에서 `addMonths`가 오류를 던져 화면이 깨짐                | 9999년을 넘으면 빈 값을 돌려주고 날짜 칸에 `max`를 넣었다                                    |
+| Finding                                                                                       | Handling                                                                                                                                  |
+| --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Closing the dialog with Esc or close while saving loses the error and allows a duplicate save | Made it not close while saving                                                                                                            |
+| Focus is lost when the dialog closes (a Radix Dialog without a trigger)                       | Returned it with `onCloseAutoFocus` to the button that opened it, or to the section title if none. Keep the existing list while reloading |
+| The guide text differs from the real behavior for a saved record with an empty expiry date    | Fixed the text, and show a "Fill" button when it differs from the computed value                                                          |
+| `addMonths` throws an error for an out-of-range year and breaks the screen                    | Return an empty value past year 9999 and added `max` to the date field                                                                    |
 
-분리한 것: 질문 상자(`ConfirmDialog`)를 `trigger` 없이 열면 닫은 뒤 포커스가 `body`로 빠진다. 브라우저에서 확인했고, 중앙 관리 파일이라 [project-standards#356](https://github.com/sirloinbh/project-standards/issues/356)으로 분리했다. 동작에는 문제가 없고 키보드 사용자의 불편이라 이 PR을 막지 않는다.
+Split out: when the question box (`ConfirmDialog`) is opened without a `trigger`, focus falls to `body` after it closes. I confirmed it in the browser, and since it is a centrally managed file I split it into [project-standards#356](https://github.com/sirloinbh/project-standards/issues/356). Behavior is fine and it is an inconvenience for keyboard users, so it does not block this PR.
 
-2차(diff를 다시 본 리뷰 에이전트): 높음·중간 0건, 낮음 3건. 모두 고쳤고, 리뷰는 2회로 마쳤다.
+2nd (review agent that looked at the diff again): 0 high or medium, 3 low. All were fixed, and the review ended after 2 rounds.
 
-- "채우기"를 누르면 버튼이 사라져 포커스가 대화상자 맨 위로 튐 → 채운 날짜 칸으로 옮겼다.
-- 삭제 뒤 다시 읽기가 실패하면 지운 행이 남아 수정·삭제를 누를 수 있음. 1차 보완의 "기존 목록 유지"에서 생긴 문제다 → 삭제하면 바로 목록에서 뺀다.
-- 삭제 뒤 포커스가 `body`로 빠짐 → 절 제목으로 옮겼다.
+- Pressing "Fill" makes the button disappear and focus jumps to the top of the dialog → moved it to the date field that was filled.
+- If the reload after a delete fails, the deleted row stays and edit and delete can be pressed. It came from "keep the existing list" in the 1st fix → remove it from the list right away when deleted.
+- Focus falls to `body` after a delete → moved it to the section title.
 
-보완 뒤 브라우저에서 다시 확인했다. 채우기 뒤 포커스는 만료일 칸, 삭제 뒤에는 절 제목이고, 대화상자가 닫힌 뒤 화면이 잠기지 않으며 콘솔 오류·경고가 없다. 삭제 뒤 다시 읽기 실패는 테스트로만 확인했다.
+After the fixes I checked again in the browser. After Fill the focus is on the expiry date field, and after a delete it is on the section title, the screen is not locked after the dialog closes, and there are no console errors or warnings. A failed reload after a delete was checked only by a test.
 
-## CodeQL 알림 — 2026-10-30
+## CodeQL alerts: 2026-10-30
 
-- CodeQL이 새 API 경로 5개에 `js/missing-rate-limiting` 5건(#8~#12)을 냈다. SQL 쪽 경고는 없었다. CodeQL은 필수 검사가 아니다(필수: `ci / verify`, `ci / docker-build`).
-- 요청 횟수 제한은 `frontend/nginx.conf`의 `limit_req`가 맡는다(중앙 결정 project-standards#291). 사용자 확인을 받아 #8~#12와 main에 열려 있던 같은 종류의 #7(`backend/src/app.ts`)을 "고치지 않음"으로 닫았다.
+- CodeQL raised 5 `js/missing-rate-limiting` alerts (#8 to #12) on the 5 new API routes. There were no warnings on the SQL side. CodeQL is not a required check (required: `ci / verify`, `ci / docker-build`).
+- Rate limiting is handled by `limit_req` in `frontend/nginx.conf` (central decision project-standards#291). With the user's confirmation, I closed #8 to #12 and #7 of the same kind that was open on main (`backend/src/app.ts`) as "won't fix".

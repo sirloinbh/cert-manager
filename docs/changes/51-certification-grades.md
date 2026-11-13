@@ -1,81 +1,81 @@
-# #51 자격증별 등급 체계와 목표 등급 만들기
+# #51 Build the grade system per certification and the target grade
 
-- 이슈: [#51](https://github.com/sirloinbh/cert-manager/issues/51)
-- 브랜치: `feat/51-certification-grades`
-- 조사: [자격증별 등급 체계](../research/certification-grades.md)
+- Issue: [#51](https://github.com/sirloinbh/cert-manager/issues/51)
+- Branch: `feat/51-certification-grades`
+- Survey: [Grade systems by certification](../research/certification-grades.md)
 
-## 목적
+## Purpose
 
-자격증마다 공식 자료 기준의 등급을 고르고 목표 등급을 정한다. 응시 기록의 등급을 목표와 비교할 수 있게 한다.
+For each certification, choose a grade based on official sources and set a target grade. Make it possible to compare the grade of an attempt record with the goal.
 
-## 사용자 결정 — 2026-10-31
+## User decisions: 2026-10-31
 
-- "등급"은 자격증 안의 수준(예: 토익 B2, 토익 스피킹 AL)이다.
-- 목표와 응시 기록에 모두 연동한다.
+- "Grade" is a level inside a certification (for example TOEIC B2, TOEIC Speaking AL).
+- It is linked to both the goal and the attempt records.
 
-## 구현 판단
+## Implementation judgments
 
-| 항목                | 판단                                                                                                                                                                     |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 등급표 위치         | `backend/src/grade-scales.ts` 한 곳. 입력 검증에 쓰고 `GET /api/grade-scales`로 내려 준다. 프런트엔드에 복사하지 않는다                                                  |
-| 목표에 넣는 등급표  | 이름으로 짐작하지 않고 사용자가 고른다. 자격증 이름은 자유 입력이다                                                                                                      |
-| 응시 기록의 등급 열 | 자유 텍스트를 유지하고 서버에서 목록 검사를 하지 않는다. 개편 전 `Level 7` 같은 실제 성적을 남길 수 있어야 한다                                                          |
-| 점수로 등급 채우기  | 맞는 등급이 하나일 때만 채운다. IM1~IM3처럼 여럿이면 직접 고르게 한다. 직접 고른 값과 저장된 등급은 덮어쓰지 않는다. 등급이 빈 저장 기록은 수정 창을 열 때 점수로 채운다 |
-| 목표 달성           | 정한 목표(점수, 등급)를 모두 채울 때. 등급은 `passed`·`scored` 결과만 비교한다. Specialty와 운전면허는 같은 값일 때만                                                    |
-| 최근 결과           | 만료 표시와 같은 기준 기록(가장 늦은 `passed`·`scored`)의 등급                                                                                                           |
+| Item                              | Judgment                                                                                                                                                                                                                                                         |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Where the grade table lives       | One place, `backend/src/grade-scales.ts`. It is used for input validation and served with `GET /api/grade-scales`. It is not copied into the frontend                                                                                                            |
+| Grade table put on a goal         | Not guessed from the name; the user chooses it. The certification name is free input                                                                                                                                                                             |
+| Grade column of an attempt record | Keep it free text and do not check it against a list on the server. It must be able to keep real scores such as `Level 7` from before the revision                                                                                                               |
+| Filling the grade from a score    | Fill it only when exactly one grade matches. If there are several, as with IM1 to IM3, make the user choose. Do not overwrite a value the user chose or a saved grade. For a saved record with an empty grade, fill it from the score when the edit window opens |
+| Goal achieved                     | When every goal that is set (score, grade) is met. For the grade, compare only `passed` and `scored` results. For Specialty and the driver's license, only when the value is the same                                                                            |
+| Latest result                     | The grade of the same reference record as the expiry display (the latest `passed` or `scored`)                                                                                                                                                                   |
 
-## 변경 — 2026-10-31
+## Changes: 2026-10-31
 
-- DB: `database/migrations/005_certification_grades.sql`. `certifications`에 `grade_scale`, `target_grade`를 더했다. 체계가 없으면 목표 등급을 넣지 못한다.
-- API: `GET /api/grade-scales`. 목표 등록·수정이 `gradeScale`, `targetGrade`를 받고, 체계에 없는 등급은 한국어 400이다.
-- 화면
-  - 목표 폼: 등급 체계와 목표 등급 선택. 체계를 바꾸면 목표 등급을 비운다. 목록을 읽지 못하면 저장된 값을 유지한다.
-  - 응시 기록 폼: 체계가 있으면 등급을 목록에서 고르고 점수로 채운다. 체계가 없으면 지금처럼 직접 입력한다.
-  - 목표 상세: 등급표(높은 등급부터), 목표, 최근 결과, 출처 링크. 목표 등급 줄.
-  - 목표 목록: 요약에 목표 등급.
-- `docs/design/scope-and-data-model.md` 5절을 고쳤다.
+- DB: `database/migrations/005_certification_grades.sql`. Added `grade_scale` and `target_grade` to `certifications`. A target grade cannot be set without a system.
+- API: `GET /api/grade-scales`. Goal register and edit accept `gradeScale` and `targetGrade`, and a grade that is not in the system gives a Korean 400.
+- Screens
+  - Goal form: choose the grade system and the target grade. Changing the system clears the target grade. If the list cannot be read, the saved value is kept.
+  - Attempt record form: if there is a system, choose the grade from a list and fill it from the score. If there is no system, enter it directly as now.
+  - Goal detail: the grade table (highest grade first), the goal, the latest result, the source link, and the target grade line.
+  - Goal list: the target grade in the summary.
+- Fixed section 5 of `docs/design/scope-and-data-model.md`.
 
-## 검증
+## Verification
 
-- `TEST_DATABASE_URL=… npm run check`: 통과(exit 0). 포맷·lint·타입 통과, 백엔드 40개 통과(건너뜀 0), 프런트엔드 163개 통과, 스킬 4개 통과, 빌드 성공.
-- `npm run knip`: 결과 없음. `node .standards/check.mjs`: 통과. `node .standards/secret-scan.mjs`: 의심 항목 없음.
-- 마이그레이션: 이 PC의 PostgreSQL 17에서 `005`를 `cert`, `cert_test`에 두 번씩 적용했고 오류가 없었다.
-- 브라우저: 헤드리스 Edge(개발자 도구 프로토콜)로 Vite 5206 + 백엔드 3106 + `cert_test`에서 확인했다. Chrome 확장이 연결되어 있지 않아 이 방법을 썼고, 저장소에 넣지 않은 임시 스크립트로 돌렸다. 스크린샷은 로컬에서만 봤다. 임시 목표는 확인 뒤 지웠다. 1차 리뷰 보완은 테스트로 확인했고 브라우저로 다시 보지는 않았다.
-  - 모바일 390×844, PC 1440×900 모두 같은 결과: 목표 폼에서 체계를 바꾸면 목표 등급이 비워짐, 토익 스피킹 등급표 10줄, 120점은 등급을 비우고 IM1~IM3 안내, 170점은 AL로 채움, 저장 뒤 "목표 달성"과 "최근 결과", 목록에 "목표 등급 AL".
-  - 콘솔 오류·경고 없음, 가로 넘침 없음.
+- `TEST_DATABASE_URL=… npm run check`: pass (exit 0). Format, lint, and type checks pass, backend 40 passed (0 skipped), frontend 163 passed, skills 4 passed, build succeeded.
+- `npm run knip`: no findings. `node .standards/check.mjs`: pass. `node .standards/secret-scan.mjs`: no suspicious items.
+- Migration: applied `005` twice each to `cert` and `cert_test` on this PC's PostgreSQL 17, and there were no errors.
+- Browser: checked with headless Edge (the developer tools protocol) on Vite 5206 + backend 3106 + `cert_test`. The Chrome extension was not connected, so I used this method, and I ran it with a temporary script that is not in the repository. I looked at the screenshots only locally. I deleted the temporary goals after the check. I confirmed the fixes of the 1st review with tests and did not look at them again in the browser.
+  - Same result for mobile 390×844 and PC 1440×900: in the goal form, changing the system clears the target grade, the TOEIC Speaking grade table has 10 rows, 120 points clears the grade and shows the IM1 to IM3 note, 170 points fills AL, after saving "목표 달성" ("Goal achieved") and "최근 결과" ("Latest result") show, and the list shows "목표 등급 AL" ("Target grade AL").
+  - No console errors or warnings and no horizontal overflow.
 
-## 자동 코드 리뷰 — 2026-10-31
+## Automatic code review: 2026-10-31
 
-1차(읽기 전용 리뷰 에이전트): 높음 0건, 중간 3건, 낮음 10건. 12건을 이 PR에서 고쳤다.
+1st (read-only review agent): 0 high, 3 medium, 10 low. I fixed 12 in this PR.
 
-| 지적                                                                                          | 처리                                                                                     |
-| --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| IM1~IM3 구간이 "공개되어 있지 않다"는 안내가 근거보다 강함(사실 여부는 리뷰에서도 확정 못 함) | "공식 자료에서 확인하지 못했다"로 고쳤다. 조사 문서에 비공식 자료의 값과 신뢰도를 적었다 |
-| 불합격 기록에 "목표 달성"이 붙음                                                              | 등급은 `passed`·`scored`만 비교한다                                                      |
-| 목표 점수와 목표 등급 중 하나만 채워도 달성으로 표시                                          | 정한 목표를 모두 채워야 달성이다. 설계 문서에도 적었다                                   |
-| 목록이 늦게 오면 직접 입력한 등급이 사라짐                                                    | 입력 칸에서도 직접 고친 것으로 기록한다                                                  |
-| 등급이 빈 저장 기록은 안내와 선택값이 다름                                                    | 저장된 등급이 있을 때만 고정한다                                                         |
-| 고르지 않은 등급이 `''`로 저장됨                                                              | 고르는 칸의 "없음"과 같다고 보고 설계 문서에 예외로 적었다                               |
-| 상세 화면이 등급 목록 실패를 알리지 않음                                                      | 안내를 넣었다                                                                            |
-| 등급 체계 안내가 스크린리더에 연결되지 않고 불러오는 중 문구가 없음                           | `aria-describedby`와 문구를 넣었다                                                       |
-| 점수로 등급이 바뀌는 것을 스크린리더가 알 수 없음                                             | 안내에 `aria-live`를 넣었다                                                              |
-| AWS Professional 문구, 기술사 종목 설명이 출처보다 단정적임                                   | 문구를 고쳤다                                                                            |
-| 등급 체계 목록이 코드와 마이그레이션 두 곳에 있음                                             | 코드의 모든 체계를 실제 DB에 넣어 보는 통합 테스트를 더했다                              |
-| `markPassed`, 결과 입력 흐름, 실제 등급표 값의 테스트가 없음                                  | 테스트를 더했다                                                                          |
+| Finding                                                                                                                                   | Handling                                                                                                                               |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| The note that the IM1 to IM3 ranges are "not public" is stronger than the evidence (even the review could not confirm whether it is true) | Changed it to "could not confirm with official sources". Wrote the values and reliability of unofficial sources in the survey document |
+| "Goal achieved" is attached to a failed record                                                                                            | For the grade, compare only `passed` and `scored`                                                                                      |
+| It shows as achieved if only one of the target score and the target grade is met                                                          | Every goal that is set must be met to be achieved. Wrote it in the design document too                                                 |
+| If the list arrives late, a grade entered by hand disappears                                                                              | Also record it as edited by hand in the input field                                                                                    |
+| For a saved record with an empty grade, the guide and the selected value differ                                                           | Fix it only when there is a saved grade                                                                                                |
+| A grade that was not chosen is saved as `''`                                                                                              | I treated it as the same as "None" in the choice field and wrote it as an exception in the design document                             |
+| The detail screen does not report a failure to load the grade list                                                                        | Added a message                                                                                                                        |
+| The grade system guide is not connected to screen readers and there is no loading text                                                    | Added `aria-describedby` and text                                                                                                      |
+| Screen readers cannot tell that the grade changes by score                                                                                | Added `aria-live` to the guide                                                                                                         |
+| The wording for AWS Professional and the description of the Professional Engineer exam are more definite than the sources                 | Fixed the wording                                                                                                                      |
+| The list of grade systems is in two places, the code and the migration                                                                    | Added an integration test that puts every system in the code into the real DB                                                          |
+| No tests for `markPassed`, the result entry flow, and the real grade table values                                                         | Added tests                                                                                                                            |
 
-고치지 않은 것: 앞으로 등급표에서 레벨을 지우면 그 값을 가진 목표의 저장이 400이 된다. 지금 데이터에는 생기지 않는 일이라 등급표를 바꾸는 이슈에서 함께 처리한다.
+Not fixed: if a level is removed from a grade table in the future, saving a goal that has that value will give a 400. It does not happen with the current data, so it will be handled in the issue that changes the grade table.
 
-2차(diff를 다시 본 리뷰 에이전트): 높음·중간 0건, 낮음 3건. 모두 처리했고, 리뷰는 2회로 마쳤다.
+2nd (review agent that looked at the diff again): 0 high or medium, 3 low. All were handled, and the review ended after 2 rounds.
 
-- 등급을 "없음"으로 저장한 기록도 수정 창을 열면 점수의 등급으로 채워짐 → 체계가 있는 목표에서는 "등급 없음"을 구분하지 않기로 했으므로 동작을 두고 위 판단 표에 적었다. 채운 값은 저장 전에 화면에 보인다.
-- 등급 목록을 못 읽으면 더 높은 등급의 달성 표시가 사라지는데 안내에 없음 → 안내 문구에 넣었다.
-- 아래 테스트 표에 보완 커밋의 테스트가 빠짐 → 표를 고쳤다.
+- A record saved with the grade set to "None" is also filled with the grade of the score when the edit window opens → for a goal that has a system, "no grade" is not told apart, so I kept the behavior and wrote it in the judgment table above. The filled value is shown on the screen before saving.
+- If the grade list cannot be read, the achieved display for a higher grade disappears and the guide does not say so → added it to the guide text.
+- The test table below was missing the tests of the fix commit → fixed the table.
 
-## 테스트
+## Tests
 
-| 파일                                            | 검증한 동작                                                                                                                                                                                                                                                               |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `backend/test/grade-scales.test.ts`             | 등급표 API, 저장 값, 목표 없는 체계 허용, 잘못된 체계·등급·체계 없는 목표의 한국어 400, 점수 구간이 겹치지 않음(IM1~IM3 제외), 실제 등급표 점수(800점 B2, 945점 C1, 120점 IM1~IM3, 170점 AL)                                                                              |
-| `backend/test/grade-scales.integration.test.ts` | 실제 DB 저장·조회·비우기, 테이블 제약 2가지, 코드의 모든 체계를 테이블이 받음                                                                                                                                                                                             |
-| `frontend/src/grade-scale-data.test.ts`         | 구간 경계, 공유 구간, 높고 낮음 비교, 비교할 수 없는 값, Specialty와 운전면허, 목표 점수·등급 조합과 불합격 기록                                                                                                                                                          |
-| `frontend/src/grade-scales.test.tsx`            | 등급표 표시, 800점 → B2와 목표 달성, 목표 미달, 120점 직접 선택, 직접 고른 값 유지, 옛 형식 유지, 체계 없는 목표, 목표 폼, 목록 실패, 목록 표시, 불합격 기록, 목표 둘 다 필요, 결과 전에서 결과 입력, 저장 등급 유지와 빈 값 채움, 늦게 오는 목록, 합격 처리 때 등급 유지 |
+| File                                            | Behavior verified                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `backend/test/grade-scales.test.ts`             | The grade table API, saved values, allowing a system without a goal, Korean 400 for a wrong system, a wrong grade, and a goal without a system, score ranges not overlapping (except IM1 to IM3), real grade table scores (800 points B2, 945 points C1, 120 points IM1 to IM3, 170 points AL)                                                                                                                          |
+| `backend/test/grade-scales.integration.test.ts` | Real DB save, lookup, and clearing, 2 table constraints, and the table accepts every system in the code                                                                                                                                                                                                                                                                                                                 |
+| `frontend/src/grade-scale-data.test.ts`         | Range boundaries, shared ranges, comparing higher and lower, values that cannot be compared, Specialty and the driver's license, combinations of target score and grade, and failed records                                                                                                                                                                                                                             |
+| `frontend/src/grade-scales.test.tsx`            | Grade table display, 800 points → B2 and goal achieved, goal not met, choosing 120 points by hand, keeping a value chosen by hand, keeping the old format, a goal without a system, the goal form, list failure, list display, a failed record, both goals needed, entering a result from before the result, keeping the saved grade and filling an empty value, a late list, and keeping the grade when marking passed |

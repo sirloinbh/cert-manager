@@ -1,44 +1,44 @@
-# #20 #10 검증 기록 보완과 일일·다음 작업 문서 최신화
+# #20 Fill in the #10 verification record and update the daily and next-steps docs
 
-- 이슈: [#20](https://github.com/sirloinbh/english-study/issues/20)
-- 브랜치: `docs/20-docs-records-catch-up`
+- Issue: [#20](https://github.com/sirloinbh/english-study/issues/20)
+- Branch: `docs/20-docs-records-catch-up`
 
-## 목적
+## Purpose
 
-project-standards 준수 점검(2026-10-29)에서 빠진 문서 기록 3가지를 확인했다.
+The project-standards compliance check (2026-10-29) found 3 missing documentation records.
 
-- `docs/changes/10-design-system.md`에 `npm run check` 전체 결과와 모바일·PC 브라우저 확인이 없다(`AGENTS.md` 검증 명령).
-- `docs/daily/`에 2026-10-19 이후 기록이 없다.
-- `docs/next-steps/README.md`가 2026-10-19에 멈춰 있다.
+- `docs/changes/10-design-system.md` has no full `npm run check` result and no mobile and PC browser check (the `AGENTS.md` verification commands).
+- `docs/daily/` has no records after 2026-10-19.
+- `docs/next-steps/README.md` stopped at 2026-10-19.
 
-## 변경 — 2026-10-29
+## Changes: 2026-10-29
 
-- `docs/changes/10-design-system.md`: "검증 보완" 절 추가. `npm run check` 결과, 390×844·1440×900 브라우저 확인 결과, 관찰한 줄바꿈 문제와 확인하지 못한 범위를 적었다.
-- `docs/daily/`: 2026-10-21·22·26·27·28·29 기록을 새로 쓰고 `README.md` 목록에 넣었다. 이슈에는 26일·29일만 적었지만, 작업일마다 파일을 만드는 규칙에 따라 PR이 병합된 나머지 날(21일 #2, 22일 #4, 27일 #12, 28일 #13·#14)도 넣었다.
-- `docs/next-steps/README.md`: 보안 업데이트 PR #15(CI 실패)를 1순위로 올리고, `knip` 결과와 줄바꿈 문제, 로컬 Node 버전 차이를 "함께 볼 것"에 적었다.
+- `docs/changes/10-design-system.md`: added a "Verification supplement" section. It has the `npm run check` result, the 390×844 and 1440×900 browser check results, the line wrapping problem observed, and the scope that was not checked.
+- `docs/daily/`: wrote new records for 2026-10-21, 22, 26, 27, 28, and 29 and added them to the `README.md` list. The issue named only the 26th and 29th, but following the rule of making a file for every working day, I also added the other days when PRs were merged (the 21st #2, the 22nd #4, the 27th #12, the 28th #13 and #14).
+- `docs/next-steps/README.md`: moved security update PR #15 (CI failing) to the top priority, and wrote the `knip` result, the line wrapping problem, and the local Node version difference under "Also see".
 
-## 검증
+## Verification
 
-문서만 바뀌어 앱 테스트는 추가하지 않았다.
+Only docs changed, so I added no app tests.
 
-- `npm run format:check`: 처음에 표 정렬 때문에 2개 파일이 걸렸고, Prettier로 맞춘 뒤 통과했다.
-- 링크 검사: 바뀐 문서의 상대 링크가 모두 존재하는 파일을 가리킨다.
-- `npm run check` (Node 24.21.0 / npm 11.19.0, 이 브랜치): 통과. 백엔드 4개 통과·1개 건너뜀(`TEST_DATABASE_URL` 미설정, 성공으로 세지 않음), 프론트엔드 52개 통과, 스킬 4개 통과, 빌드 성공.
+- `npm run format:check`: at first 2 files failed because of table alignment, and it passed after fixing them with Prettier.
+- Link check: every relative link in the changed docs points to a file that exists.
+- `npm run check` (Node 24.21.0 / npm 11.19.0, this branch): pass. Backend 4 passed and 1 skipped (`TEST_DATABASE_URL` not set, not counted as success), frontend 52 passed, skills 4 passed, build succeeded.
 
-- 브라우저 확인 방법과 결과는 [#10 변경 기록](10-design-system.md)의 "검증 보완" 절에 있다. 확인에 쓴 임시 DB 컨테이너, API·Vite 서버, Chrome은 확인 후 모두 종료했다.
+- How the browser check was done and its result are in the "Verification supplement" section of the [#10 change record](10-design-system.md). The temporary DB container, the API and Vite servers, and Chrome used for the check were all shut down afterward.
 
-## 1차 자동 리뷰 반영 — 2026-10-29
+## Applied the 1st automatic review: 2026-10-29
 
-PR #21의 1차 리뷰(작성 맥락과 분리된 읽기 전용 에이전트)에서 4건이 나왔고 모두 이 PR에서 고쳤다.
+The 1st review of PR #21 (a read-only agent separate from the writing context) found 4 items, and all were fixed in this PR.
 
-- `10-design-system.md`: 확인 기준 커밋과 PR 범위가 맞지 않았다. `npm run check`는 `0f1f171`(#17까지), 브라우저 확인은 `3e56615`(#18까지)에서 했다고 나누어 적고, #14는 보안 업데이트로 구분했다.
-- `docs/daily/`: PR이 병합된 2026-10-21(#2)과 2026-10-22(#4) 기록이 빠져 있어 추가했다.
-- 링크 수: "12개"는 바뀌지 않은 `2026-10-19.md`까지 센 값이라 숫자를 지웠다.
-- `2026-10-26.md`: 10-29에 한 보완 사실이 섞여 있어, 10-26 당시 상태만 남겼다.
+- `10-design-system.md`: the commit used for the check did not match the PR scope. I wrote separately that `npm run check` was run at `0f1f171` (through #17) and the browser check at `3e56615` (through #18), and classed #14 as a security update.
+- `docs/daily/`: the records for 2026-10-21 (#2) and 2026-10-22 (#4), when PRs were merged, were missing, so I added them.
+- Link count: "12" counted even the unchanged `2026-10-19.md`, so I removed the number.
+- `2026-10-26.md`: facts from the 10-29 supplement were mixed in, so only the state at the time of 10-26 was kept.
 
-## 2차 자동 리뷰 반영 — 2026-10-29
+## Applied the 2nd automatic review: 2026-10-29
 
-2차 리뷰에서 1차 지적 4건이 맞게 고쳐진 것을 확인했고, 새 지적 2건이 나왔다. 3차 리뷰는 하지 않는다.
+The 2nd review confirmed that the 4 findings of the 1st were fixed correctly, and raised 2 new ones. There is no 3rd review.
 
-- PR 본문의 "PR #5~#18"이 10-21(#2)·10-22(#4) 추가를 반영하지 못했다. PR 본문을 "PR #2~#18"로 고쳤다(파일 변경 없음).
-- 줄바꿈 문제를 "중앙에서만 고칠 수 있다"고 적었지만, 호출부 `frontend/src/app.tsx`는 이 리포 관리 파일이고 `EmptyState`가 `className`을 받아 이 리포에서도 고칠 수 있다. 화면 변경이라 [#22](https://github.com/sirloinbh/english-study/issues/22)로 분리하고, `10-design-system.md`와 다음 작업 문서의 문구를 고쳤다.
+- "PR #5 to #18" in the PR body did not reflect the additions for 10-21 (#2) and 10-22 (#4). I fixed the PR body to "PR #2 to #18" (no file change).
+- I wrote that the line wrapping problem "can only be fixed centrally", but the caller `frontend/src/app.tsx` is a file managed by this repository and `EmptyState` accepts `className`, so it can be fixed in this repository too. It is a screen change, so I split it into [#22](https://github.com/sirloinbh/english-study/issues/22) and fixed the wording of `10-design-system.md` and the next steps document.

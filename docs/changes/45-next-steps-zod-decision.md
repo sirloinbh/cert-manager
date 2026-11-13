@@ -1,27 +1,27 @@
-# #45 다음 작업 문서의 보안 PR #15 안내 고치기
+# #45 Fix the guidance on security PR #15 in the next steps document
 
-- 이슈: [#45](https://github.com/sirloinbh/cert-manager/issues/45)
-- 결정: [sirloinbh/project-standards#307](https://github.com/sirloinbh/project-standards/issues/307) 후보 A, project-standards `docs/research/zod4.md` 결정 절
+- Issue: [#45](https://github.com/sirloinbh/cert-manager/issues/45)
+- Decision: [sirloinbh/project-standards#307](https://github.com/sirloinbh/project-standards/issues/307) candidate A, the decision section of project-standards `docs/research/zod4.md`
 
-## 목적
+## Purpose
 
-다음 작업 문서가 PR #15(`zod` 3 → 4) 처리를 1순위로 안내했고, [#27](27-rename-to-cert-manager.md)에서는 lockfile을 다시 만들라는 내용까지 더했다. 중앙 결정과 다른 안내이므로 바로잡는다.
+The next steps document told us to handle PR #15 (`zod` 3 → 4) as the top priority, and in [#27](27-rename-to-cert-manager.md) it even added to recreate the lockfile. The guidance differs from the central decision, so I am fixing it.
 
-## 변경 — 2026-10-30
+## Changes: 2026-10-30
 
-- `docs/next-steps/README.md`: 표에서 PR #15 행을 빼고 번호를 다시 매겼다. "함께 볼 것"에 결정과 이 앱의 노출 여부를 적었다.
+- `docs/next-steps/README.md`: removed the PR #15 row from the table and renumbered. Wrote the decision and whether this app is exposed under "Also see".
 
-## 검증
+## Verification
 
-- `git grep -n "z\.array\|\.array(" -- backend/src`: 결과 없음
-- `node .standards/check.mjs`: 통과, zod 배열 경고 없음
-- `npm audit --omit=dev`: zod high 1건(GHSA-mrhx-c7xc-m3w5). 결정대로 남아 있다
-- `npm run format:check`: 통과
+- `git grep -n "z\.array\|\.array(" -- backend/src`: no results
+- `node .standards/check.mjs`: pass, no zod array warning
+- `npm audit --omit=dev`: 1 zod high (GHSA-mrhx-c7xc-m3w5). It remains as decided
+- `npm run format:check`: pass
 
-## 제한
+## Limits
 
-코드는 바꾸지 않았다. PR #15는 결정대로 열어 둔다.
+I did not change the code. PR #15 stays open as decided.
 
-## 자동 코드 리뷰 — 2026-10-30
+## Automatic code review: 2026-10-30
 
-- 1차(읽기 전용 리뷰 에이전트): 결함 없음. 결정 내용과 날짜, 중앙 관리 값, `z.array` 없음, 메시지 개수 제한(`MAX_ISSUES = 10`), 표에서 PR #15 행만 빠졌는지를 원본과 대조했다. 보완 커밋이 없어 2차 리뷰는 하지 않았다.
+- 1st (read-only review agent): no defects. I compared the decision content and dates, the centrally managed values, no `z.array`, the message count limit (`MAX_ISSUES = 10`), and whether only the PR #15 row was removed from the table against the original. There was no fix commit, so I did not do a 2nd review.

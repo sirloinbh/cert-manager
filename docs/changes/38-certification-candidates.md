@@ -1,41 +1,41 @@
-# #38 자격증 후보와 추천 로드맵 문서
+# #38 Certification candidates and recommended roadmap document
 
-이슈: [#38](https://github.com/sirloinbh/cert-manager/issues/38)
+Issue: [#38](https://github.com/sirloinbh/cert-manager/issues/38)
 
-## 목적
+## Purpose
 
-지금 목표 다음에 무엇을 딸지 고를 기준을 만든다. 사용자가 받아 둔 AI 추천 목록의 응시료와 기간은 확인되지 않은 값이어서, 공식 자료로 다시 확인했다.
+Make the standard for choosing what to earn after the current goals. The exam fees and periods in the AI recommendation list the user had saved were unconfirmed values, so I checked them again with official sources.
 
-## 변경 내용
+## Changes
 
-- `docs/research/certification-candidates.md`: 분야별 후보 표, AWS 라인업과 추천 순서, 지금 목표에 맞춘 5단계 로드맵, 확인하지 못한 값 목록.
-- `docs/next-steps/README.md`: #38을 빼고 #73 상태를 넣었다.
+- `docs/research/certification-candidates.md`: candidate tables by field, the AWS lineup and recommended order, a 5-stage roadmap matched to the current goals, and the list of values I could not confirm.
+- `docs/next-steps/README.md`: removed #38 and put in the state of #73.
 
-## 검증
+## Verification
 
-- 값은 2026-11-01에 공식 사이트에서 조사했다. 조사는 분야별 에이전트 3개가 했고, 값을 모두 다시 대조하지는 않았다.
-- 공식 페이지 본문을 열지 못하고 검색 발췌로 본 값은 "(발췌)"로 표시했다.
-- 공식 근거가 없는 값은 "확인 못 함"으로 남겼다. 이슈의 "모든 응시료·유효기간에 출처 링크"는 **적어 둔 값**에만 해당하며, 확인하지 못한 값은 문서 끝 표에 있다.
-- 로드맵 1단계는 앱의 첫 목표인 토익과 정보처리기사 실기와 맞다(`cert` DB의 목표와 `docs/plans/README.md`로 확인).
-- 문서만 바꿔 앱 테스트를 더하지 않았다.
-- `npm run format:check`: 통과.
-- `node .standards/check.mjs`: 통과.
-- `node .standards/secret-scan.mjs`: 의심 항목 없음.
+- The values were surveyed on official sites on 2026-11-01. The survey was done by 3 agents, one per field, and I did not cross-check every value again.
+- Values I saw in search excerpts because I could not open the official page text are marked "(excerpt)".
+- Values with no official evidence were left as "Could not confirm". "A source link for every exam fee and validity" in the issue applies only to **the values written down**, and the values I could not confirm are in the table at the end of the document.
+- Stage 1 of the roadmap matches the app's first goals, TOEIC and the Engineer Information Processing practical exam (checked with the goals in the `cert` DB and `docs/plans/README.md`).
+- Only docs changed, so I added no app tests.
+- `npm run format:check`: pass.
+- `node .standards/check.mjs`: pass.
+- `node .standards/secret-scan.mjs`: no suspicious items.
 
-## 1차 리뷰 반영
+## Applied the 1st review
 
-리뷰어가 값 약 40개를 공식 페이지와 표본 대조했고, 모두 일치했다. 문서 쪽 지적 9건(중간 3, 낮음 6)을 고쳤다.
+The reviewer sampled about 40 values against the official pages, and all matched. I fixed 9 findings on the document side (3 medium, 6 low).
 
-- 중간: 한국 가격을 확인하지 못한 항목과 발급비를 끝 표와 맞췄다. KCNA는 비용이 낮다고 할 수 없어 로드맵의 이유를 고쳤다. 조리기능사는 국가기술자격이므로 Q-Net 일반 안내대로 "만료 없음"으로 고쳤다.
-- 낮음: AWS 시험 전환일, LPIC 가격, Security+ V8의 링크를 값이 있는 페이지로 바꿨다. HSK 3.0 전환, AI-200 링크, AI Business Strategist의 유효기간 단서, 증권투자권유자문인력을 조사하지 않았다는 점을 적었다.
+- Medium: matched the items whose Korean price I could not confirm and the issuance fees with the table at the end. KCNA cannot be called low cost, so I fixed the reason in the roadmap. Craftsman Cook is a national technical qualification, so I changed it to "No expiry" as in the Q-Net general guide.
+- Low: changed the AWS exam switch dates, the LPIC price, and the Security+ V8 link to pages that have the values. Wrote down the HSK 3.0 switch, the AI-200 link, the caveat on the validity of AI Business Strategist, and that the Securities Investment Advisor was not surveyed.
 
-이슈의 완료 기준을 "적어 둔 값"으로 좁힌 것과 앱 기능을 만들지 않는 추천은 사용자 확인이 필요해 최종 보고에 적는다.
+The user needs to confirm narrowing the issue done criterion to "the values written down" and recommending without building an app feature, so they go in the final report.
 
-## 2차 리뷰 반영
+## Applied the 2nd review
 
-독립 읽기 전용 리뷰의 지적 2건(낮음)을 고쳤다. 만료 없음 안내가 적용되는 목록에 정보보안기사를 넣고, 끝 표의 한국 가격 항목에 CISSP를 넣었다. 리뷰는 2차까지이므로 이후는 CI로 넘어간다.
+I fixed 2 findings (low) of the independent read-only review. Put Engineer Information Security in the list the no-expiry note applies to, and put CISSP in the Korean price item of the table at the end. The review is up to the 2nd round, so after this it goes to CI.
 
-## 제한·후속 작업
+## Limits and follow-up
 
-- 후보를 앱에서 골라 목표로 등록하는 기능은 만들지 않았다. 후보를 고를 일이 드물고 목표 등록 화면이 이미 있어, 지금은 필요하지 않다고 추천한다. 사용자가 원하면 이슈를 등록한다.
-- 응시료는 바뀌므로 접수할 때 공식 사이트에서 다시 확인한다.
+- I did not build a feature to pick candidates in the app and register them as goals. Choosing candidates is rare and the goal registration screen already exists, so I recommend it is not needed now. If the user wants it, register an issue.
+- Exam fees change, so check again on the official site when you register.

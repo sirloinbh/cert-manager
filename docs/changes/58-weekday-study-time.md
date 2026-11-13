@@ -1,39 +1,39 @@
-# #58 공부 계획에 시험 전 평일 시간 넣고 낮은 등급 빼기
+# #58 Add weekday time before exams to the study plan and remove the lower grades
 
-- 이슈: [#58](https://github.com/sirloinbh/cert-manager/issues/58)
-- 브랜치: `docs/58-weekday-study-time`
+- Issue: [#58](https://github.com/sirloinbh/cert-manager/issues/58)
+- Branch: `docs/58-weekday-study-time`
 
-## 사용자 답변 — 2026-10-31
+## User answers: 2026-10-31
 
-- 기능사와 산업기사는 따지 않는다.
-- 공휴일 외 공부 시간은 시험이 있는 날 이전 2주 동안 평일 1시간이다.
+- The Craftsman and Industrial Engineer grades are not pursued.
+- The study time other than public holidays is 1 hour on weekdays in the 2 weeks before the exam day.
 
-## 판단
+## Judgments
 
-- "이전 2주"는 응시일 전날까지 14일로 계산했다. 그 안의 평일이 최대 10일이고, 평일 공휴일은 이미 2시간을 쓰므로 세지 않는다.
-- 실기 2회·3회의 평일 시간은 그 회차를 치를 때만 쓴다.
-- 등급표 자체는 고치지 않았다. `information_processing` 체계에는 기능사·산업기사가 그대로 보이지만, 공식 등급 안내이고 목표로 고르지 않으면 된다.
+- "The previous 2 weeks" is counted as 14 days up to the day before the exam date. There are at most 10 weekdays in it, and a weekday public holiday already uses 2 hours, so it is not counted.
+- The weekday time of the 2nd and 3rd practical sessions is used only when you take that session.
+- I did not change the grade table itself. The `information_processing` system still shows Craftsman and Industrial Engineer, but they are official grade guidance and you simply do not choose them as a goal.
 
-## 변경 — 2026-10-31
+## Changes: 2026-10-31
 
-- `docs/plans/README.md`: 사용자 결정, 시간 설명, 일정표의 평일 칸, 등급 설명.
-- `docs/plans/information-processing.md`: 다음 등급을 기술사로 고치고 응시 전 2주 행을 넣었다.
-- `docs/plans/` 나머지: 응시 전 2주 평일 시간을 적었다.
-- 이 PC의 앱 DB `cert`: 시험 전 평일 공부 할 일 9개와 실기 2회 응시 할 일 1개를 더했고, 정보처리 메모를 고쳤다. 전체 할 일은 69개다.
+- `docs/plans/README.md`: the user decisions, the time explanation, the weekday column of the schedule table, and the grade explanation.
+- `docs/plans/information-processing.md`: changed the next grade to Professional Engineer and added a row for the 2 weeks before the exam.
+- The rest of `docs/plans/`: wrote the weekday time in the 2 weeks before the exam.
+- This PC's app DB `cert`: added 9 weekday study tasks before exams and 1 task for taking the 2nd practical session, and fixed the information processing memo. There are 69 tasks in total.
 
-## 검증
+## Verification
 
-- 날짜: 평일 기간의 시작과 끝 요일을 계산했다. 2027-01-18(월)~01-29(금) 10일, 04-05(월)~04-16(금) 10일, 07-12(월)~07-23(금) 중 7/19 공휴일을 뺀 9일, 10-12(화)~10-22(금) 9일이다. 3회 기준 10/23은 2026년 시작일(10/24)에 대응하는 토요일이고, 10/26 이후로 보면 10일이 된다. 응시일은 모두 잠정이다.
-- `docs/plans/`에서 기능사·산업기사는 "따지 않는다", "뺀" 같은 제외 표현에만 남아 있고 목표로 남아 있지 않다.
-- `TEST_DATABASE_URL=… npm run check`: 통과(exit 0). 백엔드 40개 통과(건너뜀 0), 프런트엔드 163개 통과, 스킬 4개 통과, 빌드 성공.
+- Dates: I computed the start and end days of the week of the weekday periods. They are 2027-01-18 (Mon) to 01-29 (Fri) 10 days, 04-05 (Mon) to 04-16 (Fri) 10 days, 07-12 (Mon) to 07-23 (Fri) 9 days excluding the 7/19 public holiday, and 10-12 (Tue) to 10-22 (Fri) 9 days. For the 3rd session, 10/23 is the Saturday that corresponds to the 2026 start date (10/24), and if you count from after 10/26 it becomes 10 days. All exam dates are tentative.
+- In `docs/plans/`, Craftsman and Industrial Engineer remain only in exclusion wording such as "not pursued" and "left out", and not as goals.
+- `TEST_DATABASE_URL=… npm run check`: pass (exit 0). Backend 40 passed (0 skipped), frontend 163 passed, skills 4 passed, build succeeded.
 
-## 자동 코드 리뷰 — 2026-10-31
+## Automatic code review: 2026-10-31
 
-1차(읽기 전용 리뷰 에이전트): 높음 0건, 중간 1건, 낮음 3건. 모두 처리했다. 48시간만 전체 시간으로 치던 문장, 공휴일 시간과 평일 시간의 구분, 3회 평일 시간 단서, 변경 기록 문구를 고쳤다. 3회 기준일은 근거가 있어 10/23을 유지했다.
+1st (read-only review agent): 0 high, 1 medium, 3 low. All were handled. I fixed the sentence that counted only 48 hours as the total time, the distinction between holiday time and weekday time, the caveat on the 3rd session weekday time, and the change record wording. I kept 10/23 as the 3rd session reference day because there is a basis.
 
-2차(diff를 다시 본 리뷰 에이전트): 높음·중간 0건, 낮음 1건. "더 늦으면 10시간"을 "10/26 이후면"으로 고쳤고, 리뷰는 2회로 마쳤다.
+2nd (review agent that looked at the diff again): 0 high or medium, 1 low. I fixed "10 hours if later" to "if it is after 10/26", and the review ended after 2 rounds.
 
-## 한계
+## Limits
 
-- 응시일이 잠정이라 평일 기간도 잠정이다. 응시일이 바뀌면 함께 고친다.
-- 시간 배분이 합격에 충분하다는 근거는 없다.
+- The exam dates are tentative, so the weekday periods are tentative too. Fix them together when an exam date changes.
+- There is no evidence that the time split is enough to pass.

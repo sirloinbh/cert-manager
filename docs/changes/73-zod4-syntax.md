@@ -1,51 +1,51 @@
-# #73 백엔드 검증 코드를 zod 4 문법으로 옮기기
+# #73 Move the backend validation code to zod 4 syntax
 
-- 이슈: [#73](https://github.com/sirloinbh/cert-manager/issues/73)
-- 브랜치: `chore/73-zod4-syntax`
+- Issue: [#73](https://github.com/sirloinbh/cert-manager/issues/73)
+- Branch: `chore/73-zod4-syntax`
 
-## 목적
+## Purpose
 
-중앙 `sirloinbh/project-standards#386`의 1단계다. 중앙이 `zod`를 4.6.7로 올릴 때 이 앱이 깨지지 않도록 코드를 먼저 옮긴다. 보안 권고 GHSA-mrhx-c7xc-m3w5의 Dependabot 알림은 그 동기화로 닫힌다. 이 PR만으로는 닫히지 않는다.
+This is step 1 of the central `sirloinbh/project-standards#386`. Move the code first so this app does not break when the center raises `zod` to 4.6.7. The Dependabot alert for security advisory GHSA-mrhx-c7xc-m3w5 is closed by that sync. This PR alone does not close it.
 
-## 변경 — 2026-11-01
+## Changes: 2026-11-01
 
-- `backend/src`의 zod 파일 10개(main에서 온 `daily-words.ts` 포함)가 `zod/v4`에서 불러온다. 설치된 3.25.76에 이 경로가 들어 있어 설치와 잠금 파일은 바꾸지 않았다.
-- 스키마의 `message` 옵션을 `error`로 옮겼다. `ctx.addIssue`의 `message`는 zod 4에서도 그대로 쓴다.
-- 화면에 보이는 문자열 길이 검사(`.min`, `.max`)를 `.refine`으로 옮겼다. zod 4는 타입 검사가 실패해도 길이가 있는 값에 `.min`, `.max`를 실행해, 문자열 자리에 배열을 보내면 같은 메시지가 두 번 나온다. 숫자 범위, 배열 길이, 스크립트 파일 스키마의 `.min`, `.max`는 그대로 두었다.
-- `.partial()`, `.merge()`, `.default().optional()`, `z.record`는 이 앱에 없다. `.default()`는 모두 변환 없는 값이라 뒤에 건너뛰는 검증이 없다.
-- `docs/next-steps/README.md`의 zod 3 유지 안내를 2026-11-01 결정에 맞게 고쳤다.
+- The 10 zod files in `backend/src` (including `daily-words.ts` that came from main) import from `zod/v4`. The installed 3.25.76 contains this path, so I did not change the install or the lockfiles.
+- Moved the `message` option of the schemas to `error`. The `message` of `ctx.addIssue` is used as it is in zod 4 too.
+- Moved the string length checks (`.min`, `.max`) that show on screen to `.refine`. Zod 4 runs `.min` and `.max` on a value that has a length even if the type check fails, so sending an array where a string goes gives the same message twice. I left the `.min` and `.max` of number ranges, array lengths, and the script file schemas as they are.
+- `.partial()`, `.merge()`, `.default().optional()`, and `z.record` are not in this app. All `.default()` values are values without a transform, so there is no validation skipped after them.
+- Fixed the zod 3 keep guidance in `docs/next-steps/README.md` to match the 2026-11-01 decision.
 
-## 바뀌는 응답
+## Responses that change
 
-전환 전후 스키마에 같은 입력 약 67만 건을 넣어 비교했다(필드 하나와 둘을 바꾼 조합, `constructor` 키가 있는 입력 포함). 유효한 입력의 결과는 모두 같고, 잘못된 입력이 통과하는 경우는 없다. 화면 입력에서 바뀌는 것은 이미 400인 입력의 메시지뿐이다. 아래 표처럼 메시지가 빠지기도, 더해지거나 바뀌기도 한다.
+I put about 670,000 of the same inputs into the schemas before and after the switch and compared them (combinations that change one and two fields, including inputs with a `constructor` key). The results for valid input are all the same, and no wrong input passes. The only thing that changes for screen input is the message of input that was already a 400. As in the table below, a message can be dropped, added, or changed.
 
-| 입력                                                                         | 전                                     | 후 (3.25.76의 `zod/v4`) | 후 (4.6.7) |
-| ---------------------------------------------------------------------------- | -------------------------------------- | ----------------------- | ---------- |
-| 음수 소수 점수 (`-1.5`)                                                      | 정수여야 + 0 이상이어야                | 정수여야                | 같음       |
-| 소수 점수와 다른 필드 규칙 위반 (`score: 1.5`, 결과 전)                      | 정수여야 + 결과 전에는 비워 주세요     | 정수여야                | 같음       |
-| 안전 범위를 넘는 정수 (`1e20`)                                               | 이하여야                               | 정수여야 + 이하여야     | 같음       |
-| JSON `1e999` (무한대)                                                        | 정수여야 + 이하여야                    | 숫자여야                | 같음       |
-| 시험일보다 앞선 잘못된 만료일 (`expiresOn: "2026-02-30"`, 시험일 2026-03-15) | 실제 날짜가 아닙니다 + 시험일 이후여야 | 실제 날짜가 아닙니다    | 전과 같음  |
+| Input                                                                                            | Before                                                                                     | After (`zod/v4` of 3.25.76)                                | After (4.6.7)  |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------- | -------------- |
+| Negative decimal score (`-1.5`)                                                                  | 정수여야 + 0 이상이어야 (must be an integer + must be 0 or more)                           | 정수여야 (must be an integer)                              | Same           |
+| Decimal score and a violation of another field rule (`score: 1.5`, before the result)            | 정수여야 + 결과 전에는 비워 주세요 (must be an integer + leave it empty before the result) | 정수여야 (must be an integer)                              | Same           |
+| An integer beyond the safe range (`1e20`)                                                        | 이하여야 (must be at most)                                                                 | 정수여야 + 이하여야 (must be an integer + must be at most) | Same           |
+| JSON `1e999` (infinity)                                                                          | 정수여야 + 이하여야 (must be an integer + must be at most)                                 | 숫자여야 (must be a number)                                | Same           |
+| A wrong expiry date earlier than the exam date (`expiresOn: "2026-02-30"`, exam date 2026-03-15) | 실제 날짜가 아닙니다 + 시험일 이후여야 (not a real date + must be after the exam date)     | 실제 날짜가 아닙니다 (not a real date)                     | Same as before |
 
-스크립트에서는 응답이 아니라 판정이 달라진다.
+In the scripts, it is the judgment that changes, not the response.
 
-- LRCLIB 응답의 숫자가 무한대면 잘못된 응답으로 처리한다.
-- 번역 파일의 `lineNumber`가 안전 범위를 넘으면 "원문이 DB와 다릅니다" 대신 "파일 형식이 내보낸 형식과 다릅니다"로 거절한다.
-- 단어 파일이 1000개를 넘고 잘못된 항목도 있으면 3.25.76의 `zod/v4`에서는 거절 이유의 경로가 `words`에서 그 항목으로 바뀐다. 4.6.7에서는 전과 같이 `words`다.
-- 형태소가 12개를 넘고 잘못된 항목도 있으면 4.6.7에서 경로가 항목(`words.0.morphemes.13.key`)에서 `words.0.morphemes`로 바뀐다.
-- 4.6.7은 스크립트 문자열의 `.max()`를 코드 포인트로 센다. 번역 파일의 `original`, `atExport`, `translation`과 단어 파일의 `lemma`, 품사, 뜻, 형태소 `key`, `meaningKo`, `origin`은 이모지가 많으면 전에 거절되던 입력이 통과한다. 마이그레이션의 `length()` 제한은 문자 수 기준이라 새 DB 오류는 나지 않는다.
+- If a number in an LRCLIB response is infinity, it is treated as a wrong response.
+- If the `lineNumber` of a translation file is beyond the safe range, it is rejected as "파일 형식이 내보낸 형식과 다릅니다" ("the file format differs from the export format") instead of "원문이 DB와 다릅니다" ("the original differs from the DB").
+- If a word file has more than 1000 entries and also has a wrong entry, in `zod/v4` of 3.25.76 the path of the rejection reason changes from `words` to that entry. In 4.6.7 it is `words` as before.
+- If there are more than 12 morphemes and also a wrong entry, in 4.6.7 the path changes from the entry (`words.0.morphemes.13.key`) to `words.0.morphemes`.
+- 4.6.7 counts the `.max()` of script strings in code points. For `original`, `atExport`, and `translation` of the translation file and `lemma`, part of speech, meaning, the morpheme `key`, `meaningKo`, and `origin` of the word file, an input that used to be rejected passes if it has many emoji. The `length()` limit in the migration is based on the number of characters, so no new DB error occurs.
 
-## 검증
+## Verification
 
-- `npm run check`: 통과. 백엔드 108개 중 98개 통과, 10개 건너뜀(`TEST_DATABASE_URL`을 비워 DB 통합 테스트 제외). 프론트엔드 224개 중 222개 통과, 2개 건너뜀. 스킬 테스트 4개 통과.
-- DB 통합 테스트는 PR CI로 확인한다. 로컬에서는 공유 DB를 건드리지 않으려고 실행하지 않았다.
-- 새 테스트: 메시지 전체 비교(`backend/test/exam-attempts.test.ts`), 배열을 문자열 자리에 보낸 경우(`backend/test/certifications.test.ts`), 파일 스키마의 배열 길이 제한(`backend/test/array-limits.test.ts`).
-- 리뷰에서 백엔드 테스트와 타입 검사를 개발 의존성에 들어 있는 4.6.7 사본으로 돌렸다(DB 통합 테스트 제외). 실패한 만료일 사례 1건은 입력을 고쳤다. 실제 설치 상태의 확인은 중앙 동기화 PR의 CI로 한다.
+- `npm run check`: pass. Backend 98 of 108 passed and 10 skipped (the DB integration tests were left out by emptying `TEST_DATABASE_URL`). Frontend 222 of 224 passed and 2 skipped. 4 skill tests passed.
+- The DB integration tests are confirmed by the PR CI. I did not run them locally so as not to touch the shared DB.
+- New tests: full message comparison (`backend/test/exam-attempts.test.ts`), the case of sending an array where a string goes (`backend/test/certifications.test.ts`), and the array length limit of the file schemas (`backend/test/array-limits.test.ts`).
+- In the review, I ran the backend tests and the type check with the 4.6.7 copy that is in the dev dependencies (leaving out the DB integration tests). For 1 failed expiry date case, I fixed the input. The check of the real installed state is done by the CI of the central sync PR.
 
-## 병합 뒤 후속 — 2026-11-01
+## Follow-up after the merge: 2026-11-01
 
-PR #74가 병합된 뒤 별도 리뷰의 남은 지적을 후속 PR로 반영했다. 같은 만료일 테스트 지적은 #74에서 이미 고쳐졌으므로 그 수정을 그대로 두었다.
+After PR #74 was merged, I applied the remaining findings of a separate review in a follow-up PR. The same expiry date test finding had already been fixed in #74, so I left that fix as it is.
 
-- **별도 리뷰:** 전환 전, 수정 전 PR, 그 PR + 4.6.7을 가짜 DB로 띄워 같은 41,180건을 비교했다. 상태 코드와 DB로 가는 값은 모두 같고 5xx는 0건이다. 메시지 차이는 400 안에서만 난다. 4.6.7 패키지는 임시 폴더에만 풀었다.
-- **반영:** 배열을 제목·가사·번역 자리에 보내는 테스트를 추가했다. 위 파일 수를 고쳤다.
-- **반영 안 함(낮음):** 최대 길이 경계값과 `lyrics-fetch.ts`의 `.max(1000)` 테스트는 없다. 현재 동작은 맞다.
+- **Separate review:** I ran the pre-switch code, the PR before the fixes, and that PR + 4.6.7 on a fake DB and compared the same 41,180 cases. The status codes and the values going to the DB are all the same, and there are 0 cases of 5xx. Message differences appear only within 400. I unpacked the 4.6.7 package only into a temporary folder.
+- **Applied:** added tests that send an array where the title, lyrics, and translation go. Fixed the number of files above.
+- **Not applied (low):** there is no test for the maximum length boundary value and `.max(1000)` in `lyrics-fetch.ts`. The current behavior is correct.

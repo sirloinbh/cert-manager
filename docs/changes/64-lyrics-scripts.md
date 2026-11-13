@@ -1,90 +1,90 @@
-# #64 가사 받기와 번역 파일 스크립트 만들기
+# #64 Build the lyrics fetch and translation file scripts
 
-- 이슈: [#64](https://github.com/sirloinbh/cert-manager/issues/64)
-- 브랜치: `feat/64-lyrics-scripts`
-- 자료: [영어 공부 자료 출처](../research/english-content-sources.md) 1·2절, 앞선 작업: [#35 변경 기록](35-song-lyrics.md)
+- Issue: [#64](https://github.com/sirloinbh/cert-manager/issues/64)
+- Branch: `feat/64-lyrics-scripts`
+- Material: sections 1 and 2 of [Sources of English study material](../research/english-content-sources.md); earlier work: [#35 change record](35-song-lyrics.md)
 
-## 사용 순서
+## Order of use
 
-사용자가 직접 실행한다. 모두 `DATABASE_URL`의 DB에 쓰고, 시작할 때 대상 DB를 출력한다.
+The user runs them directly. All of them write to the DB in `DATABASE_URL` and print the target DB when they start.
 
-1. `npm run lyrics:import -w backend`: 가사가 없는 곡을 LRCLIB에서 받아 넣는다.
-2. `npm run translations:export -w backend`: 번역이 덜 된 곡을 `.local/translations/<곡 ID>.json`으로 내보낸다.
-3. 파일의 `translation`을 직접 쓰거나 다른 번역 도구로 채운다.
-4. `npm run translations:import -w backend`: 모든 줄이 맞는 파일만 DB에 넣고 `imported/`로 옮긴다. 아직 안 채운 파일은 건너뛰고, 맞지 않는 파일은 이유를 출력하고 저장하지 않는다.
+1. `npm run lyrics:import -w backend`: fetches the lyrics of songs without lyrics from LRCLIB and puts them in.
+2. `npm run translations:export -w backend`: exports songs that are not fully translated to `.local/translations/<song ID>.json`.
+3. Fill the `translation` in the file by hand or with another translation tool.
+4. `npm run translations:import -w backend`: puts only the files where every line matches into the DB and moves them to `imported/`. It skips files that are not filled in yet, and for a file that does not fit it prints the reason and does not save.
 
-## 판단
+## Judgments
 
-| 항목                | 판단                                                                                                                                                                                                           |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 요청 간격           | 이슈의 200~500ms 대신 700ms. 조사 문서의 약 90회/분 제한을 넘지 않으려면 667ms 이상이어야 한다                                                                                                                 |
-| 못 찾은 곡          | `api/get`이 `404`이거나 글자가 없거나 다른 곡이면 `api/search`로 찾는다. LRCLIB 제목에 버전 표기가 붙을 수 있어서다. 두 경로 모두 제목(버전·손님 표기 제외), 가수, 길이(±3초)가 맞을 때만 쓴다                 |
-| 이미 가사가 있는 곡 | 건드리지 않는다. 직접 넣은 가사를 덮어쓰지 않는다                                                                                                                                                              |
-| 한 곡 실패          | 나머지는 계속하고, 끝나면 실패한 곡을 알리고 종료 코드 1. 요청 제한을 포기할 때, 연속 5곡 실패, DB 오류에는 전체를 멈춘다                                                                                      |
-| 출력                | 곡 제목과 수만 출력한다. 가사는 출력하지 않는다                                                                                                                                                                |
-| 시간 정보 가사      | 일반 가사가 없으면 시간 표시를 떼어 쓴다                                                                                                                                                                       |
-| 내보내기            | 이미 있는 파일은 덮어쓰지 않는다. 쓰던 번역을 지키기 위해서다. 빈 줄은 파일에 넣지 않는다                                                                                                                      |
-| 들여오기            | 파일 하나는 전부 저장하거나 전부 저장하지 않는다. 줄 수, 줄 번호, 원문이 DB와 다르거나 빈 번역이 있으면 저장하지 않는다. 파일의 `atExport`와 DB 번역이 다르면 내보낸 뒤 화면에서 고친 것이므로 저장하지 않는다 |
-| 코드 위치           | 줄 나누기와 트랜잭션을 `lyrics-store.ts`로, 대상 DB 출력을 `script-database.ts`로 옮겨 라우트와 스크립트가 함께 쓴다                                                                                           |
+| Item                           | Judgment                                                                                                                                                                                                                                                                                    |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Request interval               | 700 ms instead of the 200-500 ms in the issue. To stay under the roughly 90 per minute limit in the survey document, it must be 667 ms or more                                                                                                                                              |
+| Songs not found                | If `api/get` gives `404`, has no text, or returns a different song, look it up with `api/search`. It is because the LRCLIB title may carry a version label. On both paths, use it only when the title (excluding version and guest labels), the artist, and the length (±3 seconds) match   |
+| Songs that already have lyrics | Do not touch them. Do not overwrite lyrics entered by hand                                                                                                                                                                                                                                  |
+| One song fails                 | Continue with the rest, and at the end report the failed songs and exit with code 1. Stop the whole run when giving up on the rate limit, on 5 failed songs in a row, and on a DB error                                                                                                     |
+| Output                         | Print only the song title and counts. Do not print lyrics                                                                                                                                                                                                                                   |
+| Time-synced lyrics             | If there are no plain lyrics, strip the time marks and use them                                                                                                                                                                                                                             |
+| Export                         | Do not overwrite a file that already exists, to protect a translation in progress. Blank lines are not put in the file                                                                                                                                                                      |
+| Import                         | A file is saved entirely or not at all. If the line count, line number, or original differs from the DB, or there is an empty translation, it is not saved. If the `atExport` in the file differs from the DB translation, it was edited on the screen after the export, so it is not saved |
+| Code location                  | Moved the line splitting and the transaction to `lyrics-store.ts` and the target DB output to `script-database.ts`, so the route and the scripts share them                                                                                                                                 |
 
-## 변경 — 2026-11-01
+## Changes: 2026-11-01
 
-- 가사 받기: `backend/src/lyrics-fetch.ts`, `backend/src/import-lyrics.ts`. 받은 기록은 `import_sources`에 남긴다(라이선스 표기가 없어 빈 값).
-- 번역 파일: `backend/src/translation-files.ts`, `backend/src/export-translations.ts`, `backend/src/import-translations.ts`.
-- 공통: `backend/src/lyrics-store.ts`, `backend/src/script-database.ts`. `backend/src/routes/songs.ts`와 `backend/src/import-song-list.ts`가 이를 쓴다.
-- 문서: README 사용법, 조사 문서 2절, 다음 작업, 일일 기록.
+- Lyrics fetch: `backend/src/lyrics-fetch.ts`, `backend/src/import-lyrics.ts`. The fetch record is left in `import_sources` (empty license because there is no notice).
+- Translation files: `backend/src/translation-files.ts`, `backend/src/export-translations.ts`, `backend/src/import-translations.ts`.
+- Shared: `backend/src/lyrics-store.ts`, `backend/src/script-database.ts`. `backend/src/routes/songs.ts` and `backend/src/import-song-list.ts` use them.
+- Docs: the README usage, section 2 of the survey document, the next steps, and the daily log.
 
-## 1차 코드 리뷰 반영 — 2026-11-01
+## Applied the 1st code review: 2026-11-01
 
-독립 리뷰의 높음 1건, 중간 4건, 낮음 8건을 확인했다.
+I checked 1 high, 4 medium, and 8 low findings of the independent review.
 
-| 지적                                             | 처리                                                                                                          |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
-| 다시 들여오면 화면에서 고친 번역을 덮어씀 (높음) | 저장한 파일을 `imported/`로 옮김                                                                              |
-| 안 채운 파일이 모두 거부와 종료 코드 1이 됨      | DB와 같은 파일은 건너뜀으로 따로 셈                                                                           |
-| `/api/get` 결과가 맞는 곡인지 안 봄              | 검색과 같은 검사를 거침                                                                                       |
-| 전체가 실패해도 멈추지 않음                      | 429를 포기하거나 300초 넘게 기다리라고 하면 멈춤, 연속 5곡 실패 시 멈춤, DB 오류 시 멈춤, 요청 시간 제한 30초 |
-| BOM이 있는 파일 거부                             | BOM을 뗀다                                                                                                    |
-| 들여오기를 먼저 실행하면 오류                    | 폴더를 만들고 먼저 내보내라고 안내                                                                            |
-| 소수·초대형 곡 ID, NUL 문자로 스크립트가 멈춤    | 파일을 거부                                                                                                   |
-| 파일 글자 수 상한 없음                           | 줄당 5,000자. LRCLIB 응답 크기는 제한하지 않음. 소유자가 실행하는 로컬 스크립트라 그대로 둠                   |
-| 연속 시간 표시                                   | 정규식 수정                                                                                                   |
-| 받은 기록이 실행 끝에만 남음                     | 고치지 않음. 곡별 출처 칼럼이 있어 영향이 작다                                                                |
-| 가수 비교가 느슨함                               | 이름만, 또는 뒤에 손님 표기가 있을 때만 인정                                                                  |
-| 실패 로그에 응답 조각이 섞일 수 있음             | 상태 코드 외에는 고정 문구 출력                                                                               |
-| 비밀번호 일부가 대상 DB 출력에 나올 수 있음      | 경로에 `@`가 있으면 거부                                                                                      |
+| Finding                                                                 | Handling                                                                                                                                                      |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Importing again overwrites a translation edited on the screen (high)    | Moved the saved file to `imported/`                                                                                                                           |
+| A file that is not filled in is counted as all rejected and exit code 1 | A file the same as the DB is counted separately as skipped                                                                                                    |
+| It does not check that the `/api/get` result is the right song          | It goes through the same check as the search                                                                                                                  |
+| It does not stop even if everything fails                               | Stops if it gives up on 429 or is told to wait over 300 seconds, stops after 5 failed songs in a row, stops on a DB error, and a 30 second request time limit |
+| A file with a BOM is rejected                                           | Strip the BOM                                                                                                                                                 |
+| An error if you run the import first                                    | Create the folder and tell the user to export first                                                                                                           |
+| A fractional or huge song ID or a NUL character stops the script        | Reject the file                                                                                                                                               |
+| No upper limit on the file's character count                            | 5,000 characters per line. The LRCLIB response size is not limited. It is a local script the owner runs, so I left it                                         |
+| Consecutive time marks                                                  | Fixed the regular expression                                                                                                                                  |
+| The fetch record is left only at the end of a run                       | Not fixed. There is a per-song source column, so the effect is small                                                                                          |
+| The artist comparison is loose                                          | Accept only the name alone, or when a guest label follows                                                                                                     |
+| A response fragment can get mixed into the failure log                  | Print a fixed phrase other than the status code                                                                                                               |
+| Part of the password can appear in the target DB output                 | Reject it if the path has `@`                                                                                                                                 |
 
-## 2차 코드 리뷰 반영 — 2026-11-01
+## Applied the 2nd code review: 2026-11-01
 
-독립 리뷰의 중간 3건, 낮음 5건을 확인했다.
+I checked 3 medium and 5 low findings of the independent review.
 
-| 지적                                                   | 처리                                                                                                 |
-| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| 저장 뒤 파일 이동이 실패하면 덮어쓰기 문제가 다시 생김 | 이미 DB와 같은 파일은 건너뛰지 않고 옮김                                                             |
-| 내보낸 뒤 화면에서 고친 번역이 덮어써짐                | 파일에 `atExport`를 저장하고, DB와 다르면 거부                                                       |
-| 번역본에 손님 표기가 붙은 곡을 못 찾음                 | 제목 비교에서 손님 표기를 뺌                                                                         |
-| `sameArtist`가 `featuring`, 괄호 표기를 놓침           | 정규식 수정                                                                                          |
-| 안 채운 파일이 거부됨                                  | 입력한 내용이 없으면 DB가 바뀌었어도 건너뜀                                                          |
-| 응답의 NUL 문자로 전체가 멈춤                          | 그 응답을 쓰지 않음                                                                                  |
-| 문서 어긋남                                            | 판단 표, 테스트 표, README 수정                                                                      |
-| 테스트 공백                                            | 이동 실패 뒤 재실행, 내보낸 뒤 변경을 추가. 곡을 저장한 뒤 429로 멈출 때의 받은 기록은 코드로만 확인 |
+| Finding                                                                 | Handling                                                                                                                                             |
+| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| If moving the file fails after saving, the overwrite problem comes back | Move a file that is already the same as the DB instead of skipping it                                                                                |
+| A translation edited on the screen after the export is overwritten      | Save `atExport` in the file and reject it if it differs from the DB                                                                                  |
+| Cannot find a song whose translated edition has a guest label           | Removed the guest label in the title comparison                                                                                                      |
+| `sameArtist` misses `featuring` and parenthesis notation                | Fixed the regular expression                                                                                                                         |
+| A file that is not filled in is rejected                                | If there is no input, skip it even if the DB changed                                                                                                 |
+| A NUL character in a response stops everything                          | Do not use that response                                                                                                                             |
+| The docs do not match                                                   | Fixed the judgment table, the test table, and the README                                                                                             |
+| Test gaps                                                               | Added a rerun after a failed move and a change after the export. The fetch record when stopping with 429 after saving songs was checked only by code |
 
-## 테스트
+## Tests
 
-| 파일                                              | 검증한 동작                                                                                                                                                                                                                                                          |
-| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `backend/test/lyrics-fetch.test.ts`               | 가짜 서버로 200, 404, 429(`Retry-After` 대기와 재시도, 없을 때 60초, 반복 시 중단), 500, 요청 값과 `User-Agent`, 검색 대체와 다른 곡 거르기, 시간 정보 가사, 중단 조건 3가지, 대상 DB 출력                                                                           |
-| `backend/test/lyrics-scripts.integration.test.ts` | 실제 DB에서 저장과 출처, 이미 넣은 가사 유지, 한 곡 실패에도 계속, 받은 기록, 다시 실행, 내보내기 내용과 덮어쓰지 않기, 잘못된 파일 9가지가 저장되지 않음, 안 채운 파일 건너뜀, BOM 파일과 `imported/` 이동, 이동 실패 뒤 재실행, 화면에서 고친 번역 유지, 사라진 곡 |
+| File                                              | Behavior verified                                                                                                                                                                                                                                                                                                                                                                      |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `backend/test/lyrics-fetch.test.ts`               | With a fake server: 200, 404, 429 (waiting for `Retry-After` and retrying, 60 seconds when it is missing, stopping on repeats), 500, the request values and `User-Agent`, search fallback and filtering out other songs, time-synced lyrics, 3 stop conditions, and the target DB output                                                                                               |
+| `backend/test/lyrics-scripts.integration.test.ts` | On a real DB: saving and the source, keeping lyrics already entered, continuing after one song fails, the fetch record, running again, the export content and not overwriting, 9 kinds of wrong files not being saved, skipping files not filled in, a BOM file and the move to `imported/`, rerun after a failed move, keeping translations edited on the screen, and a vanished song |
 
-## 검증
+## Verification
 
-- `TEST_DATABASE_URL=… npm run check`: 통과(exit 0). 포맷·lint·타입 통과, 백엔드 91개 통과(건너뜀 0), 프런트엔드 207개 통과·2개 건너뜀(`DARK_ONLY`), 스킬 4개 통과, 빌드 성공. `npm run knip`: 결과 없음.
-- 실제 LRCLIB에는 요청하지 않았다. 가사 받기는 사용자가 직접 실행한다. 실제 응답과 맞는지는 첫 실행에서 드러난다.
-- 테스트 문장은 모두 직접 지었다. `.local/`은 `.gitignore`에 있음을 `git check-ignore`로 확인했다.
-- 화면 변경 없음.
+- `TEST_DATABASE_URL=… npm run check`: pass (exit 0). Format, lint, and type checks pass, backend 91 passed (0 skipped), frontend 207 passed and 2 skipped (`DARK_ONLY`), skills 4 passed, build succeeded. `npm run knip`: no findings.
+- I did not send requests to the real LRCLIB. The user runs the lyrics fetch directly. Whether it matches the real responses will show up on the first run.
+- All test sentences were written by hand. I confirmed with `git check-ignore` that `.local/` is in `.gitignore`.
+- No screen changes.
 
-## 한계
+## Limits
 
-- 곡을 얼마나 찾을지는 실행해 봐야 안다. 못 찾은 곡은 화면에서 붙여 넣는다.
-- 받은 가사가 맞는 판본인지 자동으로 확인하지 않는다. 제목, 가수, 길이만 본다.
-- 번역을 채우는 일은 이 작업에 없다. Claude Code는 가사를 번역하지 않는다.
+- How many songs it finds is known only by running it. Paste the songs it could not find on the screen.
+- It does not automatically check that the lyrics received are the right edition. It looks only at the title, artist, and length.
+- Filling in the translations is not part of this work. Claude Code does not translate lyrics.

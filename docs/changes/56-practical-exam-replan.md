@@ -1,62 +1,62 @@
-# #56 정보처리기사 실기 기한에 맞춰 공부 계획 다시 짜기
+# #56 Redo the study plan to fit the Engineer Information Processing practical exam deadline
 
-- 이슈: [#56](https://github.com/sirloinbh/cert-manager/issues/56)
-- 브랜치: `docs/56-practical-exam-replan`
-- 결과: [자격증 세부 공부 계획](../plans/README.md)
+- Issue: [#56](https://github.com/sirloinbh/cert-manager/issues/56)
+- Branch: `docs/56-practical-exam-replan`
+- Result: [Detailed certification study plans](../plans/README.md)
 
-## 목적
+## Purpose
 
-#34 계획을 쓴 뒤 받은 답변을 반영한다.
+Reflect the answers received after the #34 plan was written.
 
-## 사용자 답변 — 2026-10-31
+## User answers: 2026-10-31
 
-- 토익 목표는 2027년 1월이다.
-- 정보처리기사 필기는 합격했고, 실기 기한은 2027년 3회까지다.
-- 운전면허는 없다.
+- The TOEIC goal is January 2027.
+- The Engineer Information Processing written exam is passed, and the practical exam deadline is the 3rd session of 2027.
+- You have no driver's license.
 
-## 판단
+## Judgments
 
-- 기한이 있는 실기를 가장 앞에 두고 2027년 공휴일을 먼저 쓴다. 실기 1회에 떨어져도 2·3회 준비 날이 남도록 나눴다.
-- 토익은 사용자가 정한 2027년 1월을 지킨다. 2027년 공식 일정을 확인하지 못해 2027-01-31(일)로 잠정했다. 공부 날은 2026-12-25와 2027-01-01이고, 2026-12-27 회차 접수는 계획에서 뺐다.
-- 정보처리 다음 등급을 기능사에서 기사로 바꿨다. 필기를 이미 합격했으므로 기능사·산업기사부터 보면 기한을 놓칠 수 있다. 낮은 등급은 작성자 판단으로 뒤로 미뤘다. "모든 등급" 결정을 취소한 것은 아니며, 그 뒤 순서는 기사를 딴 뒤 사용자가 정한다고 문서에 적었다.
-- 운전면허, AWS, 토익 스피킹, 토익 두 번째 응시는 고정 날짜를 지우고 실기 결과 뒤에 정한다. 실기를 몇 회차에 붙는지에 따라 남는 공휴일이 최대 28시간, 18시간, 4시간으로 달라지기 때문이다. 발표가 늦으면 더 줄어든다.
-- 실기 시기는 2026년 일정을 옮긴 잠정 값이다. 앱의 날짜도 같다.
+- Put the practical exam, which has a deadline, first and use the 2027 public holidays on it first. I split them so that preparation days remain for the 2nd and 3rd sessions even if the 1st session fails.
+- TOEIC keeps the January 2027 the user chose. I could not confirm the official 2027 schedule, so I made it tentatively 2027-01-31 (Sunday). The study days are 2026-12-25 and 2027-01-01, and I removed registration for the 2026-12-27 session from the plan.
+- Changed the next grade of information processing from Craftsman to Engineer. The written exam is already passed, so starting from Craftsman or Industrial Engineer could miss the deadline. I postponed the lower grades by the author's judgment. This does not cancel the "all grades" decision, and the document says the user decides the order after earning Engineer.
+- For the driver's license, AWS, TOEIC Speaking, and the second TOEIC attempt, I removed the fixed dates and decided them after the practical result. Depending on which session the practical exam passes, the remaining holidays are at most 28 hours, 18 hours, or 4 hours. If the announcement is late, it shrinks more.
+- The practical exam periods are tentative values carried over from the 2026 schedule. The dates in the app are the same.
 
-## 변경 — 2026-10-31
+## Changes: 2026-10-31
 
-- `docs/plans/README.md`: 사용자 답변, 2027년 일정표, 실기 뒤 순서, 합격 회차별 남는 공휴일, 추천 이유.
-- `docs/plans/information-processing.md`: 기사 실기 기준으로 다시 썼다.
-- `docs/plans/toeic.md`, `toeic-speaking.md`, `aws-cloud-practitioner.md`, `aws-solutions-architect.md`, `driver-license.md`: 첫 토익 시기와 "실기 뒤" 일정으로 고쳤다.
-- 이 PC의 앱 DB `cert`: 토익 시험일과 할 일, 정보처리 목표(이름, 상태, 목표 등급 기사, 시험일)와 단계 3개·할 일 26개를 고쳤다. 다른 목표의 시험일과 할 일 날짜를 비웠다.
+- `docs/plans/README.md`: the user answers, the 2027 schedule table, the order after the practical exam, the holidays left by passing session, and the reasons for the recommendation.
+- `docs/plans/information-processing.md`: rewritten around the Engineer practical exam.
+- `docs/plans/toeic.md`, `toeic-speaking.md`, `aws-cloud-practitioner.md`, `aws-solutions-architect.md`, `driver-license.md`: changed to the first TOEIC timing and the "after the practical" schedule.
+- This PC's app DB `cert`: fixed the TOEIC exam date and tasks, the information processing goal (name, status, target grade Engineer, exam date) and its 3 stages and 26 tasks. Cleared the exam dates and task dates of the other goals.
 
-## 검증
+## Verification
 
-- 시간: 2027년 공휴일 24일이 일정표에 한 번씩 배정됐고 합계 48시간이다. 2026-12-25의 2시간은 따로다.
-- 앱: 2027년 공휴일 중 22일에 할 일이 하나씩 있다. 남은 12/25, 12/27은 실기 뒤 시험용이라 비워 뒀다. 정보처리기사 실기는 목표 등급 기사, 토익 시험일은 2027-01-31이다.
-- 회차별 준비 날: 1회 준비는 3/1까지, 3회 준비는 10/11까지로 2026년 기준 시험 시작일(4월 18일, 10월 24일)보다 앞선다. 2회 준비의 7/17과 7/19는 2026년 시작일(7월 18일) 부근이어서 시험 기간과 겹칠 수 있다. 그래서 2회는 접수 때 7/19 뒤의 날을 고르도록 계획에 적었고, 이슈의 "예상 시기보다 앞" 기준은 이 조건을 붙여 충족한다.
-- `TEST_DATABASE_URL=… npm run check`: 통과(exit 0). 백엔드 40개 통과(건너뜀 0), 프런트엔드 163개 통과, 스킬 4개 통과, 빌드 성공.
-- `node .standards/secret-scan.mjs`: 의심 항목 없음. 앱 코드 변경이 없어 앱 테스트를 더하지 않았다.
+- Time: the 24 public holidays of 2027 are assigned to the schedule table once each, for 48 hours in total. The 2 hours of 2026-12-25 are separate.
+- App: 22 of the 2027 public holidays have one task each. The remaining 12/25 and 12/27 are left empty for the exams after the practical. The Engineer Information Processing practical has the target grade Engineer, and the TOEIC exam date is 2027-01-31.
+- Preparation days per session: preparation for the 1st session ends by 3/1 and for the 3rd by 10/11, which are before the 2026 exam start dates (April 18 and October 24). 7/17 and 7/19 of the 2nd session preparation are near the 2026 start date (July 18), so they can overlap the exam period. So the plan says to choose a day after 7/19 for the 2nd session when you register, and the issue criterion "before the expected period" is met with this condition added.
+- `TEST_DATABASE_URL=… npm run check`: pass (exit 0). Backend 40 passed (0 skipped), frontend 163 passed, skills 4 passed, build succeeded.
+- `node .standards/secret-scan.mjs`: no suspicious items. There is no app code change, so I added no app tests.
 
-## 자동 코드 리뷰 — 2026-10-31
+## Automatic code review: 2026-10-31
 
-1차(읽기 전용 리뷰 에이전트): 높음 0건, 중간 4건, 낮음 2건. 모두 고쳤다.
+1st (read-only review agent): 0 high, 4 medium, 2 low. All were fixed.
 
-| 지적                                                                      | 처리                                                                    |
-| ------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| 기능사·산업기사를 뺀 설명이 "모든 등급" 결정과 어긋남                     | 결정은 유지하고 뒤로 미룬 것임을 적었다. 기사 뒤 순서는 사용자가 정한다 |
-| 2회 직전 공부 날이 시험 기간과 겹칠 수 있음                               | 접수 때 7/19 뒤의 날을 고르도록 적고 검증 문장을 고쳤다                 |
-| 6/6은 1회 2차 발표 전일 수 있음                                           | 발표를 "초~중순"으로 적고 26시간이 되는 경우를 적었다                   |
-| 응시자격 서류 안내가 사라짐                                               | 안내를 되살리고 사용자 할 일에 넣었다                                   |
-| 실기 뒤 시험 시간이 모자란다는 말이 없음, "2028년부터"가 옛 일정을 전제함 | 합계 50시간과 넘어가는 시간을 적고 문구를 고쳤다                        |
-| 5월 공부 날이 1회 응시 완료를 전제함                                      | 1회는 4월 안의 날을 고르도록 적었다                                     |
+| Finding                                                                                                   | Handling                                                                                     |
+| --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| The explanation that left out Craftsman and Industrial Engineer conflicts with the "all grades" decision  | Kept the decision and wrote that it was postponed. The user decides the order after Engineer |
+| The study days just before the 2nd session can overlap the exam period                                    | Wrote to choose a day after 7/19 when you register and fixed the verification sentence       |
+| 6/6 may be before the 1st session's 2nd announcement                                                      | Wrote the announcement as "early to mid" and wrote the case where it becomes 26 hours        |
+| The eligibility document guidance disappeared                                                             | Restored the guidance and put it in the user tasks                                           |
+| No mention that the exam time after the practical is not enough, and "from 2028" assumes the old schedule | Wrote the total of 50 hours and the hours that move over, and fixed the wording              |
+| The May study days assume the 1st session is already taken                                                | Wrote to choose a day in April for the 1st session                                           |
 
-앱 할 일 문구도 같은 내용으로 고쳤다.
+I fixed the task wording in the app the same way.
 
-2차(diff를 다시 본 리뷰 에이전트): 높음 0건, 중간 1건, 낮음 2건. 모두 고쳤고, 리뷰는 2회로 마쳤다. 2회 합격 시간도 발표 시기에 따라 줄어든다는 단서를 넣었고, 1회 발표 확인 행을 되살렸으며, 응시일 조건을 일정표와 사용자 할 일에도 적었다.
+2nd (review agent that looked at the diff again): 0 high, 1 medium, 2 low. All were fixed, and the review ended after 2 rounds. I added the caveat that the hours for passing the 2nd session also shrink depending on the announcement time, restored the 1st session announcement check row, and wrote the exam date condition in the schedule table and the user tasks too.
 
-## 한계
+## Limits
 
-- 실기 시기, 토익 2027-01-31은 잠정이다. 2027년 공식 일정을 확인하지 못했다.
-- 실기 시험 형식, 합격 기준, 응시료는 민간 자료 값이다.
-- 실기 기한은 사용자 답변 값이다. Q-Net에서 본인 기한을 확인해야 한다.
-- 공부 묶음과 시간 배분은 작성자의 추정이고, 합격에 충분하다는 근거는 없다.
+- The practical exam periods and TOEIC 2027-01-31 are tentative. I could not confirm the official 2027 schedule.
+- The practical exam format, passing criteria, and exam fees are private source values.
+- The practical exam deadline is the value the user answered. Check your own deadline on Q-Net.
+- The grouping of study and the time split are the author's estimate, and there is no evidence that they are enough to pass.

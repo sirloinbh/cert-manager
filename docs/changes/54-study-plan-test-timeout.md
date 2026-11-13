@@ -1,70 +1,70 @@
-# #54 공부 계획 화면 테스트의 시간 초과 고치기
+# #54 Fix the timeout of the study plan screen tests
 
-이슈: [#54](https://github.com/sirloinbh/cert-manager/issues/54)
+Issue: [#54](https://github.com/sirloinbh/cert-manager/issues/54)
 
-## 목적
+## Purpose
 
-`frontend/src/study-plan.test.tsx`가 PC가 바쁠 때 5초 제한에 걸려 가끔 실패했다. 필수 검사 `ci / verify`도 같은 테스트를 돌리므로 코드와 무관하게 실패할 수 있다.
+`frontend/src/study-plan.test.tsx` sometimes failed by hitting the 5 second limit when the PC was busy. The required check `ci / verify` runs the same test, so it can fail regardless of the code.
 
-## 원인 측정
+## Measuring the cause
 
-부하가 없을 때 파일에서 가장 느린 테스트는 `what was saved shows even if reloading the plan fails`로 1,169ms였고, 다음은 647ms였다. 나머지는 대부분 300ms 아래였다.
+With no load, the slowest test in the file was `what was saved shows even if reloading the plan fails` at 1,169 ms, and the next was 647 ms. Most of the others were under 300 ms.
 
-이 테스트 하나에 시간을 재는 임시 코드를 붙여 잰 결과는 다음과 같다(전체 1,442ms).
+I attached temporary timing code to that one test and measured the following (1,442 ms in total).
 
-| 동작                                               | 호출 |  시간 | 비율 |
-| -------------------------------------------------- | ---: | ----: | ---: |
-| `findByRole`                                       |  6회 | 608ms |  42% |
-| `getByRole`                                        |  8회 | 505ms |  35% |
-| `fireEvent.click`(대화상자 그리기 포함)            |  8회 | 203ms |  14% |
-| `getByLabelText`, `fireEvent.change`, `findByText` |  9회 |  29ms |   2% |
+| Action                                             | Calls |  Time | Share |
+| -------------------------------------------------- | ----: | ----: | ----: |
+| `findByRole`                                       |     6 | 608ms |   42% |
+| `getByRole`                                        |     8 | 505ms |   35% |
+| `fireEvent.click` (including drawing the dialog)   |     8 | 203ms |   14% |
+| `getByLabelText`, `fireEvent.change`, `findByText` |     9 |  29ms |    2% |
 
-역할로 찾는 쿼리가 77%다. 대화상자 입력 이벤트나 애니메이션은 큰 원인이 아니었다. 한 테스트가 저장을 네 번 하면서 역할 쿼리를 14번 호출해 가장 먼저 제한에 닿았다.
+Queries by role are 77%. Dialog input events and animations were not a big cause. One test saves four times and calls role queries 14 times, so it hit the limit first.
 
-## 변경 내용
+## Changes
 
-- 그 테스트를 셋으로 나눴다. 새 단계와 첫 할 일, 할 일 수정, 단계 수정이다. 각 테스트는 다시 읽기가 실패해도 저장한 내용이 보이는지 확인한다.
-- 제한 시간은 늘리지 않았다.
-- 수정 테스트는 앞 단계에서 이어 가지 않고 처음 불러온 계획에서 시작한다. 새 단계에 할 일을 더하는 경우는 다시 읽기 실패 뒤의 저장이 이어지도록 한 테스트에 남겼다.
+- Split that test into three: a new stage and the first task, editing a task, and editing a stage. Each test checks that the saved content shows even if the reload fails.
+- I did not raise the time limit.
+- The edit tests start from the plan loaded at first and do not carry on from the earlier step. The case of adding a task to a new stage stays in one test so that saving after a failed reload carries on.
 
-## 검증
+## Verification
 
-코어 12개를 모두 바쁘게 돌리는 프로세스 12개를 띄우고 이 파일을 반복 실행했다. 측정 스크립트는 임시 파일이라 커밋하지 않았다.
+I started 12 processes that keep all 12 cores busy and ran this file repeatedly. The measuring script was a temporary file, so I did not commit it.
 
-| 시점    |      실행 | 시간 초과·실패 | 가장 느린 테스트 |
-| ------- | --------: | -------------: | ---------------- |
-| 변경 전 |       3회 |            0건 | 2,796~3,001ms    |
-| 변경 후 | 10회 연속 |            0건 | 1,712~2,255ms    |
+| When          |        Runs | Timeouts or failures | Slowest test  |
+| ------------- | ----------: | -------------------: | ------------- |
+| Before change |     3 times |                    0 | 2,796-3,001ms |
+| After change  | 10 in a row |                    0 | 1,712-2,255ms |
 
-제한 5초에 대한 여유가 늘었다. 테스트가 19개에서 21개로 늘어 파일 전체 시간은 12.5~13.1초에서 14.9~19.2초로 늘었다.
+The margin against the 5 second limit grew. The tests went from 19 to 21, so the time of the whole file went from 12.5-13.1 seconds to 14.9-19.2 seconds.
 
-- `npm run check`: 통과. 백엔드 108개 통과, 프런트엔드 236개 통과·2개 건너뜀(`DARK_ONLY`), 스킬 4개 통과, 빌드 성공.
-- `npm run knip`: 결과 없음.
-- `node .standards/check.mjs`: 통과.
-- `node .standards/secret-scan.mjs`: 의심 항목 없음.
-- 앱 코드와 화면은 바꾸지 않아 브라우저 확인은 하지 않았다.
+- `npm run check`: pass. Backend 108 passed, frontend 236 passed and 2 skipped (`DARK_ONLY`), skills 4 passed, build succeeded.
+- `npm run knip`: no findings.
+- `node .standards/check.mjs`: pass.
+- `node .standards/secret-scan.mjs`: no suspicious items.
+- I did not change app code or screens, so I did not do a browser check.
 
-## 1차 리뷰 반영
+## Applied the 1st review
 
-독립 읽기 전용 리뷰의 지적 2건(낮음)을 고쳤다.
+I fixed 2 findings (low) of the independent read-only review.
 
-- 나눈 테스트가 다시 읽기 실패를 기다린 뒤 수정한 값을 다시 확인하지 않았다. 실패 문구를 본 뒤 한 번 더 확인한다.
-- 가짜 API가 단계 수정에 할 일까지 돌려줘, 실제 서버(할 일 없이 응답)와 달랐다. 서버와 같은 모양으로 고쳐 "할 일을 유지한다"는 검사가 의미를 갖게 했다.
+- The split tests did not check the edited value again after waiting for the reload to fail. They now check once more after seeing the failure message.
+- The fake API returned the tasks too for a stage edit, which differed from the real server (it answers without tasks). I changed it to the same shape as the server so that the check "keeps the tasks" has meaning.
 
-위 표의 부하 측정은 이 수정 전의 코드로 했다.
+The load measurement in the table above was done with the code before this fix.
 
-## 2차 리뷰 반영
+## Applied the 2nd review
 
-독립 읽기 전용 리뷰의 지적 2건(낮음)을 고쳤다.
+I fixed 2 findings (low) of the independent read-only review.
 
-- 새 단계와 첫 할 일 테스트도 두 번째 다시 읽기 실패를 기다린 뒤 할 일을 다시 확인한다.
-- 이 기록에 역할 쿼리 수를 잘못 적은 문장을 지웠다.
+- The test for a new stage and the first task also checks the task again after waiting for the second reload failure.
+- Deleted the sentence in this record that wrote the number of role queries wrongly.
 
-최종 코드로 같은 부하를 걸어 10회 연속 다시 실행했다. 시간 초과·실패는 0건이고, 가장 느린 테스트는 1,307~2,025ms다. 측정 때마다 PC의 다른 작업이 달라 표의 값과 정밀하게 비교할 수는 없다.
+I ran it 10 times in a row again with the same load on the final code. There were 0 timeouts or failures, and the slowest test is 1,307-2,025 ms. What else the PC was doing differed at each measurement, so it cannot be compared precisely with the values in the table.
 
-리뷰는 2차까지이므로 이후는 CI로 넘어간다.
+The review is up to the 2nd round, so after this it goes to CI.
 
-## 제한·후속 작업
+## Limits and follow-up
 
-- 이슈의 원래 실패는 리뷰 에이전트와 함께 돌 때 파일 전체가 80초 걸렸던 경우다. 이번 부하는 그보다 가벼워, 그만큼 느려질 때 통과한다는 뜻은 아니다.
-- 다른 테스트 파일의 역할 쿼리 비용은 재지 않았다.
+- The original failure in the issue was the case where the whole file took 80 seconds when it ran together with a review agent. This load is lighter than that, so it does not mean it passes when it gets that slow.
+- I did not measure the cost of role queries in other test files.

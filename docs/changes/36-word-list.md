@@ -1,92 +1,92 @@
-# #36 자주 쓰는 영어 단어장과 어원 분석 만들기
+# #36 Build the frequently used English word list and etymology analysis
 
-- 이슈: [#36](https://github.com/sirloinbh/cert-manager/issues/36)
-- 브랜치: `feat/36-word-list`
-- 설계: [서비스 범위와 데이터 구조](../design/scope-and-data-model.md) 6절, 자료: [영어 공부 자료 출처](../research/english-content-sources.md) 4~6절
+- Issue: [#36](https://github.com/sirloinbh/cert-manager/issues/36)
+- Branch: `feat/36-word-list`
+- Design: section 6 of [Service scope and data model](../design/scope-and-data-model.md); material: sections 4 to 6 of [Sources of English study material](../research/english-content-sources.md)
 
-## 사용 순서
+## Order of use
 
-모두 `DATABASE_URL`의 DB에 쓰고, 시작할 때 대상 DB를 출력한다.
+All of them write to the DB in `DATABASE_URL` and print the target DB when they start.
 
-1. `npm run words:import -w backend`: NGSL 1.2 목록을 받아 넣는다. 원본은 `.local/sources/`에 둔다.
-2. `npm run words:etymology -w backend`: 단어마다 Wiktionary 어원을 찾아본다. 처음에는 약 1시간 걸리고, 끊어도 다음 실행이 남은 단어부터 받는다.
-3. `npm run words:export -w backend -- 50`: 어원을 찾아봤고 뜻이 없는 단어를 빈도 순으로 `.local/word-batches/`에 내보낸다.
-4. 파일의 뜻, 예문, 어원 요소를 Claude Code 세션에서 채운다.
-5. `npm run words:fill -w backend`: 파일 하나를 통째로 저장하고 `imported/`로 옮긴다. 맞지 않는 파일은 이유를 출력하고 저장하지 않는다. 저장은 됐는데 옮기지 못하면 지우라고 따로 알린다.
+1. `npm run words:import -w backend`: fetches the NGSL 1.2 list and puts it in. The original is kept in `.local/sources/`.
+2. `npm run words:etymology -w backend`: looks up the Wiktionary etymology of each word. The first run takes about 1 hour, and if you stop it, the next run fetches from the remaining words.
+3. `npm run words:export -w backend -- 50`: exports words whose etymology was looked up and that have no meaning yet, in frequency order, to `.local/word-batches/`.
+4. Fill in the meanings, examples, and etymology parts of the file in a Claude Code session.
+5. `npm run words:fill -w backend`: saves a whole file and moves it to `imported/`. A file that does not fit prints the reason and is not saved. If it was saved but could not be moved, it separately tells you to delete it.
 
-## 판단
+## Judgments
 
-| 항목              | 판단                                                                                                                                                               |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 범위              | 이 이슈는 표, 스크립트, API, 화면까지다. 2,809단어를 채우는 일은 세션 여러 번이 필요해 후속 이슈로 나눴다                                                          |
-| 어원 받기         | 3.2GB 전체 덤프(폐기 예정 표시)가 아니라 kaikki.org의 단어별 파일을 1초 간격으로 받는다                                                                            |
-| 어원 원문         | 맨 앞의 자동 생성 계보를 `English <단어>` 줄까지 뺀다. 그 줄이 없거나 뒤에 문장이 없으면 자료 없음으로 둔다. 품사별로 같은 글은 한 번만 넣는다                     |
-| 원본 파일         | NGSL CSV만 `.local/sources/`에 둔다. 단어별 파일은 어원 글만 DB에 넣고 버린다                                                                                      |
-| 스프레드시트 흔적 | 원본의 `TRUE`, `FALSE`를 소문자로 고치고 `I`는 그대로 둔다                                                                                                         |
-| 라이선스          | NGSL은 사이트 표기대로 CC BY-SA 4.0. kaikki.org에는 표기가 없어 Wiktionary 저작권 문서의 CC BY-SA 4.0을 기록한다                                                   |
-| 어원 요소         | 어원 자료가 없는 단어에는 넣을 수 없다. 같은 `key`는 같은 요소이고 처음 쓴 뜻을 유지한다                                                                           |
-| 이미 채운 단어    | 들여오기가 덮어쓰지 않고 파일을 거부한다                                                                                                                           |
-| 목록              | 2,809행을 한 번에 받아 화면에서 검색하고 100개씩 보여 준다                                                                                                         |
-| 공통 코드         | 요청 간격과 재시도를 `polite-fetch.ts`로 옮겨 가사 받기와 함께 쓴다. 이 과정에서 가사 받기도 `503`에 기다렸다 다시 시도하고, 포기하면 `429`처럼 실행 전체를 멈춘다 |
+| Item                 | Judgment                                                                                                                                                                                                             |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Scope                | This issue covers the table, the scripts, the API, and the screens. Filling in 2,809 words needs several sessions, so I split it into a follow-up issue                                                              |
+| Fetching etymology   | Instead of the 3.2GB full dump (marked for removal), fetch the per-word files from kaikki.org at 1 second intervals                                                                                                  |
+| Etymology text       | Cut the auto-generated lineage at the start up to the `English <word>` line. If that line is missing or there is no text after it, treat it as no data. Put the same text for different parts of speech in only once |
+| Original files       | Keep only the NGSL CSV in `.local/sources/`. For the per-word files, put only the etymology text into the DB and discard them                                                                                        |
+| Spreadsheet traces   | Fix `TRUE` and `FALSE` in the original to lowercase, and leave `I` as it is                                                                                                                                          |
+| License              | NGSL is CC BY-SA 4.0 as the site states. kaikki.org has no notice, so I record CC BY-SA 4.0 from the Wiktionary copyright page                                                                                       |
+| Etymology parts      | They cannot be added to a word with no etymology data. The same `key` is the same part and keeps the meaning written first                                                                                           |
+| Words already filled | The import does not overwrite them and rejects the file                                                                                                                                                              |
+| List                 | Fetch all 2,809 rows at once, search on the screen, and show 100 at a time                                                                                                                                           |
+| Shared code          | Moved the request interval and retry into `polite-fetch.ts`, shared with the lyrics fetch. In the process the lyrics fetch also waits and retries on `503`, and if it gives up it stops the whole run like `429`     |
 
-## 변경 — 2026-11-01
+## Changes: 2026-11-01
 
-- DB: `database/migrations/008_words.sql`. `words`, `morphemes`, `word_morphemes`. `import_sources`는 #35에서 만들었다.
-- 스크립트: `backend/src/word-list.ts`, `import-word-list.ts`, `word-etymology.ts`, `import-etymology.ts`, `word-files.ts`, `export-words.ts`, `import-words.ts`, `polite-fetch.ts`.
+- DB: `database/migrations/008_words.sql`. `words`, `morphemes`, `word_morphemes`. `import_sources` was created in #35.
+- Scripts: `backend/src/word-list.ts`, `import-word-list.ts`, `word-etymology.ts`, `import-etymology.ts`, `word-files.ts`, `export-words.ts`, `import-words.ts`, `polite-fetch.ts`.
 - API: `backend/src/routes/words.ts`. `GET /api/words`, `GET /api/words/:id`.
-- 화면: `frontend/src/words.tsx`, `word-data.ts`, `app.tsx`의 `/words`, `/words/:id`. 두 화면 아래에 출처와 라이선스를 적는다.
-- 이 PC의 앱 DB `cert`: 2,809단어를 넣었고 어원 찾아보기를 실행했다.
+- Screens: `frontend/src/words.tsx`, `word-data.ts`, and `/words` and `/words/:id` in `app.tsx`. The source and license are written below both screens.
+- This PC's app DB `cert`: put in 2,809 words and ran the etymology lookup.
 
-## 1차 코드 리뷰 반영 — 2026-11-01
+## Applied the 1st code review: 2026-11-01
 
-독립 리뷰의 중간 2건, 낮음 10건을 확인했다. 저장된 값을 표본 점검해 두 가지가 실제 문제임을 확인하고, 받던 어원을 멈춘 뒤 고쳐서 처음부터 다시 받았다(2차 리뷰 뒤 한 번 더).
+I checked 2 medium and 10 low findings of the independent review. I sampled the stored values and confirmed that two were real problems, stopped the etymology fetch that was running, fixed them, and fetched again from the start (one more time after the 2nd review).
 
-| 지적                                         | 처리                                                                            |
-| -------------------------------------------- | ------------------------------------------------------------------------------- |
-| 계보 제거가 문장을 버리거나 계보 줄을 저장함 | 실제로 `well`에 계보 줄이 섞였다. 추측 대신 `English <단어>` 줄을 기준으로 자름 |
-| 테스트가 DB의 다른 단어까지 고침             | 다른 단어가 있으면 시작할 때 실패                                               |
-| `I` 주소 (불확실)                            | 실제로 틀렸다. 주소의 대소문자를 유지                                           |
-| 목록이 바뀌면 순위 충돌                      | 순위가 바뀐 목록은 이유를 알리고 저장하지 않음                                  |
-| CSV 중복과 순위 빠짐                         | 거부                                                                            |
-| 파일 내용의 DB 오류로 스크립트가 멈춤        | 그 파일만 거부                                                                  |
-| 커밋 뒤 이동 실패                            | 저장됐으니 파일을 지우라고 안내                                                 |
-| 한 단어에 같은 요소 두 번                    | 거부                                                                            |
-| 관련 단어로 옮기면 검색어 유실               | 복귀 정보를 넘김                                                                |
-| 페이지 수가 URL 밖에 있음                    | 다른 검색이면 첫 페이지로. 상세에서 돌아오면 첫 100개부터 보이는 것은 그대로 둠 |
-| 빈 꼬리 키                                   | 파일 검사와 DB에서 거부                                                         |
-| 가사 받기 동작 변화                          | `Accept` 헤더 복원, `503` 테스트 추가, 위 판단 표에 기록                        |
+| Finding                                                        | Handling                                                                                                                         |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Removing the lineage drops a sentence or stores a lineage line | A lineage line was really mixed into `well`. Instead of guessing, cut at the `English <word>` line                               |
+| The test also changes other words in the DB                    | If other words exist, it fails at the start                                                                                      |
+| The address of `I` (uncertain)                                 | It was really wrong. Keep the case of the address                                                                                |
+| If the list changes, ranks collide                             | A list whose ranks changed reports the reason and is not saved                                                                   |
+| CSV duplicates and missing ranks                               | Rejected                                                                                                                         |
+| A DB error from file content stops the script                  | Reject only that file                                                                                                            |
+| Move failure after commit                                      | It was saved, so tell the user to delete the file                                                                                |
+| The same part twice in one word                                | Rejected                                                                                                                         |
+| Moving to a related word loses the search term                 | Pass the return information                                                                                                      |
+| The page count is outside the URL                              | Go to the first page for a different search. Coming back from the detail still starts from the first 100, and I left it as it is |
+| Empty trailing key                                             | Rejected in the file check and in the DB                                                                                         |
+| Behavior change in the lyrics fetch                            | Restored the `Accept` header, added a `503` test, and recorded it in the judgment table above                                    |
 
-## 2차 코드 리뷰 반영 — 2026-11-01
+## Applied the 2nd code review: 2026-11-01
 
-독립 리뷰의 중간 1건, 낮음 6건을 확인했다.
+I checked 1 medium and 6 low findings of the independent review.
 
-| 지적                                  | 처리                                                               |
-| ------------------------------------- | ------------------------------------------------------------------ |
-| 짧은 문장을 계보 끝으로 오인          | `English <그 단어>` 줄만 끝으로 본다. 받던 어원을 멈추고 다시 받음 |
-| 고친 제약이 이미 만든 DB에 적용 안 됨 | 아직 병합 전 파일이라 이 PC의 두 DB에는 직접 고쳤다                |
-| 이동 실패의 출력이 모순됨             | 저장됨과 옮기지 못함을 따로 출력                                   |
-| DB 거부 메시지로 원인을 못 찾음       | NUL은 파일 검사에서 항목 위치와 함께 거부. DB 오류에는 코드를 붙임 |
-| 거부될 목록이 원본을 먼저 덮어씀      | 저장에 성공한 뒤 원본을 씀                                         |
-| 페이지 초기화가 주석과 다름           | 동작 피해가 없어 주석을 고침                                       |
-| 문서 불일치                           | 수정                                                               |
+| Finding                                                      | Handling                                                                                            |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| A short sentence is mistaken for the end of the lineage      | Treat only the `English <that word>` line as the end. Stopped the etymology fetch and fetched again |
+| The fixed constraint is not applied to an already created DB | The file is not merged yet, so I fixed both DBs on this PC directly                                 |
+| The output for a failed move is contradictory                | Print saved and could-not-move separately                                                           |
+| The cause cannot be found from the DB rejection message      | A NUL is rejected in the file check with the item position. DB errors get a code attached           |
+| A list that will be rejected overwrites the original first   | Write the original after the save succeeds                                                          |
+| Page reset differs from the comment                          | There is no harm to behavior, so I fixed the comment                                                |
+| Docs do not match                                            | Fixed                                                                                               |
 
-## 테스트
+## Tests
 
-| 파일                                     | 검증한 동작                                                                                                                                                                                                                |
-| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `backend/test/word-list.test.ts`         | 목록 읽기와 스프레드시트 흔적, 잘못된 파일 거부, 항목 주소, 계보 줄 제거와 중복 제거, 가짜 서버의 200·404·503, 중단 조건, 응답을 출력하지 않음, DB 오류 시 중단                                                            |
-| `backend/test/words.integration.test.ts` | 실제 DB에서 목록 재실행, 어원을 안 찾아본 단어는 안 내보냄, 찾음과 없음 표시, 잘못된 파일 10가지, 요소 공유와 처음 뜻 유지, 이미 채운 단어 거부, API의 빈도 순서·출처·같은 어근·404·400, 쓰이는 요소 삭제 거부, `key` 규칙 |
-| `frontend/src/words.test.tsx`            | 검색 규칙, 목록과 출처, 100개씩 보기, 검색어 유지, 빈 목록, 실패, 상세 표시, 요소를 누르면 같은 어근의 단어, 단어를 옮기면 선택 초기화, 안 채운 단어, 어원 자료 없음, 없는 단어                                            |
+| File                                     | Behavior verified                                                                                                                                                                                                                                                                                                                 |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `backend/test/word-list.test.ts`         | Reading the list and spreadsheet traces, rejecting wrong files, entry addresses, removing the lineage line and duplicates, 200, 404, and 503 from a fake server, stop conditions, not printing the response, stopping on a DB error                                                                                               |
+| `backend/test/words.integration.test.ts` | On a real DB: rerunning the list, not exporting words whose etymology was not looked up, marking found and none, 10 kinds of wrong files, sharing parts and keeping the first meaning, rejecting words already filled, the API frequency order, source, same root, 404, 400, refusing to delete a part in use, and the `key` rule |
+| `frontend/src/words.test.tsx`            | Search rules, list and source, showing 100 at a time, keeping the search term, empty list, failure, detail display, pressing a part shows words with the same root, moving words resets the selection, a word not filled in, no etymology data, a missing word                                                                    |
 
-## 검증
+## Verification
 
-- `TEST_DATABASE_URL=… npm run check`: 통과(exit 0). 포맷·lint·타입 통과, 백엔드 103개 통과(건너뜀 0), 프런트엔드 222개 통과·2개 건너뜀(`DARK_ONLY`), 스킬 4개 통과, 빌드 성공. `npm run knip`: 결과 없음.
-- 실제 자료: `words:import`를 실제 사이트로 실행해 2,809단어를 받았다(순위 1~2809 빠짐없음). `words:etymology`는 `cert`에서 실행했다. 표본 결과는 PR 코멘트에 적는다.
-- 브라우저: 헤드리스 Edge로 Vite 5206 + 백엔드 3106 + `cert_test`에서 확인했다. 단어 목록은 실제 NGSL이고, 뜻과 어원 요소는 확인용으로 네 단어에만 넣었다가 지웠다.
-  - 모바일 390×844, PC 1440×900: 목록, 더 보기, 검색, 상세, 요소를 눌러 같은 어근 보기, 출처 표기. 콘솔 오류·경고 없음, 가로 넘침 없음.
+- `TEST_DATABASE_URL=… npm run check`: pass (exit 0). Format, lint, and type checks pass, backend 103 passed (0 skipped), frontend 222 passed and 2 skipped (`DARK_ONLY`), skills 4 passed, build succeeded. `npm run knip`: no findings.
+- Real data: ran `words:import` against the real site and received 2,809 words (ranks 1 to 2809 with none missing). Ran `words:etymology` on `cert`. The sample results are written in the PR comment.
+- Browser: checked with headless Edge on Vite 5206 + backend 3106 + `cert_test`. The word list is the real NGSL, and I put meanings and etymology parts into only four words for the check and then deleted them.
+  - Mobile 390×844 and PC 1440×900: list, show more, search, detail, pressing a part to see words with the same root, and the source notice. No console errors or warnings and no horizontal overflow.
 
-## 한계
+## Limits
 
-- 뜻, 예문, 어원 요소는 아직 대부분 비어 있다. 후속 이슈에서 빈도 순으로 채운다.
-- 어원 요소와 뜻은 AI가 만든 값이라 틀릴 수 있다. 화면에 "AI 정리"로 표시하고 Wiktionary 원문을 함께 보여 준다.
-- 이 앱을 외부에 공개하면 CC BY-SA 4.0에 따라 출처 표기를 유지하고, 고친 목록은 같은 라이선스로 배포해야 한다.
+- Most meanings, examples, and etymology parts are still empty. A follow-up issue fills them in frequency order.
+- The etymology parts and meanings are AI-generated values and can be wrong. The screen marks them as "AI 정리" ("organized by AI") and shows the Wiktionary original text together.
+- If this app is made public, keep the source notice according to CC BY-SA 4.0, and distribute a modified list under the same license.
