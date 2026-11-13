@@ -1,80 +1,80 @@
-# 정보처리 공부 계획
+# Information Processing study plan
 
-[전체 일정표](README.md) · 확인일 2026-10-31
+[Overall schedule](README.md) · Checked 2026-10-31
 
-**정보처리기사 필기는 합격했고, 실기 기한은 2027년 3회까지다(사용자 답변).** 이 기한을 넘기면 필기부터 다시 봐야 할 수 있다. 본인의 정확한 기한은 Q-Net 마이페이지에서 확인한다.
+**The Engineer Information Processing written exam is passed, and the practical exam deadline is the 3rd session of 2027 (the user answered).** If you pass that deadline, you may have to take the written exam again from the start. Check your exact deadline on Q-Net My Page.
 
-응시자격 서류를 정해진 기간에 내지 않으면 필기 합격 예정이 무효 처리된다는 [Q-Net 안내](https://www.q-net.or.kr/man004.do?id=man00402&gSite=Q&gId=&BOARD_ID=Q001&ARTL_SEQ=5209968)가 있다. 이미 냈는지 Q-Net에서 함께 확인한다.
+There is a [Q-Net notice](https://www.q-net.or.kr/man004.do?id=man00402&gSite=Q&gId=&BOARD_ID=Q001&ARTL_SEQ=5209968) saying that if the eligibility documents are not submitted in the set period, the expected written pass is voided. Check on Q-Net whether you have already submitted them.
 
-## 시험 정보
+## Exam information
 
-| 항목      | 내용                                                                                                   |
-| --------- | ------------------------------------------------------------------------------------------------------ |
-| 다음 등급 | 기사(정보처리기사 실기)                                                                                |
-| 구성      | 정보처리 실무 필답형 2시간 30분. 문항 수는 자료마다 달라 공고로 확인한다(민간 자료)                    |
-| 합격      | 100점 만점에 60점 이상(민간 자료)                                                                      |
-| 응시료    | 22,600원(민간 자료, 접수 화면에서 확인)                                                                |
-| 출제기준  | 실기는 2026년과 2027년 기준이 같다는 정리가 있다(민간 자료). Q-Net 원문을 받아 확인한다                |
-| 유효기간  | 없음                                                                                                   |
-| 교재      | 가진 것이 없으므로 첫 공부 날에 실기 교재나 기출 자료를 하나 정한다. 2027년 출제기준에 맞는지 확인한다 |
+| Item       | Details                                                                                                                                                         |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Next level | Engineer (Engineer Information Processing practical)                                                                                                            |
+| Format     | Information processing practical written-answer exam, 2 hours 30 minutes. The number of questions differs by source, so check the announcement (private source) |
+| Passing    | 60 or more out of 100 (private source)                                                                                                                          |
+| Exam fee   | 22,600 KRW (private source, check on the registration screen)                                                                                                   |
+| Syllabus   | One summary says the practical syllabus is the same for 2026 and 2027 (private source). Download the original from Q-Net and check                              |
+| Validity   | None                                                                                                                                                            |
+| Textbook   | You own none, so on the first study day pick one practical textbook or past exam material. Check that it fits the 2027 syllabus                                 |
 
-출처: [Q-Net 정보처리기사](https://www.q-net.or.kr/crf005.do?id=crf00503&jmCd=1320), [2027년 출제기준 정리(IT 위키)](https://www.itwiki.kr/w/%EC%A0%95%EB%B3%B4%EC%B2%98%EB%A6%AC%EA%B8%B0%EC%82%AC/2027%EB%85%84_%EC%B6%9C%EC%A0%9C%EA%B8%B0%EC%A4%80), [실기 정리(IT 위키)](https://www.itwiki.kr/w/%EC%A0%95%EB%B3%B4%EC%B2%98%EB%A6%AC%EA%B8%B0%EC%82%AC_%EC%8B%A4%EA%B8%B0), [2026년 일정 정리(민간)](https://www.moducbt.com/info/information-processing-engineer/information-processing-engineer-exam-schedule)
+Sources: [Q-Net Engineer Information Processing](https://www.q-net.or.kr/crf005.do?id=crf00503&jmCd=1320), [2027 syllabus summary (IT Wiki)](https://www.itwiki.kr/w/%EC%A0%95%EB%B3%B4%EC%B2%98%EB%A6%AC%EA%B8%B0%EC%82%AC/2027%EB%85%84_%EC%B6%9C%EC%A0%9C%EA%B8%B0%EC%A4%80), [Practical exam summary (IT Wiki)](https://www.itwiki.kr/w/%EC%A0%95%EB%B3%B4%EC%B2%98%EB%A6%AC%EA%B8%B0%EC%82%AC_%EC%8B%A4%EA%B8%B0), [2026 schedule summary (private)](https://www.moducbt.com/info/information-processing-engineer/information-processing-engineer-exam-schedule)
 
-## 응시 예정일
+## Planned exam date
 
-2026-10-31 현재 2027년 공식 일정을 확인하지 못했다. 아래는 2026년 일정을 그대로 옮긴 잠정 시기다. 접수 기간이 회차마다 며칠뿐이므로 공고가 나오면 바로 날짜를 고친다.
+As of 2026-10-31, I could not confirm the official 2027 schedule. Below are the tentative periods carried over from the 2026 schedule as they are. The registration period is only a few days per session, so fix the dates as soon as the announcement comes out.
 
-| 회차       | 접수(잠정) | 실기 시험(잠정)   | 발표(잠정)  | 언제 보나                             |
-| ---------- | ---------- | ----------------- | ----------- | ------------------------------------- |
-| 2027년 1회 | 3월 말     | 4월 중순~5월 초   | 6월 초~중순 | 첫 도전. 4월 안의 날로 고른다         |
-| 2027년 2회 | 6월 말     | 7월 중순~8월 초   | 9월 초~중순 | 1회 불합격이면. 7/19 뒤의 날로 고른다 |
-| 2027년 3회 | 9월 말     | 10월 말~11월 중순 | 12월 중순   | 2회 불합격이면, 마지막                |
+| Session  | Registration (tentative) | Practical exam (tentative)   | Results (tentative)    | When to take it                           |
+| -------- | ------------------------ | ---------------------------- | ---------------------- | ----------------------------------------- |
+| 2027 1st | Late March               | Mid-April to early May       | Early to mid June      | First try. Choose a day in April          |
+| 2027 2nd | Late June                | Mid-July to early August     | Early to mid September | If the 1st fails. Choose a day after 7/19 |
+| 2027 3rd | Late September           | Late October to mid-November | Mid December           | If the 2nd fails, the last chance         |
 
-## 단계별 할 일
+## Tasks by stage
 
-시험 전 2주 동안 평일에 1시간씩 더 공부한다. 응시일이 정해지면 그 날에서 거꾸로 계산한다. 과목 묶음은 작성자가 정한 것이다. 받은 출제기준에 맞춰 고친다. 공휴일 2시간씩과 평일 1시간씩이라 시간이 빠듯할 수 있고, 충분하다는 근거는 없다.
+Study 1 more hour on weekdays in the 2 weeks before the exam. Once the exam date is set, count backward from that day. The grouping of subjects is the author's. Adjust it to the syllabus you download. With 2 hours per holiday and 1 hour per weekday, time may be tight, and there is no evidence that it is enough.
 
-### 1회 준비 (공휴일 10시간)
+### Preparing for the 1st session (10 holiday hours)
 
-| 날짜        | 할 일                                                             |
-| ----------- | ----------------------------------------------------------------- |
-| 2027-02-06  | 출제기준 받기, 교재 정하기, 기출 1회분으로 수준 재기              |
-| 2027-02-07  | 프로그래밍 언어 문제(C, Java, Python)                             |
-| 2027-02-08  | SQL 문제                                                          |
-| 2027-02-09  | 이론 문제(설계, 네트워크, 보안 등)                                |
-| 2027-03-01  | 기출 1회분을 2시간 30분 재고 풀기, 오답 정리, 접수 준비           |
-| 3월 말      | 1회 접수                                                          |
-| 응시 전 2주 | 평일 1시간씩, 기출 풀고 오답 정리                                 |
-| 4월 중순~말 | 1회 응시. 5월 공휴일을 복습에 쓰도록 접수 때 4월 안의 날을 고른다 |
+| Date              | Task                                                                                                     |
+| ----------------- | -------------------------------------------------------------------------------------------------------- |
+| 2027-02-06        | Get the syllabus, pick a textbook, measure your level with one past exam                                 |
+| 2027-02-07        | Programming language questions (C, Java, Python)                                                         |
+| 2027-02-08        | SQL questions                                                                                            |
+| 2027-02-09        | Theory questions (design, network, security, and so on)                                                  |
+| 2027-03-01        | Solve one past exam with a 2 hour 30 minute timer, sort out wrong answers, prepare to register           |
+| Late March        | Register for the 1st session                                                                             |
+| 2 weeks before    | 1 hour each weekday, solve past exams and sort out wrong answers                                         |
+| Mid to late April | Take the 1st session. Choose a day in April when you register so the May holidays can be used for review |
 
-### 2회 준비 (공휴일 14시간)
+### Preparing for the 2nd session (14 holiday hours)
 
-1회 발표 전이라도 합격을 장담할 수 없으므로 계속 준비한다.
+Even before the 1st session results come out, passing is not certain, so keep preparing.
 
-| 날짜        | 할 일                                                                                        |
-| ----------- | -------------------------------------------------------------------------------------------- |
-| 2027-05-01  | 1회에서 어려웠던 범위 정리                                                                   |
-| 2027-05-03  | 프로그래밍 언어 문제 복습                                                                    |
-| 2027-05-05  | SQL 복습                                                                                     |
-| 2027-05-13  | 이론 복습                                                                                    |
-| 2027-06-06  | 합격 발표 전이거나 불합격이면 기출 1회분 풀기, 2회 접수 준비                                 |
-| 6월 초~중순 | 1회 발표 확인. 합격이면 남은 표를 건너뛰고 아래 "합격하면"으로                               |
-| 2027-07-17  | 1회 불합격이면 2회 직전 마무리 1. 시험 기간과 겹칠 수 있으므로 접수 때 7/19 뒤의 날을 고른다 |
-| 2027-07-19  | 1회 불합격이면 2회 직전 마무리 2                                                             |
-| 응시 전 2주 | 1회 불합격이면 평일 1시간씩, 기출 풀고 오답 정리                                             |
+| Date              | Task                                                                                                                                |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| 2027-05-01        | Sort out the areas that were hard in the 1st session                                                                                |
+| 2027-05-03        | Review programming language questions                                                                                               |
+| 2027-05-05        | Review SQL                                                                                                                          |
+| 2027-05-13        | Review theory                                                                                                                       |
+| 2027-06-06        | If the results are not out yet or you failed, solve one past exam and prepare to register for the 2nd session                       |
+| Early to mid June | Check the 1st session results. If you passed, skip the rest of the table and go to "If you pass" below                              |
+| 2027-07-17        | If you failed the 1st, final prep for the 2nd, part 1. It may overlap the exam period, so choose a day after 7/19 when you register |
+| 2027-07-19        | If you failed the 1st, final prep for the 2nd, part 2                                                                               |
+| 2 weeks before    | If you failed the 1st, 1 hour each weekday, solve past exams and sort out wrong answers                                             |
 
-### 3회 준비 (공휴일 18시간, 마지막 기회)
+### Preparing for the 3rd session (18 holiday hours, the last chance)
 
-2회 발표(9월 초~중순 잠정) 전에는 계속 준비하고, 2회도 불합격이면 남은 날을 모두 쓴다.
+Keep preparing before the 2nd session results (tentatively early to mid September), and if you fail the 2nd as well, use all the remaining days.
 
-| 날짜                   | 할 일                             |
-| ---------------------- | --------------------------------- |
-| 2027-08-15, 8-16       | 2회 어려웠던 범위 정리            |
-| 2027-09-14, 9-15, 9-16 | 약한 범위 다시 공부               |
-| 2027-10-03, 10-04      | 기출 풀기, 오답 정리              |
-| 2027-10-09, 10-11      | 시간 재고 모의시험                |
-| 응시 전 2주            | 평일 1시간씩, 기출 풀고 오답 정리 |
+| Date                   | Task                                                             |
+| ---------------------- | ---------------------------------------------------------------- |
+| 2027-08-15, 8-16       | Sort out the areas that were hard in the 2nd session             |
+| 2027-09-14, 9-15, 9-16 | Study the weak areas again                                       |
+| 2027-10-03, 10-04      | Solve past exams, sort out wrong answers                         |
+| 2027-10-09, 10-11      | Timed mock exam                                                  |
+| 2 weeks before         | 1 hour each weekday, solve past exams and sort out wrong answers |
 
-### 합격하면
+### If you pass
 
-기능사와 산업기사는 따지 않는다(사용자 결정). 다음 등급은 기술사이고, 실무 경력 같은 응시 자격이 필요하므로 그때 다시 본다.
+Craftsman and Industrial Engineer grades will not be taken (user decision). The next grade is Professional Engineer (Gisulsa), which needs eligibility to apply such as practical work experience, so look at it again then.

@@ -1,47 +1,47 @@
-# 토익 공부 계획
+# TOEIC study plan
 
-[전체 일정표](README.md) · 확인일 2026-10-31
+[Overall schedule](README.md) · Checked 2026-10-31
 
-## 시험 정보
+## Exam information
 
-| 항목     | 내용                                                                                                                                                                                                                                          |
-| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 구성     | LC 100문항 45분, RC 100문항 75분, 총 120분, 990점 만점                                                                                                                                                                                        |
-| 응시료   | 52,500원(정기접수, 민간 자료 여러 곳에서 일치. 접수 화면에서 확인)                                                                                                                                                                            |
-| 유효기간 | 시험일부터 2년                                                                                                                                                                                                                                |
-| 등급     | A1 120 → A2 225 → B1 550 → B2 785 → C1 945 (ETS CEFR 최저 점수, 참고용)                                                                                                                                                                       |
-| 교재     | [ETS 토익 정기시험 기출문제집 1000 Vol.5 LC](https://www.ybmbooks.com/book/book_view.asp?seq=2998&step_1=15&step_2=208)·[RC](https://www.ybmbooks.com/book/book_view.asp?seq=2999&step_1=15&step_2=). 해설과 MP3 제공. 두 번째 응시 전에 산다 |
+| Item     | Details                                                                                                                                                                                                                                                                              |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Format   | LC 100 questions 45 minutes, RC 100 questions 75 minutes, 120 minutes in total, 990 points maximum                                                                                                                                                                                   |
+| Exam fee | 52,500 KRW (regular registration; several private sources agree. Check on the registration screen)                                                                                                                                                                                   |
+| Validity | 2 years from the exam date                                                                                                                                                                                                                                                           |
+| Level    | A1 120 → A2 225 → B1 550 → B2 785 → C1 945 (ETS CEFR minimum scores, for reference)                                                                                                                                                                                                  |
+| Textbook | [ETS TOEIC Regular Exam Past Questions 1000 Vol.5 LC](https://www.ybmbooks.com/book/book_view.asp?seq=2998&step_1=15&step_2=208) · [RC](https://www.ybmbooks.com/book/book_view.asp?seq=2999&step_1=15&step_2=). Explanations and MP3 are included. Buy it before the second attempt |
 
-출처: [토익스토리 시험 구성](https://www.toeicstory.co.kr/2537), [토익 공식 시험일정](https://exam.toeic.co.kr/receipt/examSchList.php), [응시료 정리(민간)](https://tilnote.io/en/pages/6ae0d03ae402ea9db2a2a0c5)
+Sources: [TOEIC Story exam format](https://www.toeicstory.co.kr/2537), [Official TOEIC exam schedule](https://exam.toeic.co.kr/receipt/examSchList.php), [Exam fee summary (private)](https://tilnote.io/en/pages/6ae0d03ae402ea9db2a2a0c5)
 
-## 응시 예정일
+## Planned exam date
 
-- **첫 응시 2027년 1월(사용자 결정), 잠정 2027-01-31(일).** 2026-10-31 현재 2027년 공식 일정을 확인하지 못했다. 공고가 나오면 1월 회차로 날짜를 고친다. 1월에 회차가 없으면 가장 가까운 회차로 다시 정한다.
-- **두 번째 응시는 정보처리기사 실기 결과 뒤에 정한다.** 2027년 공휴일은 실기에 먼저 쓴다.
+- **First attempt in January 2027 (user decision), tentatively 2027-01-31 (Sunday).** As of 2026-10-31, I could not confirm the official 2027 schedule. When the announcement comes out, fix the date to a January session. If there is no session in January, decide again on the nearest session.
+- **Decide the second attempt after the Engineer Information Processing practical result.** The 2027 holidays go to the practical exam first.
 
-## 단계별 할 일
+## Tasks by stage
 
-### 1단계 — 현재 등급 재기
+### Stage 1: measure the current level
 
-| 날짜             | 할 일                                                      |
-| ---------------- | ---------------------------------------------------------- |
-| 2026-12-25       | 파트별 문제 유형과 시간 배분 익히기, 공개 샘플 문제 풀기   |
-| 2027-01-01       | LC 45분, RC 75분 시간 재고 샘플 풀기, 접수 확인            |
-| 2027-01-18~01-29 | 평일 1시간씩(잠정 응시일 기준 10시간), LC와 RC 번갈아 풀기 |
-| 2027-01-31(잠정) | 첫 응시                                                    |
-| 성적 발표 뒤     | 성적 확인, 앱에 응시 기록 넣기, 다음 등급을 목표로 정하기  |
+| Date                   | Task                                                                                     |
+| ---------------------- | ---------------------------------------------------------------------------------------- |
+| 2026-12-25             | Learn the question types and time split of each part, solve public sample questions      |
+| 2027-01-01             | Solve a sample with a timer, LC 45 minutes and RC 75 minutes, check the registration     |
+| 2027-01-18~01-29       | 1 hour each weekday (10 hours based on the tentative exam date), alternate LC and RC     |
+| 2027-01-31 (tentative) | First attempt                                                                            |
+| After the results      | Check the score, enter the attempt record in the app, and set the next level as the goal |
 
-### 2단계 — 다음 등급 도전
+### Stage 2: aim for the next level
 
-공휴일 6시간에 시험 전 2주 동안 평일에 1시간씩 더 공부한다. 응시일이 정해지면 그 날에서 거꾸로 계산한다. 이 시간으로 등급이 오른다는 근거는 없다. 첫 성적을 보고 다음 등급까지의 거리를 판단한다.
+Study 6 holiday hours, plus 1 more hour on weekdays in the 2 weeks before the exam. Once the exam date is set, count backward from that day. There is no evidence that this time raises the level. Look at the first score to judge the distance to the next level.
 
-| 순서   | 할 일                                           |
-| ------ | ----------------------------------------------- |
-| 공부 1 | 기출 1회분 LC 풀고 틀린 문제 받아쓰기           |
-| 공부 2 | 기출 1회분 RC Part 5·6 풀고 어휘·문법 오답 정리 |
-| 공부 3 | 기출 1회분 RC Part 7, 75분 시간 재기            |
-| 시험   | 두 번째 응시. 날짜는 공고를 보고 정한다         |
+| Order   | Task                                                                                      |
+| ------- | ----------------------------------------------------------------------------------------- |
+| Study 1 | Solve LC of one past exam and write out the questions you got wrong as dictation          |
+| Study 2 | Solve RC Parts 5 and 6 of one past exam and sort out wrong vocabulary and grammar answers |
+| Study 3 | Solve RC Part 7 of one past exam, timing 75 minutes                                       |
+| Exam    | Second attempt. Set the date after the announcement                                       |
 
-### 이후
+### After this
 
-두 번째 응시 뒤에는 해마다 한 번 이상 응시하며 C1을 목표로 삼는다. 성적 유효기간이 2년이므로 2년 안에 다시 본다. 공부 날은 그해 공휴일에서 배정한다.
+After the second attempt, take it at least once a year and aim for C1. The score is valid for 2 years, so take it again within 2 years. Assign the study days from that year's holidays.

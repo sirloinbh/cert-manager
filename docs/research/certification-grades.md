@@ -1,31 +1,31 @@
-# 자격증별 등급 체계
+# Grade systems by certification
 
-- 이슈: [#51](https://github.com/sirloinbh/cert-manager/issues/51)
-- 확인일: 2026-10-31
-- 앱에서 쓰는 값의 원본: `backend/src/grade-scales.ts`
+- Issue: [#51](https://github.com/sirloinbh/cert-manager/issues/51)
+- Checked: 2026-10-31
+- Source of the values the app uses: `backend/src/grade-scales.ts`
 
-"등급"은 자격증 안의 수준(점수대, 레벨, 단계, 면허 종류)을 뜻한다(사용자 확인).
+"Grade" means a level inside a certification (score band, level, stage, or license type) (confirmed by the user).
 
-## 토익 (듣기·읽기)
+## TOEIC (Listening and Reading)
 
-토익에는 합격·불합격이나 공식 등급이 없다. ETS가 공개한 CEFR 대응 최저 점수를 쓴다. 총점 최저는 듣기와 읽기 최저의 합이다.
+TOEIC has no pass or fail and no official grade. This uses the minimum scores for the CEFR mapping that ETS published. The minimum total is the sum of the listening and reading minimums.
 
-| 등급 | 듣기 최저 | 읽기 최저 | 총점 최저 | 앱의 구간 |
-| ---- | --------- | --------- | --------- | --------- |
-| C1   | 490       | 455       | 945       | 945~990   |
-| B2   | 400       | 385       | 785       | 785~944   |
-| B1   | 275       | 275       | 550       | 550~784   |
-| A2   | 110       | 115       | 225       | 225~549   |
-| A1   | 60        | 60        | 120       | 120~224   |
+| Grade | Listening minimum | Reading minimum | Total minimum | App band |
+| ----- | ----------------- | --------------- | ------------- | -------- |
+| C1    | 490               | 455             | 945           | 945~990  |
+| B2    | 400               | 385             | 785           | 785~944  |
+| B1    | 275               | 275             | 550           | 550~784  |
+| A2    | 110               | 115             | 225           | 225~549  |
+| A1    | 60                | 60              | 120           | 120~224  |
 
-- 출처: [ETS TOEIC CEFR 대응표](https://www.ets.org/pdfs/toeic/toeic-mapping-cefr-reference.pdf)
-- 한계: ETS는 이 값을 엄격한 기준으로 쓰지 말고, 듣기와 읽기를 따로 보라고 안내한다. 앱은 총점만 받으므로 총점 기준의 참고 등급으로만 쓴다. PDF 본문은 직접 열지 못했고 검색 결과에 인용된 표로 확인했다.
+- Source: [ETS TOEIC CEFR mapping table](https://www.ets.org/pdfs/toeic/toeic-mapping-cefr-reference.pdf)
+- Limit: ETS advises not to use these values as strict criteria and to look at listening and reading separately. The app takes only the total score, so it uses them only as reference grades based on the total. I could not open the PDF text myself and checked it with the table quoted in search results.
 
-## 토익 스피킹
+## TOEIC Speaking
 
-2022년 6월 4일 정기시험부터 ACTFL 기준 등급을 함께 표시한다.
+Since the regular exam on June 4, 2022, a grade based on ACTFL is shown together.
 
-| 등급        | 점수    |
+| Grade       | Score   |
 | ----------- | ------- |
 | AH          | 200     |
 | AM          | 180~190 |
@@ -36,44 +36,44 @@
 | NH          | 60~80   |
 | NM/NL       | 0~50    |
 
-- 출처: [한국토익위원회 토익스토리](https://www.toeicstory.co.kr/2607), [토익스피킹 공식 사이트 레벨과 점수](https://www.toeicswt.co.kr/common/template/viewContents.php?contentsCode=78)
-- 한계: IM1~IM3의 점수별 구간은 공식 자료에서 확인하지 못했다. 공식 비교표는 이미지여서 읽지 못했다. 비공식 자료(나무위키, 블로그)는 IM1=110, IM2=120, IM3=130으로 적지만 서로 일치하지 않는 내용이 있어 쓰지 않았다. 앱은 110~130점이면 셋 중에서 사용자가 고르게 한다. 공식 사이트 본문은 도구로 직접 읽지 못해 검색 결과로 확인했고, 토익스토리 본문은 읽어서 IM 구간을 확인했다.
-- 개편 전 `Level 7` 같은 성적은 응시 기록의 등급에 그대로 남길 수 있다.
+- Source: [Korea TOEIC Committee TOEIC Story](https://www.toeicstory.co.kr/2607), [TOEIC Speaking official site levels and scores](https://www.toeicswt.co.kr/common/template/viewContents.php?contentsCode=78)
+- Limit: I could not confirm the score ranges for IM1 to IM3 in official sources. The official comparison table is an image, so I could not read it. Unofficial sources (Namuwiki, blogs) list IM1=110, IM2=120, IM3=130, but some of their content does not agree with each other, so I did not use them. For 110 to 130 points, the app lets the user choose among the three. I could not read the official site text directly with a tool and checked it with search results, and I read the TOEIC Story text and confirmed the IM ranges.
+- A score from before the revision, such as `Level 7`, can stay as it is in the grade of an attempt record.
 
-## 정보처리 (국가기술자격)
+## Information processing (national technical qualification)
 
-기술·기능 분야의 등급은 기술사, 기능장, 기사, 산업기사, 기능사 다섯 단계다. 정보처리 분야에 있는 단계만 넣었다.
+The grades in the technology and skills field have five levels: Master Craftsman, Craftsman Master (Gineung-jang), Engineer, Industrial Engineer, and Craftsman. Only the levels that exist in the information processing field are included.
 
-| 등급     | 해당 종목                                  |
-| -------- | ------------------------------------------ |
-| 기술사   | 정보관리기술사 등                          |
-| 기사     | 정보처리기사                               |
-| 산업기사 | 정보처리산업기사                           |
-| 기능사   | 프로그래밍기능사(2026년 전 정보처리기능사) |
+| Grade                 | Applicable exams                                                     |
+| --------------------- | -------------------------------------------------------------------- |
+| Professional Engineer | Professional Engineer Information Management and others              |
+| Engineer              | Engineer Information Processing                                      |
+| Industrial Engineer   | Industrial Engineer Information Processing                           |
+| Craftsman             | Programming Craftsman (Craftsman Information Processing before 2026) |
 
-- 출처: [국가기술자격법 등급 조문(위키문헌, 제10339호)](<https://ko.wikisource.org/wiki/%EA%B5%AD%EA%B0%80%EA%B8%B0%EC%88%A0%EC%9E%90%EA%B2%A9%EB%B2%95_(%EC%A0%9C10339%ED%98%B8)>), Q-Net [정보처리기사](https://www.q-net.or.kr/crf005.do?id=crf00503&jmCd=1320)·[정보처리산업기사](https://www.q-net.or.kr/crf005.do?id=crf00503&jmCd=2290)·[정보관리기술사](https://q-net.or.kr/crf005.do?gSite=Q&id=crf00503&jmCd=0601), [기사/산업기사 시험일정](https://q-net.or.kr/crf021.do?scheType=03)
-- 한계: 등급 조문은 옛 판본(제10339호)에서 확인했다. 현행 법령 원문은 직접 열지 못했다. 기능사 이름 변경은 Q-Net 공지를 인용한 검색 결과로 확인했다. 응시 자격은 등급마다 다르므로 응시 전에 Q-Net 자가진단으로 확인한다.
+- Source: [National Technical Qualification Act grade provision (Wikisource, No. 10339)](<https://ko.wikisource.org/wiki/%EA%B5%AD%EA%B0%80%EA%B8%B0%EC%88%A0%EC%9E%90%EA%B2%A9%EB%B2%95_(%EC%A0%9C10339%ED%98%B8)>), Q-Net [Engineer Information Processing](https://www.q-net.or.kr/crf005.do?id=crf00503&jmCd=1320) · [Industrial Engineer Information Processing](https://www.q-net.or.kr/crf005.do?id=crf00503&jmCd=2290) · [Professional Engineer Information Management](https://q-net.or.kr/crf005.do?gSite=Q&id=crf00503&jmCd=0601), [Engineer and Industrial Engineer exam schedule](https://q-net.or.kr/crf021.do?scheType=03)
+- Limit: I confirmed the grade provision in an old edition (No. 10339). I could not open the text of the current law directly. I confirmed the Craftsman name change with search results that quote a Q-Net notice. Eligibility to apply differs by grade, so check it with the Q-Net self-check before you apply.
 
 ## AWS
 
-| 등급         | 해당 자격(이 앱의 목표)                 |
-| ------------ | --------------------------------------- |
-| Foundational | Cloud Practitioner                      |
-| Associate    | Solutions Architect – Associate         |
-| Professional | 2년 이상 AWS 경험을 안내하는 상위 단계  |
-| Specialty    | 특정 기술 분야. 단계가 아니라 별도 분야 |
+| Grade        | Applicable certification (goals in this app)                   |
+| ------------ | -------------------------------------------------------------- |
+| Foundational | Cloud Practitioner                                             |
+| Associate    | Solutions Architect – Associate                                |
+| Professional | A higher level that suggests 2 or more years of AWS experience |
+| Specialty    | A specific technology field. A separate field, not a level     |
 
-- 출처: [AWS Certification](https://aws.amazon.com/certification/)
-- 한계: 같은 페이지에 베타 시험을 포함한 Business 분류도 있지만 지금 목표와 관계없어 넣지 않았다. 앱은 Specialty를 다른 단계와 비교하지 않는다.
+- Source: [AWS Certification](https://aws.amazon.com/certification/)
+- Limit: The same page also has a Business category that includes beta exams, but it is unrelated to the current goals, so I did not include it. The app does not compare Specialty with the other levels.
 
-## 운전면허
+## Driver's license
 
-단계가 아니라 면허 종류이므로 위아래를 비교하지 않는다. 같은 종류를 받았을 때만 목표 달성으로 본다.
+These are license types, not levels, so they are not compared as higher or lower. It counts as goal achieved only when you get the same type.
 
-| 종별 | 종류                                                   |
-| ---- | ------------------------------------------------------ |
-| 1종  | 대형, 보통, 소형, 특수(대형견인차, 소형견인차, 구난차) |
-| 2종  | 보통, 소형, 원동기장치자전거                           |
+| Class   | Type                                                                              |
+| ------- | --------------------------------------------------------------------------------- |
+| Class 1 | Large, Regular, Small, Special (large tow truck, small tow truck, rescue vehicle) |
+| Class 2 | Regular, Small, Motorized bicycle                                                 |
 
-- 출처: [공공데이터포털 경찰청 운전면허 데이터 설명](https://www.data.go.kr/biz/dcat/metadata/15160156.do)
-- 한계: 도로교통법 시행규칙 별표 18의 원문은 열지 못했다.
+- Source: [Public Data Portal National Police Agency driver's license data description](https://www.data.go.kr/biz/dcat/metadata/15160156.do)
+- Limit: I could not open the original text of Annex 18 of the Enforcement Rule of the Road Traffic Act.

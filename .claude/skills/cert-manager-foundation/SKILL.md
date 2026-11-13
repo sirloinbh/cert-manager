@@ -3,26 +3,26 @@ name: cert-manager-foundation
 description: Establish or improve the repeatable development foundation of the cert-manager app, covering stack, structure, conventions, API contracts, design, tests, AI guidance, and deployment. Use for project foundation requests; apply only the requested scope through the cert-manager-implementation issue-to-PR workflow.
 ---
 
-# 자격증 관리 개발 기반
+# Certification manager development foundation
 
-이 앱의 개발·검증·운영 방식을 반복 가능하게 정리한다. 먼저 프로젝트 루트의 `AGENTS.md`와 `skills/cert-manager-implementation/SKILL.md`를 읽고, 이슈 → 번호 기반 브랜치 → 구현 및 docs 기록 → 테스트·PR → 자동 코드 리뷰(최대 2회) → 필수 CI 통과 후 에이전트 병합 절차로 진행한다. 이 스킬이 이슈·PR 절차나 CI 통과 조건을 생략하거나 배포 권한을 부여하지 않는다.
+Make how this app is developed, verified, and operated repeatable. First read `AGENTS.md` at the project root and `skills/cert-manager-implementation/SKILL.md`, and then follow the procedure: issue → branch based on the issue number → implementation and docs record → tests and PR → automatic code review (up to 2 rounds) → agent merge after required CI passes. This skill does not skip the issue and PR procedure or the CI pass condition, and it does not grant deploy permission.
 
-## 기준
+## Standards
 
-- 기준 문서는 `docs/project-setup.md`이다. 현재 package.json, 잠금 파일, API·SQL, Compose, CI를 확인해 실제 구현과 추천(미도입)을 구분한다. 추천 목록 전체를 자동 설치하지 않는다.
-- 사용자는 본인 한 명이며 로그인은 현재 요구사항에 없다. 날짜는 Asia/Seoul 기준이다.
-- 도구를 바꾸거나 추가할 때는 실제 문제·데이터 영향·검증 방법을 먼저 정리하고, 패키지 설치는 사용자 재확인 후에만 한다.
+- The standard document is `docs/project-setup.md`. Check the current package.json, lockfiles, API and SQL, Compose, and CI, and separate what is really implemented from recommendations (not adopted). Do not install the whole recommendation list automatically.
+- There is one user, the owner, and login is not in the current requirements. Dates use Asia/Seoul.
+- When you change or add a tool, first write down the real problem, the data impact, and how to verify it, and install packages only after the user confirms again.
 
-## 수행
+## Steps
 
-1. 현재 상태와 이슈의 완료 기준을 정하고, 선택 이유·구조·계약을 문서에 기록한다.
-2. 도구 설정, 실행 명령, CI와 문서를 같은 변경에서 맞춘다. 사용하지 않는 설정·스크립트·빈 모듈은 만들지 않는다.
-3. API·DB 변경은 기존 데이터와 날짜·단위 의미를 보존하고, 마이그레이션 적용과 실패 복구 방법을 검증한다. DB 마이그레이션 원본은 하나로 정한다.
-4. 화면 변경은 디자인 토큰(`frontend/src/style.css`의 CSS 변수)과 기존 컴포넌트를 유지하면서 로딩·빈 결과·오류·키보드 접근을 해당 범위에서 정리한다.
-5. `skills/cert-manager-testing/SKILL.md`를 함께 적용한다. 구현과 테스트를 함께 작성하고, 버그에는 회귀 테스트를 추가하며, 실제 결과를 docs·PR에 기록한다.
-6. 배포는 사용자 요청 범위에서만 한다. 이미지 버전, health check, 비밀값 관리, 백업·복원, 이전 버전 복구를 준비한다.
-7. 각 작업 커밋에 docs 기록을 포함하고 검증한 PR을 만든다. PR 후 자동 코드 리뷰를 최대 2회 거쳐 보완하고(큰 수정은 새 이슈), 최종 head의 필수 CI 검사가 모두 통과하면 cert-manager-implementation 절차대로 merge commit 병합하고 연결된 이슈가 닫혔는지 확인한다.
+1. Decide the current state and the issue's done criteria, and record the reason for the choice, the structure, and the contract in the docs.
+2. Keep tool settings, run commands, CI, and docs in step in the same change. Do not create unused settings, scripts, or empty modules.
+3. For API and DB changes, keep the meaning of existing data and of dates and units, and verify how the migration is applied and how a failure is recovered. Have only one source of DB migrations.
+4. For screen changes, keep the design tokens (the CSS variables in `frontend/src/style.css`) and existing components, and sort out loading, empty results, errors, and keyboard access within that scope.
+5. Apply `skills/cert-manager-testing/SKILL.md` together. Write the implementation and tests together, add a regression test for a bug, and record the real results in the docs and the PR.
+6. Deploy only within the scope the user requested. Prepare image versions, a health check, secret management, backup and restore, and recovery to the previous version.
+7. Include a docs record in each work commit and open a verified PR. After the PR, go through automatic code review up to 2 rounds and fix findings (a new issue for big changes), and when all required CI checks on the final head pass, merge with a merge commit following the cert-manager-implementation procedure and check that the linked issue is closed.
 
-## 완료 기준
+## Done criteria
 
-새 환경에서 문서대로 설치·실행·검증을 재현할 수 있고, 선택한 도구가 실제 코드·명령·CI에 반영되어야 한다. 미설치 도구, 건너뛴 검사, 실제로 하지 않은 배포는 후속 작업으로 명시한다.
+You must be able to reproduce install, run, and verification in a new environment by following the docs, and the tools you chose must be reflected in the real code, commands, and CI. State tools that are not installed, checks that were skipped, and deploys that were not actually done as follow-up work.

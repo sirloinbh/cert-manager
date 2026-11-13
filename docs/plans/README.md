@@ -1,87 +1,87 @@
-# 자격증 세부 공부 계획
+# Detailed study plans for certifications
 
-- 이슈: [#34](https://github.com/sirloinbh/cert-manager/issues/34)
-- 작성·확인일: 2026-10-31 (Asia/Seoul)
-- 등급 기준: [자격증별 등급 체계](../research/certification-grades.md)
+- Issue: [#34](https://github.com/sirloinbh/cert-manager/issues/34)
+- Written and checked: 2026-10-31 (Asia/Seoul)
+- Grade standards: [Grade systems by certification](../research/certification-grades.md)
 
-## 사용자 결정
+## User decisions
 
-| 항목         | 결정                                                               |
-| ------------ | ------------------------------------------------------------------ |
-| 공부 시간    | 공휴일에 2시간씩. 시험이 있는 날 이전 2주 동안은 평일에 1시간씩 더 |
-| 교재·강의    | 가진 것 없음                                                       |
-| 순서와 시기  | 추천을 따른다                                                      |
-| 목표 등급    | 기능사·산업기사를 뺀 모든 등급. 여러 번 응시해 등급을 점차 올린다  |
-| 토익         | 첫 응시는 2027년 1월                                               |
-| 정보처리기사 | 필기 합격. 실기 기한은 2027년 3회까지                              |
-| 운전면허     | 없음                                                               |
+| Item                            | Decision                                                                                                      |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Study time                      | 2 hours on each public holiday, plus 1 more hour on weekdays in the 2 weeks before an exam day                |
+| Books and courses               | None owned                                                                                                    |
+| Order and timing                | Follow the recommendation                                                                                     |
+| Target grades                   | All grades except Craftsman and Industrial Engineer. Take exams several times to raise the grade step by step |
+| TOEIC                           | First attempt in January 2027                                                                                 |
+| Engineer Information Processing | Written exam passed. The practical exam deadline is the 3rd session of 2027                                   |
+| Driver's license                | None                                                                                                          |
 
-앱의 목표 등급 칸에는 값을 하나만 넣으므로 **다음에 노리는 등급**을 적는다. 등급을 따면 다음 등급으로 바꾼다.
+The app's target grade field holds only one value, so enter **the grade you aim for next**. When you earn a grade, change it to the next one.
 
-## 쓸 수 있는 시간
+## Available time
 
-2027년 공휴일은 24일(대체공휴일 포함)이고 2시간씩이면 **48시간**이다. 2026년에 남은 공휴일은 12월 25일 하루다. 날짜는 [한국천문연구원 2027년 달력자료](https://astro.kasi.re.kr/kor/life/post/calendarData?year=2027)이며, 이 자료는 공식 발표가 아니라고 적혀 있어 [월력요항 보도](https://www.vegannews.co.kr/mobile/article.html?no=388618)와 함께 다시 확인한다. 2026년 12월 25일은 해마다 같은 공휴일이다.
+There are 24 public holidays in 2027 (including substitute holidays), which is **48 hours** at 2 hours each. The only public holiday left in 2026 is December 25. The dates come from the [Korea Astronomy and Space Science Institute 2027 calendar data](https://astro.kasi.re.kr/kor/life/post/calendarData?year=2027); the data says it is not an official announcement, so check it again together with the [official calendar guideline report](https://www.vegannews.co.kr/mobile/article.html?no=388618). December 25, 2026 is a holiday every year.
 
-여기에 시험 전 2주의 평일 1시간이 시험마다 더해진다. 평일 공휴일은 이미 2시간을 쓰므로 세지 않아, 시험 하나에 최대 10시간이다. 자격증마다 배정한 시간은 작성자의 추정이고, 합격에 충분하다는 근거는 아니다. 첫 응시는 현재 수준을 재는 응시로 보고 결과에 따라 다음 응시를 늘리거나 미룬다.
+On top of that, 1 hour on weekdays in the 2 weeks before each exam is added for every exam. A public holiday that falls on a weekday already uses 2 hours, so it is not counted, which makes at most 10 hours per exam. The hours assigned to each certification are the author's estimate, not evidence that they are enough to pass. Treat the first attempt as a test of the current level, and add or postpone later attempts based on the result.
 
-## 전체 일정표
+## Overall schedule
 
-"잠정"은 공식 일정을 확인하기 전에 정한 날이나 시기로, 공고가 나오면 고친다. 실기 시기는 2026년 일정을 옮긴 것이다. 2027년 공휴일 24일은 아래에 한 번씩만 배정했다(합계 48시간). "평일" 칸은 시험 전 2주의 평일 시간이고, 잠정 응시일로 계산했다.
+"Tentative" means a day or period set before the official schedule was confirmed; fix it when the announcement comes out. The practical exam periods are carried over from the 2026 schedule. The 24 public holidays of 2027 are assigned below only once each (48 hours in total). The "Weekdays" column is the weekday time in the 2 weeks before the exam, calculated with the tentative exam date.
 
-### 2027년 먼저 할 일
+### First tasks in 2027
 
-| 순서 | 시험                     | 응시 예정         | 상태 | 공부 날                                               | 공휴일 시간 | 평일                                                              | 계획                                  |
-| ---- | ------------------------ | ----------------- | ---- | ----------------------------------------------------- | ----------- | ----------------------------------------------------------------- | ------------------------------------- |
-| 1    | 토익 첫 응시             | 2027-01-31        | 잠정 | 2026-12-25, 1/1                                       | 4           | 1/18~1/29, 10시간                                                 | [토익](toeic.md)                      |
-| 2    | 정보처리기사 실기 1회    | 4월 중순~5월 초   | 잠정 | 2/6, 2/7, 2/8, 2/9, 3/1                               | 10          | 응시 전 2주(4/17 응시면 4/5~4/16), 10시간                         | [정보처리](information-processing.md) |
-| 3    | 실기 2회(1회 불합격이면) | 7월 중순~8월 초   | 잠정 | 5/1, 5/3, 5/5, 5/13, 6/6, 7/17, 7/19                  | 14          | 응시 전 2주(7/24 응시면 7/12~7/23, 7/19 제외), 9시간              | [정보처리](information-processing.md) |
-| 4    | 실기 3회(마지막 기회)    | 10월 말~11월 중순 | 잠정 | 8/15, 8/16, 9/14, 9/15, 9/16, 10/3, 10/4, 10/9, 10/11 | 18          | 응시 전 2주(10/23 응시면 10/12~10/22, 9시간. 10/26 이후면 10시간) | [정보처리](information-processing.md) |
-| 5    | 실기 뒤 시험 시작        | 아래 표           | -    | 12/25, 12/27                                          | 4           | -                                                                 | 아래 표                               |
+| Order | Exam                                          | Planned date                 | Status    | Study days                                            | Holiday hours | Weekdays                                                                                           | Plan                                                |
+| ----- | --------------------------------------------- | ---------------------------- | --------- | ----------------------------------------------------- | ------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| 1     | TOEIC first attempt                           | 2027-01-31                   | Tentative | 2026-12-25, 1/1                                       | 4             | 1/18-1/29, 10 hours                                                                                | [TOEIC](toeic.md)                                   |
+| 2     | Information Processing practical, 1st session | Mid-April to early May       | Tentative | 2/6, 2/7, 2/8, 2/9, 3/1                               | 10            | 2 weeks before the exam (4/5-4/16 if the exam is 4/17), 10 hours                                   | [Information Processing](information-processing.md) |
+| 3     | Practical, 2nd session (if the 1st fails)     | Mid-July to early August     | Tentative | 5/1, 5/3, 5/5, 5/13, 6/6, 7/17, 7/19                  | 14            | 2 weeks before the exam (7/12-7/23 if the exam is 7/24, excluding 7/19), 9 hours                   | [Information Processing](information-processing.md) |
+| 4     | Practical, 3rd session (last chance)          | Late October to mid-November | Tentative | 8/15, 8/16, 9/14, 9/15, 9/16, 10/3, 10/4, 10/9, 10/11 | 18            | 2 weeks before the exam (10/12-10/22 if the exam is 10/23, 9 hours; 10 hours if it is after 10/26) | [Information Processing](information-processing.md) |
+| 5     | Exams to start after the practical            | See the table below          | -         | 12/25, 12/27                                          | 4             | -                                                                                                  | See the table below                                 |
 
-실기 1회는 접수 때 4월 안의 날로, 2회는 7/19 뒤의 날로 고른다. 평일 시간은 치르는 회차에만 쓴다. 2026-12-25의 2시간은 2026년 시간이고, 나머지 공부 날이 2027년 48시간이다. 시간은 작성자의 추정이다.
+Choose a day in April for the 1st practical session and a day after 7/19 for the 2nd when you register. Weekday time is used only for the session you actually take. The 2 hours on 2026-12-25 belong to 2026, and the remaining study days make the 48 hours of 2027. The hours are the author's estimate.
 
-### 실기 뒤 순서
+### Order after the practical exam
 
-실기에 합격하면 남은 공휴일을 이 순서로 쓴다. 날짜는 실기 결과가 나오면 정한다.
+If you pass the practical exam, use the remaining holidays in this order. Set the dates once the practical result is out.
 
-| 순서 | 시험                                | 필요한 공휴일 시간(추정) | 계획                                                  |
-| ---- | ----------------------------------- | ------------------------ | ----------------------------------------------------- |
-| 1    | 운전면허 2종 보통                   | 6시간과 학원 시간        | [운전면허](driver-license.md)                         |
-| 2    | AWS Cloud Practitioner              | 12시간                   | [AWS Cloud Practitioner](aws-cloud-practitioner.md)   |
-| 3    | 토익 스피킹 첫 응시                 | 8시간                    | [토익 스피킹](toeic-speaking.md)                      |
-| 4    | 토익 두 번째 응시                   | 6시간                    | [토익](toeic.md)                                      |
-| 5    | AWS Solutions Architect – Associate | 18시간                   | [AWS Solutions Architect](aws-solutions-architect.md) |
+| Order | Exam                                | Holiday hours needed (estimate)  | Plan                                                  |
+| ----- | ----------------------------------- | -------------------------------- | ----------------------------------------------------- |
+| 1     | Driver's license Class 2 Regular    | 6 hours plus driving school time | [Driver's license](driver-license.md)                 |
+| 2     | AWS Cloud Practitioner              | 12 hours                         | [AWS Cloud Practitioner](aws-cloud-practitioner.md)   |
+| 3     | TOEIC Speaking first attempt        | 8 hours                          | [TOEIC Speaking](toeic-speaking.md)                   |
+| 4     | TOEIC second attempt                | 6 hours                          | [TOEIC](toeic.md)                                     |
+| 5     | AWS Solutions Architect – Associate | 18 hours                         | [AWS Solutions Architect](aws-solutions-architect.md) |
 
-실기 결과에 따라 실기 뒤 시험에 쓸 수 있는 2027년 공휴일이 달라진다. 위 시험의 공휴일 시간 합계는 50시간이므로 1회에 합격해도 2027년 안에 다 하지 못하고, 나머지는 2028년 이후 공휴일로 넘어간다. 시험마다 응시 전 2주의 평일 시간(최대 10시간)이 더해진다.
+The 2027 holidays available for the exams after the practical depend on the practical result. The holiday hours of the exams above add up to 50 hours, so even if you pass on the 1st session you cannot finish them all within 2027, and the rest moves to holidays in 2028 and later. The weekday time in the 2 weeks before each exam (at most 10 hours) is added for every exam.
 
-| 합격 회차(발표는 잠정) | 다음 시험에 쓸 수 있는 2027년 공휴일                                                 | 시간 |
-| ---------------------- | ------------------------------------------------------------------------------------ | ---- |
-| 1회(6월 초~중순 발표)  | 6/6, 7/17, 7/19, 8/15, 8/16, 9/14, 9/15, 9/16, 10/3, 10/4, 10/9, 10/11, 12/25, 12/27 | 28   |
-| 2회(9월 초~중순 발표)  | 9/14, 9/15, 9/16, 10/3, 10/4, 10/9, 10/11, 12/25, 12/27                              | 18   |
-| 3회(12월 중순 발표)    | 12/25, 12/27                                                                         | 4    |
+| Passing session (announcement is tentative) | 2027 holidays available for the next exams                                           | Hours |
+| ------------------------------------------- | ------------------------------------------------------------------------------------ | ----- |
+| 1st (announced early to mid June)           | 6/6, 7/17, 7/19, 8/15, 8/16, 9/14, 9/15, 9/16, 10/3, 10/4, 10/9, 10/11, 12/25, 12/27 | 28    |
+| 2nd (announced early to mid September)      | 9/14, 9/15, 9/16, 10/3, 10/4, 10/9, 10/11, 12/25, 12/27                              | 18    |
+| 3rd (announced mid December)                | 12/25, 12/27                                                                         | 4     |
 
-시간은 표의 첫 날 전에 결과가 나올 때의 값이다. 발표가 그 뒤면 발표 전 날은 다음 회차 준비에 쓰므로 시간이 줄어든다. 예를 들어 1회는 6/6이 빠져 26시간이 되고, 2회는 9/14~9/16이 빠지면 12시간까지 줄어든다.
+The hours are the values when the result comes out before the first day in the table. If the announcement is later, the days before the announcement are used to prepare for the next session, so the hours shrink. For example, for the 1st session 6/6 drops out and it becomes 26 hours, and for the 2nd, if 9/14-9/16 drop out, it shrinks to 12 hours.
 
-## 이 순서를 추천하는 이유
+## Why this order is recommended
 
-- **실기를 가장 앞에 둔다.** 2027년 3회까지 합격하지 못하면 필기부터 다시 봐야 할 수 있다. 다른 시험은 기한이 없다.
-- **토익은 1월 목표를 지킨다.** 사용자가 정한 시기이고, 실기 공부를 시작하기 전에 끝난다.
-- **운전면허를 실기 다음에 둔다.** 면허가 없고, 공부 시간이 적게 든다. 다만 학원 시간은 공휴일 밖에서 따로 필요하다.
-- **나머지는 앞 계획의 순서를 유지한다.** AWS Cloud Practitioner, 토익 스피킹, 토익, Associate 순서는 작성자의 판단이다.
+- **Put the practical exam first.** If you do not pass by the 3rd session of 2027, you may have to take the written exam again from the start. The other exams have no deadline.
+- **Keep the January goal for TOEIC.** It is the timing the user chose, and it ends before the practical exam study starts.
+- **Put the driver's license after the practical exam.** You have no license, and it takes little study time. But driving school time is needed separately, outside holidays.
+- **Keep the earlier plan's order for the rest.** The order AWS Cloud Practitioner, TOEIC Speaking, TOEIC, Associate is the author's judgment.
 
-## 목표 등급을 모두 따는 데 대해
+## About earning all the target grades
 
-기능사와 산업기사는 따지 않는다(사용자 결정). 공휴일 시간(2027년 기준 연 48시간)과 시험 전 평일 시간으로는 목표 등급을 모두 따는 데 여러 해가 걸릴 것으로 본다(추정). 전체 완료 시기는 근거가 없어 적지 않고, 해마다 다음 등급만 정한다. 다음 등급은 시간이나 비용 말고 다른 조건도 있다.
+Craftsman and Industrial Engineer grades will not be taken (user decision). With 48 holiday hours a year (for 2027) and weekday time before exams, earning all the target grades is expected to take several years (estimate). There is no basis for a total completion date, so none is given; each year only the next grade is set. The next grade also has conditions other than time or cost.
 
-- **기술사:** 기사 취득 뒤 실무 경력 같은 응시 자격이 필요하다.
-- **AWS Professional:** 2년 이상 AWS 경험을 안내한다.
-- **1종 대형·특수:** 경력과 연령 조건이 있다고 알려져 있으나 공식 자료로 확인하지 못했다.
+- **Professional Engineer (Gisulsa):** you need eligibility to apply, such as practical work experience after earning the Engineer grade.
+- **AWS Professional:** AWS suggests 2 or more years of AWS experience.
+- **Class 1 Large and Special:** experience and age conditions are known to exist, but I could not confirm them with official sources.
 
-## 사용자가 직접 할 일
+## What the user does
 
-앱 상단의 종 아이콘에서도 알림으로 볼 수 있다. 이 PC의 앱에 알림을 넣어 두었고, 아래 접수 알림은 시기가 되면 나타난다.
+You can also see them as notifications from the bell icon at the top of the app. Notifications have been added to the app on this PC, and the registration notices below appear when the time comes.
 
-- [ ] 토익 2027년 1월 회차가 공고되면 접수
-- [ ] Q-Net 마이페이지에서 정보처리기사 실기 기한과 응시자격 서류 제출 여부 확인
-- [ ] 2027년 1회 실기 접수(2026년 기준 3월 말, 기간이 며칠뿐이다). 응시일은 4월 안의 날로 고른다
-- [ ] 2027년 일정이 공고되면 알려 주기, 또는 이 문서의 잠정 날짜 다시 확인 요청
+- [ ] Register for the January 2027 TOEIC session when it is announced
+- [ ] Check the practical exam deadline and whether the eligibility documents were submitted on Q-Net My Page
+- [ ] Register for the 1st practical session of 2027 (late March by the 2026 pattern; the period is only a few days). Choose an exam day in April
+- [ ] Ask me to tell you when the 2027 schedule is announced, or to re-check the tentative dates in this document
