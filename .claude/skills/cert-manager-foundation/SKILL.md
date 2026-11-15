@@ -5,7 +5,7 @@ description: Establish or improve the repeatable development foundation of the c
 
 # Certification manager development foundation
 
-Make how this app is developed, verified, and operated repeatable. First read `AGENTS.md` at the project root and `skills/cert-manager-implementation/SKILL.md`, and then follow the procedure: issue → branch based on the issue number → implementation and docs record → tests and PR → automatic code review (up to 2 rounds) → agent merge after required CI passes. This skill does not skip the issue and PR procedure or the CI pass condition, and it does not grant deploy permission.
+Make how this app is developed, verified, and operated repeatable. First read `AGENTS.md` at the project root and `skills/cert-manager-implementation/SKILL.md`, and then follow the procedure: issue → branch based on the issue number → implementation and docs record → tests and PR → automatic code review (1 or 2 rounds, more only while blocking findings remain) → agent merge after required CI passes. This skill does not skip the issue and PR procedure or the CI pass condition, and it does not grant deploy permission.
 
 ## Standards
 

@@ -42,7 +42,7 @@ This skill applies to change work in `sirloinbh/cert-manager`. Do not apply this
 - Pass the PR body as a UTF-8 file. Include the problem and the behavior after the change, the main changes, the real check commands and results, the evidence that is available for a screen change, and `Closes #<number>`. If there are no images, write why and the limits of the verification.
 - Check the GitHub Actions results and fix related failures. Tell them if a check is still running. If you changed code after creating the PR, run the affected checks again and update the results in the docs and the PR.
 
-## 5. Automatic code review after the PR (up to 2 rounds)
+## 5. Automatic code review after the PR (1 or 2 rounds, more only while blocking findings remain)
 
 1. **1st review:** after you open the PR, run a read-only review that is separate from the writing context (a separate agent, a review tool, and so on). Based on the issue done criteria and the whole PR diff, look at correctness, regressions, security, missing tests, and the docs record.
 2. **If there are no findings,** end the review and go on to checking CI and merging.
