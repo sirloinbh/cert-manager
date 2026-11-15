@@ -5,7 +5,7 @@ description: Follow the user's issue, numbered branch, implementation with docs,
 
 # Certification manager implementation procedure
 
-This skill applies to change work in `sirloinbh/cert-manager`. Do not apply this account, repository, or policy to other projects. First read `AGENTS.md` at the project root and the related docs. Follow the order below, and deliver as the result a PR that went through automatic code review (up to 2 rounds) and the required CI checks and was merged.
+This skill applies to change work in `sirloinbh/cert-manager`. Do not apply this account, repository, or policy to other projects. First read `AGENTS.md` at the project root and the related docs. Follow the order below, and deliver as the result a PR that went through automatic code review (1 or 2 rounds, more only while blocking findings remain) and the required CI checks and was merged.
 
 ## 1. Register an issue card
 
@@ -42,13 +42,13 @@ This skill applies to change work in `sirloinbh/cert-manager`. Do not apply this
 - Pass the PR body as a UTF-8 file. Include the problem and the behavior after the change, the main changes, the real check commands and results, the evidence that is available for a screen change, and `Closes #<number>`. If there are no images, write why and the limits of the verification.
 - Check the GitHub Actions results and fix related failures. Tell them if a check is still running. If you changed code after creating the PR, run the affected checks again and update the results in the docs and the PR.
 
-## 5. Automatic code review after the PR (up to 2 rounds)
+## 5. Automatic code review after the PR (1 or 2 rounds, more only while blocking findings remain)
 
 1. **1st review:** after you open the PR, run a read-only review that is separate from the writing context (a separate agent, a review tool, and so on). Based on the issue done criteria and the whole PR diff, look at correctness, regressions, security, missing tests, and the docs record.
 2. **If there are no findings,** end the review and go on to checking CI and merging.
 3. **If there are findings,** apply only the findings that should be fixed within this PR. Make an additional commit that includes the related tests and the docs record, and push.
 4. **2nd review:** check that the 1st findings were applied and check the additional diff. Also look at the final whole PR diff. If there are no findings, go on to CI.
-5. **2nd fixes:** apply the 2nd findings in an additional commit. The review is at most 2 rounds, so do not do a 3rd review and go on to CI.
+5. **2nd fixes:** Apply the second findings in an additional commit. Stop after round 2 unless a blocking finding remains. If one does, fix it on the same branch and review again, repeating only while blocking findings remain (std-code-review section 8), then go on to CI.
 6. **Split big changes:** do not fix findings of the following kinds in this PR. Instead create a new issue card (with the problem, scope, and done criteria). Leave the issue link in a PR comment and the docs record, and keep going with this PR.
    - A feature outside the requested scope
    - A change to the design or data structure
