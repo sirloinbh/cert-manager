@@ -26,6 +26,8 @@ npm run dev
 
 Vite http://localhost:5206, API http://localhost:3106/api/health, host DB port 15406.
 
+Every `/api` path except `/api/health` needs a session from the shared sign-in (#116): without one the response is 401 `{ "error": "unauthorized" }`, and 503 `{ "error": "auth_unavailable" }` when the sign-in service cannot be reached. `GET /api/me` returns the signed-in user. Local development without `AUTH_INTERNAL_URL` runs without the sign-in.
+
 For an existing DB, apply the new files in `database/migrations` by hand (they are applied automatically only on an empty volume). Get the song list with `npm run songs:import -w backend`. It stores only album and song names, release dates, and lengths in the DB named by `DATABASE_URL`, does not fetch lyrics, and prints the target DB when it starts.
 
 Fetch lyrics from LRCLIB with `npm run lyrics:import -w backend` and put them only in that DB. For translations, create files in `.local/translations/` with `npm run translations:export -w backend`, fill them in, and load them with `npm run translations:import -w backend`. Saved files are moved to `imported/`. Do not commit lyrics or translations.

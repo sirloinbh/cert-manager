@@ -1,3 +1,4 @@
+import { meHandler } from '@sirloinbh/auth-client';
 import express from 'express';
 import type { Pool } from 'pg';
 import { types } from 'pg';
@@ -17,7 +18,11 @@ types.setTypeParser(1082, (value) => value);
 
 export function createApp(
   pool: Pool,
-  options: { today?: () => string; rateLimit?: RateLimitOptions } = {},
+  options: {
+    today?: () => string;
+    rateLimit?: RateLimitOptions;
+    auth?: express.RequestHandler;
+  } = {},
 ) {
   const today = options.today ?? (() => serviceDate());
   const app = express();
@@ -25,6 +30,9 @@ export function createApp(
   // Before the body parser and every route, so a refused request costs neither parsing nor a query.
   app.use(apiRateLimit(options.rateLimit));
   app.use(express.json({ limit: '256kb' }));
+  // #116: the shared sign-in guards every /api route except /api/health, before any route registers.
+  if (options.auth) app.use('/api', options.auth);
+  app.get('/api/me', meHandler);
   app.get('/api/health', async (_req, res) => {
     await pool.query('SELECT 1');
     res.json({ ok: true, service: 'cert-manager', today: today() });

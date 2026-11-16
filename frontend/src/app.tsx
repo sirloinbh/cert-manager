@@ -16,6 +16,7 @@ import { Toaster } from './components/ui/sonner';
 import { DailyWords } from './daily-words';
 import { ExpiringCertifications } from './exam-attempts';
 import { type Health, healthText } from './health';
+import { AccountActions, SignInGate } from './sign-in';
 import type { SongPaths } from './song-data';
 import { SongDetail, SongList } from './songs';
 import { TodayTasks } from './study-plan';
@@ -122,59 +123,70 @@ export function App() {
   return (
     // The song search box takes its value from the URL, and React says not to update a typed value in a transition.
     <BrowserRouter useTransitions={false}>
-      <AppShell appName="Cert Manager" nav={nav} actions={<UserActionAlerts />}>
-        <Routes>
-          <Route
-            path={pages.overview}
-            element={
-              <Page
-                title="Dashboard"
-                description="See what to look at today from your certification goals and English study."
-                health={health}
-              >
-                <div className="grid gap-4 lg:grid-cols-2">
-                  <UpcomingExams paths={certificationPaths} />
-                  <TodayTasks paths={certificationPaths} />
-                  <ExpiringCertifications paths={certificationPaths} />
-                  <DailyWords paths={wordPaths} />
-                </div>
-              </Page>
-            }
-          />
-          <Route
-            path={pages.certifications}
-            element={<CertificationList paths={certificationPaths} />}
-          />
-          <Route
-            path={pages.newCertification}
-            element={<NewCertification paths={certificationPaths} />}
-          />
-          <Route
-            path={pages.certification}
-            element={<CertificationDetail paths={certificationPaths} />}
-          />
-          <Route
-            path={pages.editCertification}
-            element={<EditCertification paths={certificationPaths} />}
-          />
-          <Route path={pages.songs} element={<SongList paths={songPaths} />} />
-          <Route path={pages.song} element={<SongDetail paths={songPaths} />} />
-          <Route path={pages.words} element={<WordList paths={wordPaths} />} />
-          <Route path={pages.word} element={<WordDetail paths={wordPaths} />} />
-          <Route
-            path={pages.settings}
-            element={
-              <Page
-                title="Settings"
-                description="App environment and data management"
-                health={health}
-              />
-            }
-          />
-          <Route path="*" element={<Navigate to={pages.overview} replace />} />
-        </Routes>
-      </AppShell>
-      <Toaster />
+      <SignInGate>
+        <AppShell
+          appName="Cert Manager"
+          nav={nav}
+          actions={
+            <>
+              <UserActionAlerts />
+              <AccountActions />
+            </>
+          }
+        >
+          <Routes>
+            <Route
+              path={pages.overview}
+              element={
+                <Page
+                  title="Dashboard"
+                  description="See what to look at today from your certification goals and English study."
+                  health={health}
+                >
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <UpcomingExams paths={certificationPaths} />
+                    <TodayTasks paths={certificationPaths} />
+                    <ExpiringCertifications paths={certificationPaths} />
+                    <DailyWords paths={wordPaths} />
+                  </div>
+                </Page>
+              }
+            />
+            <Route
+              path={pages.certifications}
+              element={<CertificationList paths={certificationPaths} />}
+            />
+            <Route
+              path={pages.newCertification}
+              element={<NewCertification paths={certificationPaths} />}
+            />
+            <Route
+              path={pages.certification}
+              element={<CertificationDetail paths={certificationPaths} />}
+            />
+            <Route
+              path={pages.editCertification}
+              element={<EditCertification paths={certificationPaths} />}
+            />
+            <Route path={pages.songs} element={<SongList paths={songPaths} />} />
+            <Route path={pages.song} element={<SongDetail paths={songPaths} />} />
+            <Route path={pages.words} element={<WordList paths={wordPaths} />} />
+            <Route path={pages.word} element={<WordDetail paths={wordPaths} />} />
+            <Route
+              path={pages.settings}
+              element={
+                <Page
+                  title="Settings"
+                  description="App environment and data management"
+                  health={health}
+                />
+              }
+            />
+            <Route path="*" element={<Navigate to={pages.overview} replace />} />
+          </Routes>
+        </AppShell>
+        <Toaster />
+      </SignInGate>
     </BrowserRouter>
   );
 }
