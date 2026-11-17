@@ -18,7 +18,7 @@ const title = (label: string) =>
 const objectMessage = { error: 'Request body must be a JSON object' };
 
 // PUT replaces the whole stage or task, so POST and PUT share one input.
-const stageInput = z
+export const stageInput = z
   .object(
     {
       title: title('Stage name'),
@@ -37,7 +37,7 @@ const stageInput = z
     }
   });
 
-const taskInput = z.object(
+export const taskInput = z.object(
   {
     title: title('Task'),
     dueDate: calendarDate('Due date').nullable().default(null),
@@ -45,7 +45,7 @@ const taskInput = z.object(
   objectMessage,
 );
 
-const completionInput = z.object(
+export const completionInput = z.object(
   { completed: z.boolean({ error: 'Completed must be true or false' }) },
   objectMessage,
 );

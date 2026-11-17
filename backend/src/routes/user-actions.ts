@@ -9,7 +9,7 @@ import { body, calendarDate, toId } from '../validation.js';
 
 const objectMessage = { error: 'Request body must be a JSON object' };
 
-const actionInput = z
+export const actionInput = z
   .object(
     {
       title: z
@@ -38,7 +38,7 @@ const actionInput = z
     }
   });
 
-const completionInput = z.object(
+export const completionInput = z.object(
   { completed: z.boolean({ error: 'Completed must be true or false' }) },
   objectMessage,
 );

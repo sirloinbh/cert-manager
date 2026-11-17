@@ -13,7 +13,7 @@ const statuses = ['planned', 'studying', 'registered', 'taken', 'passed', 'faile
 const validityKinds = ['months', 'none', 'unknown'] as const;
 
 // PUT replaces the whole goal, so POST and PUT share one input; omitted optional fields take their defaults.
-const certificationInput = z
+export const certificationInput = z
   .object(
     {
       name: z

@@ -14,7 +14,7 @@ const objectMessage = { error: 'Request body must be a JSON object' };
 // Large enough for any song, small enough to keep one request cheap.
 const maxText = 50_000;
 
-const lyricsInput = z.object(
+export const lyricsInput = z.object(
   {
     original: z
       .string({ error: 'Lyrics are required' })
@@ -23,7 +23,7 @@ const lyricsInput = z.object(
   objectMessage,
 );
 
-const translationInput = z.object(
+export const translationInput = z.object(
   {
     translation: z
       .string({ error: 'Translation is required' })
