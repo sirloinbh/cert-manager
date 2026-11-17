@@ -1,5 +1,5 @@
 {
-  "centralSha": "9f05ff31ce4c4151dfe85a0ffd38195fe8ecdee4",
+  "centralSha": "d974c93bf39765824b671009f2b2d2cec202e6ee",
   "profile": "app",
   "project": "cert-manager",
   "files": {
@@ -339,7 +339,7 @@
     },
     "deploy/remote-deploy.sh": {
       "mode": "full",
-      "sha256": "59729738b954a33099ed420d669b8e06ae4e6fecd6ef84279048903302b688aa",
+      "sha256": "ca0872ab861c68b43794db1dfc59a1bdd79703a94139c2935fb9b3ce075e73a8",
       "source": "templates/app/deploy/remote-deploy.sh.tmpl"
     },
     "deploy/report.service": {
@@ -349,7 +349,7 @@
     },
     "deploy/report.sh": {
       "mode": "full",
-      "sha256": "12440a8c9f6cc3ae383c6d1262bb138d70f99eb125bb2ffa64486caf94b9cc79",
+      "sha256": "bfde17117c6dc365192e0a248a4ec6fbed3f6aa357e3ad9ae6d31c6fb4deb31b",
       "source": "templates/app/deploy/report.sh.tmpl"
     },
     "deploy/report.timer": {
