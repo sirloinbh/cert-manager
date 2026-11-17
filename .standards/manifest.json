@@ -1,5 +1,5 @@
 {
-  "centralSha": "74a105e99e677d4609f99dc4873ed79a2cd204df",
+  "centralSha": "aba0794137264f87dfdd25c776304fae7cb6ffba",
   "profile": "app",
   "project": "cert-manager",
   "files": {
@@ -428,7 +428,7 @@
     },
     "frontend/public/manifest.webmanifest": {
       "mode": "full",
-      "sha256": "00fe0ac6015e6c9d193cd25f97b6e0f50721faa0849349448bff5e345ef6b3af",
+      "sha256": "f91ed4e538ee02129c32827a0c02eac38ec611d18d1cf1eab884a4a6713e2d7c",
       "source": "templates/app/frontend/public/manifest.webmanifest.tmpl"
     },
     "frontend/public/offline.html": {
@@ -738,7 +738,7 @@
     },
     "knip.json": {
       "mode": "full",
-      "sha256": "98d012da1b99df680e21a39d1c4ea63cdebaffdf2ca1d7183aa554e2c019a93c",
+      "sha256": "b3b9fcc9dd9c425b8d7043d4d5a306f32044317ee5c53ff6ce3c6700c2eefc85",
       "source": "templates/app/knip.json"
     },
     "lighthouserc.json": {

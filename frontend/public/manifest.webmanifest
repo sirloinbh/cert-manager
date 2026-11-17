@@ -1,7 +1,7 @@
 {
   "name": "Cert Manager",
   "short_name": "Cert Manager",
-  "description": "A personal service for managing certifications, exam dates, and study records, and separately for recording and reviewing English study. There is one user (me) and no login. Before any public exposure, design private access or authentication first.",
+  "description": "Manage certifications, exam dates, and study records, and review your English study.",
   "lang": "en",
   "start_url": "/",
   "scope": "/",
