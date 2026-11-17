@@ -1,5 +1,5 @@
 {
-  "centralSha": "ef519a027a81e433b3ccb701683cf17492cba689",
+  "centralSha": "1d20cf11e897809cbead42177bae51189e92db2b",
   "profile": "app",
   "project": "cert-manager",
   "files": {
@@ -379,7 +379,7 @@
     },
     "frontend/nginx.conf": {
       "mode": "full",
-      "sha256": "aa47012836ca4d5a1abeef8ac3258cca7d9be66ac113c1449f4fa069b475d2ed",
+      "sha256": "3a9e872d0c0c10e5c1ab15727883c0f5d3d0efb1bcba1b4abb9b0bfa98f3bd23",
       "source": "templates/app/frontend/nginx.conf.tmpl"
     },
     "frontend/package.json": {
