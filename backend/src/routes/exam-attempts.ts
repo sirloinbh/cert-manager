@@ -11,7 +11,7 @@ const outcomes = ['waiting', 'passed', 'failed', 'scored'] as const;
 
 // PUT replaces the whole attempt, so POST and PUT share one input.
 // expiresOn: a date is the user's value, null means "not known", and omitting it asks for the goal's default.
-const attemptInput = z
+export const attemptInput = z
   .object(
     {
       examDate: calendarDate('Exam date'),

@@ -10,7 +10,7 @@ import { readWordSources } from './words.js';
 
 const wordsPerDay = 5;
 
-const learnedInput = z.object(
+export const learnedInput = z.object(
   { learned: z.boolean({ error: 'Learned must be true or false' }) },
   { error: 'Request body must be a JSON object' },
 );

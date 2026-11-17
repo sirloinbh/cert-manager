@@ -16,7 +16,8 @@
     "words:etymology": "tsx --env-file-if-exists=../.env src/import-etymology.ts",
     "words:export": "tsx --env-file-if-exists=../.env src/export-words.ts",
     "words:fill": "tsx --env-file-if-exists=../.env src/import-words.ts",
-    "typecheck": "tsc -p tsconfig.check.json"
+    "typecheck": "tsc -p tsconfig.check.json",
+    "openapi": "tsx src/openapi-cli.ts"
   },
   "dependencies": {
     "express": "5.3.0",
