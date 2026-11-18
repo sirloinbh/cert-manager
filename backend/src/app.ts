@@ -11,7 +11,7 @@ import { registerSongRoutes } from './routes/songs.js';
 import { registerStudyPlanRoutes } from './routes/study-plans.js';
 import { registerUserActionRoutes } from './routes/user-actions.js';
 import { registerWordRoutes } from './routes/words.js';
-import { errorHandler, notFound, serviceDate } from './standard/http.js';
+import { errorHandler, notFound, requestLog, serviceDate } from './standard/http.js';
 
 // DATE columns stay YYYY-MM-DD strings so the service time zone never shifts them.
 types.setTypeParser(1082, (value) => value);
@@ -27,6 +27,8 @@ export function createApp(
   const today = options.today ?? (() => serviceDate());
   const app = express();
   app.disable('x-powered-by');
+  // project-standards#552: a request ID and one JSON log line for every request, a refused one included.
+  app.use(requestLog);
   // Before the body parser and every route, so a refused request costs neither parsing nor a query.
   app.use(apiRateLimit(options.rateLimit));
   app.use(express.json({ limit: '256kb' }));
