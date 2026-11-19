@@ -11,10 +11,12 @@ import { registerSongRoutes } from './routes/songs.js';
 import { registerStudyPlanRoutes } from './routes/study-plans.js';
 import { registerUserActionRoutes } from './routes/user-actions.js';
 import { registerWordRoutes } from './routes/words.js';
+import { setInt8Parser } from './standard/db.js';
 import { errorHandler, notFound, requestLog, serviceDate } from './standard/http.js';
 
 // DATE columns stay YYYY-MM-DD strings so the service time zone never shifts them.
 types.setTypeParser(1082, (value) => value);
+setInt8Parser(types);
 
 export function createApp(
   pool: Pool,

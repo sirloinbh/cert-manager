@@ -3,7 +3,7 @@ import type { Pool } from 'pg';
 import { z } from 'zod/v4';
 
 import { HttpError, parseId } from '../standard/http.js';
-import { body, calendarDate, shortText, toId } from '../validation.js';
+import { body, calendarDate, shortText } from '../validation.js';
 
 // Exam attempts and earned certifications (#32). Columns and rules: docs/design/scope-and-data-model.md section 5.
 
@@ -50,8 +50,8 @@ export const attemptInput = z
   });
 
 type AttemptRow = {
-  id: string;
-  certificationId: string;
+  id: number;
+  certificationId: number;
   examDate: string;
   outcome: (typeof outcomes)[number];
   score: number | null;
@@ -62,7 +62,7 @@ type AttemptRow = {
 };
 
 // daysUntilExpiry is negative once the last valid day has passed. `today` names the query parameter.
-const columns = (today: string) => `a.id::text AS id, a.certification_id::text AS "certificationId",
+const columns = (today: string) => `a.id, a.certification_id AS "certificationId",
   a.exam_date AS "examDate", a.outcome, a.score, a.grade, a.expires_on AS "expiresOn",
   a.expires_on - ${today}::date AS "daysUntilExpiry", a.memo`;
 
@@ -73,12 +73,6 @@ const expiresOn = `CASE
     WHEN $7::boolean THEN $6::date
     WHEN c.validity_kind = 'months' THEN ($2::date + make_interval(months => c.validity_months))::date
   END`;
-
-const toAttempt = <T extends AttemptRow>(row: T) => ({
-  ...row,
-  id: toId(row.id),
-  certificationId: toId(row.certificationId),
-});
 
 const goalNotFound = 'Certification goal not found';
 const attemptNotFound = 'Exam attempt not found';
@@ -96,7 +90,7 @@ export function registerExamAttemptRoutes(app: Express, pool: Pool, today: () =>
        ORDER BY a.certification_id, a.exam_date DESC, a.id DESC`,
       [current],
     );
-    res.json({ today: current, attempts: rows.map(toAttempt) });
+    res.json({ today: current, attempts: rows });
   });
 
   // Newest exam first.
@@ -111,7 +105,7 @@ export function registerExamAttemptRoutes(app: Express, pool: Pool, today: () =>
        ORDER BY a.exam_date DESC, a.id DESC`,
       [current, id],
     );
-    res.json({ today: current, attempts: rows.map(toAttempt) });
+    res.json({ today: current, attempts: rows });
   });
 
   app.post('/api/certifications/:id/attempts', async (req, res) => {
@@ -126,7 +120,7 @@ export function registerExamAttemptRoutes(app: Express, pool: Pool, today: () =>
       [...values(id, input), today()],
     );
     if (!rows[0]) throw new HttpError(404, goalNotFound);
-    res.status(201).json({ attempt: toAttempt(rows[0]) });
+    res.status(201).json({ attempt: rows[0] });
   });
 
   app.put('/api/certifications/:id/attempts/:attemptId', async (req, res) => {
@@ -142,7 +136,7 @@ export function registerExamAttemptRoutes(app: Express, pool: Pool, today: () =>
       [...values(id, input), today(), attemptId],
     );
     if (!rows[0]) throw new HttpError(404, attemptNotFound);
-    res.json({ attempt: toAttempt(rows[0]) });
+    res.json({ attempt: rows[0] });
   });
 
   app.delete('/api/certifications/:id/attempts/:attemptId', async (req, res) => {

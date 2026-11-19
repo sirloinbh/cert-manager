@@ -94,8 +94,8 @@ async function textLines(pool: Pick<Pool, 'query'>, id: number) {
 /** Writes a file for each song with lines still to translate. A file already there is someone's work, so it stays. */
 export async function exportTranslations(pool: Pool, dir: string) {
   await mkdir(dir, { recursive: true });
-  const { rows } = await pool.query<{ id: string; title: string }>(
-    `SELECT s.id::text AS id, s.title FROM songs s
+  const { rows } = await pool.query<{ id: number; title: string }>(
+    `SELECT s.id, s.title FROM songs s
      WHERE EXISTS (SELECT 1 FROM lyric_lines l
                    WHERE l.song_id = s.id AND l.original <> '' AND l.translation IS NULL)
      ORDER BY s.id`,

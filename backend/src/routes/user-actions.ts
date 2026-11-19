@@ -3,7 +3,7 @@ import type { Pool } from 'pg';
 import { z } from 'zod/v4';
 
 import { HttpError, parseId } from '../standard/http.js';
-import { body, calendarDate, toId } from '../validation.js';
+import { body, calendarDate } from '../validation.js';
 
 // Things the user must do outside the app, shown as alerts (#60). Columns: docs/design/scope-and-data-model.md section 5.
 
@@ -44,7 +44,7 @@ export const completionInput = z.object(
 );
 
 type ActionRow = {
-  id: string;
+  id: number;
   title: string;
   note: string;
   linkUrl: string;
@@ -55,11 +55,9 @@ type ActionRow = {
 };
 
 // daysUntilDue is negative once the due date has passed. `today` names the query parameter.
-const columns = (today: string) => `id::text AS id, title, note, link_url AS "linkUrl",
+const columns = (today: string) => `id, title, note, link_url AS "linkUrl",
   remind_from AS "remindFrom", due_date AS "dueDate", due_date - ${today}::date AS "daysUntilDue",
   completed_at AS "completedAt"`;
-
-const toAction = (row: ActionRow) => ({ ...row, id: toId(row.id) });
 
 const notFoundMessage = 'Custom task not found';
 
@@ -73,7 +71,7 @@ export function registerUserActionRoutes(app: Express, pool: Pool, today: () => 
        ORDER BY due_date ASC NULLS LAST, remind_from, id`,
       [current],
     );
-    res.json({ today: current, actions: rows.map(toAction) });
+    res.json({ today: current, actions: rows });
   });
 
   app.post('/api/user-actions', async (req, res) => {
@@ -84,7 +82,7 @@ export function registerUserActionRoutes(app: Express, pool: Pool, today: () => 
        RETURNING ${columns('$6')}`,
       [input.title, input.note, input.linkUrl, input.remindFrom, input.dueDate, today()],
     );
-    res.status(201).json({ action: toAction(rows[0]) });
+    res.status(201).json({ action: rows[0] });
   });
 
   // Marking it done again keeps the first time; undoing clears it.
@@ -100,7 +98,7 @@ export function registerUserActionRoutes(app: Express, pool: Pool, today: () => 
       [id, input.completed, today()],
     );
     if (!rows[0]) throw new HttpError(404, notFoundMessage);
-    res.json({ action: toAction(rows[0]) });
+    res.json({ action: rows[0] });
   });
 
   app.delete('/api/user-actions/:id', async (req, res) => {

@@ -3,7 +3,7 @@ import type { Pool } from 'pg';
 import { z } from 'zod/v4';
 
 import { HttpError, parseId } from '../standard/http.js';
-import { body, calendarDate, toId } from '../validation.js';
+import { body, calendarDate } from '../validation.js';
 
 // Study plans (#33): a goal's stages and their tasks. Columns and rules: docs/design/scope-and-data-model.md section 5.
 
@@ -51,8 +51,8 @@ export const completionInput = z.object(
 );
 
 type StageRow = {
-  id: string;
-  certificationId: string;
+  id: number;
+  certificationId: number;
   title: string;
   position: number;
   startDate: string | null;
@@ -60,8 +60,8 @@ type StageRow = {
 };
 
 type TaskRow = {
-  id: string;
-  stageId: string;
+  id: number;
+  stageId: number;
   title: string;
   position: number;
   dueDate: string | null;
@@ -69,26 +69,12 @@ type TaskRow = {
   completedAt: Date | null;
 };
 
-const stageColumns = `s.id::text AS id, s.certification_id::text AS "certificationId", s.title, s.position,
+const stageColumns = `s.id, s.certification_id AS "certificationId", s.title, s.position,
   s.start_date AS "startDate", s.end_date AS "endDate"`;
 
 // daysUntilDue is negative once the due date has passed. `today` names the query parameter.
-const taskColumns = (
-  today: string,
-) => `t.id::text AS id, t.stage_id::text AS "stageId", t.title, t.position,
+const taskColumns = (today: string) => `t.id, t.stage_id AS "stageId", t.title, t.position,
   t.due_date AS "dueDate", t.due_date - ${today}::date AS "daysUntilDue", t.completed_at AS "completedAt"`;
-
-const toStage = (row: StageRow) => ({
-  ...row,
-  id: toId(row.id),
-  certificationId: toId(row.certificationId),
-});
-
-const toTask = <T extends TaskRow>(row: T) => ({
-  ...row,
-  id: toId(row.id),
-  stageId: toId(row.stageId),
-});
 
 const goalNotFound = 'Certification goal not found';
 const stageNotFound = 'Study stage not found';
@@ -114,10 +100,10 @@ export function registerStudyPlanRoutes(app: Express, pool: Pool, today: () => s
        ORDER BY t.position`,
       [current, id],
     );
-    const list = tasks.rows.map(toTask);
+    const list = tasks.rows;
     res.json({
       today: current,
-      stages: stages.rows.map(toStage).map((stage) => ({
+      stages: stages.rows.map((stage) => ({
         ...stage,
         tasks: list.filter((task) => task.stageId === stage.id),
       })),
@@ -128,9 +114,9 @@ export function registerStudyPlanRoutes(app: Express, pool: Pool, today: () => s
   app.get('/api/study-tasks/today', async (_req, res) => {
     const current = today();
     const { rows } = await pool.query<
-      TaskRow & { certificationId: string; certificationName: string }
+      TaskRow & { certificationId: number; certificationName: string }
     >(
-      `SELECT ${taskColumns('$1')}, c.id::text AS "certificationId", c.name AS "certificationName"
+      `SELECT ${taskColumns('$1')}, c.id AS "certificationId", c.name AS "certificationName"
        FROM study_tasks t
        JOIN study_stages s ON s.id = t.stage_id
        JOIN certifications c ON c.id = s.certification_id
@@ -140,7 +126,7 @@ export function registerStudyPlanRoutes(app: Express, pool: Pool, today: () => s
     );
     res.json({
       today: current,
-      tasks: rows.map((row) => ({ ...toTask(row), certificationId: toId(row.certificationId) })),
+      tasks: rows.map((row) => ({ ...row, certificationId: row.certificationId })),
     });
   });
 
@@ -158,7 +144,7 @@ export function registerStudyPlanRoutes(app: Express, pool: Pool, today: () => s
       [id, input.title, input.startDate, input.endDate],
     );
     if (!rows[0]) throw new HttpError(404, goalNotFound);
-    res.status(201).json({ stage: { ...toStage(rows[0]), tasks: [] } });
+    res.status(201).json({ stage: { ...rows[0], tasks: [] } });
   });
 
   app.put('/api/study-stages/:id', async (req, res) => {
@@ -171,7 +157,7 @@ export function registerStudyPlanRoutes(app: Express, pool: Pool, today: () => s
       [id, input.title, input.startDate, input.endDate],
     );
     if (!rows[0]) throw new HttpError(404, stageNotFound);
-    res.json({ stage: toStage(rows[0]) });
+    res.json({ stage: rows[0] });
   });
 
   // Its tasks go with it.
@@ -195,7 +181,7 @@ export function registerStudyPlanRoutes(app: Express, pool: Pool, today: () => s
       [id, input.title, input.dueDate, today()],
     );
     if (!rows[0]) throw new HttpError(404, stageNotFound);
-    res.status(201).json({ task: toTask(rows[0]) });
+    res.status(201).json({ task: rows[0] });
   });
 
   app.put('/api/study-tasks/:id', async (req, res) => {
@@ -208,7 +194,7 @@ export function registerStudyPlanRoutes(app: Express, pool: Pool, today: () => s
       [id, input.title, input.dueDate, today()],
     );
     if (!rows[0]) throw new HttpError(404, taskNotFound);
-    res.json({ task: toTask(rows[0]) });
+    res.json({ task: rows[0] });
   });
 
   // Asking for a finished task to be finished again keeps the moment it was first finished.
@@ -224,7 +210,7 @@ export function registerStudyPlanRoutes(app: Express, pool: Pool, today: () => s
       [id, input.completed, today()],
     );
     if (!rows[0]) throw new HttpError(404, taskNotFound);
-    res.json({ task: toTask(rows[0]) });
+    res.json({ task: rows[0] });
   });
 
   app.delete('/api/study-tasks/:id', async (req, res) => {
