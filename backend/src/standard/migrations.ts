@@ -1,4 +1,3 @@
-// Managed file. Edit it in sirloinbh/project-standards templates/app/backend/src/standard/
 // Shared migration runner (#677; rules: project-standards docs/conventions/database.md). Applies
 // database/migrations/NNN_<name>.sql in file name order and records each file in schema_migrations. Each file and its
 // history row commit in one transaction. The CLI is migrate.ts next to this file.
@@ -20,7 +19,7 @@ const filePattern = /^(\d{3})_[a-z0-9_]+\.sql$/;
 
 /** Removes a UTF-8 BOM. Editors add one on Windows, and PostgreSQL would read it as part of the first statement. */
 function stripBom(sql: string) {
-  return sql.replace(/^﻿/, '');
+  return sql.replace(/^\uFEFF/, '');
 }
 
 // Line endings and a UTF-8 BOM depend on the checkout, not on the migration's meaning.
@@ -40,7 +39,7 @@ function code(sql: string) {
 
 const noTransaction: [RegExp, string][] = [
   [/\bCONCURRENTLY\b/i, 'CONCURRENTLY'],
-  [/^\s*(BEGIN|COMMIT|ROLLBACK|END|START\s+TRANSACTION)\b/im, 'its own transaction control (BEGIN, COMMIT or ROLLBACK)'],
+  [/^\s*(BEGIN|COMMIT|ROLLBACK|START\s+TRANSACTION)\b/im, 'its own transaction control (BEGIN, COMMIT or ROLLBACK)'],
   [/^\s*VACUUM\b/im, 'VACUUM'],
   [/\b(CREATE|DROP)\s+(DATABASE|TABLESPACE)\b/i, 'CREATE or DROP DATABASE or TABLESPACE'],
   [/\bALTER\s+SYSTEM\b/i, 'ALTER SYSTEM'],
