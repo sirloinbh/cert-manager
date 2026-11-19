@@ -16,6 +16,7 @@
     "words:etymology": "tsx --env-file-if-exists=../.env src/import-etymology.ts",
     "words:export": "tsx --env-file-if-exists=../.env src/export-words.ts",
     "words:fill": "tsx --env-file-if-exists=../.env src/import-words.ts",
+    "db:migrate": "tsx --env-file-if-exists=../.env src/migrate.ts",
     "typecheck": "tsc -p tsconfig.check.json",
     "openapi": "tsx src/openapi-cli.ts"
   },
