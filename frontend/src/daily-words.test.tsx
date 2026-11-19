@@ -101,6 +101,7 @@ test('marking a word learned saves it, and it can be undone', async () => {
     method: 'PUT',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ learned: true }),
+    signal: expect.any(AbortSignal) as AbortSignal,
   });
   await waitFor(() => expect(button).toBeEnabled());
   fireEvent.click(button);
