@@ -280,7 +280,7 @@
     },
     "backend/src/standard/migrations.ts": {
       "mode": "full",
-      "sha256": "31ebde155cdcedc0374280a1f29c5d4865e5cc7ef96dbaff747852448c680ca4",
+      "sha256": "538a2655c23762baad12a96f8b1c3cc2c206a4d576883c2fff9cb1b4b458bdd3",
       "source": "templates/app/backend/src/standard/migrations.ts"
     },
     "backend/src/standard/rate-limit.ts": {
