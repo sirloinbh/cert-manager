@@ -3,7 +3,7 @@ import type { Pool } from 'pg';
 import { z } from 'zod/v4';
 
 import { gradeScaleKeys, gradeScales, hasLevel } from '../grade-scales.js';
-import { HttpError, parseId } from '../standard/http.js';
+import { HttpError, parseId, serviceDate } from '../standard/http.js';
 import { body, calendarDate, shortText } from '../validation.js';
 
 // Certification goals (#30). Columns and rules: docs/design/scope-and-data-model.md section 5.
@@ -111,6 +111,24 @@ const columns = `id, name, category, issuer, status, goal_text AS "goalText",
 
 const notFoundMessage = 'Certification goal not found';
 
+/**
+ * The goals in menu order, nearest exam first. The list route and the AI tool share it; `limit` is for the tool only,
+ * the route lists them all (a person has a handful).
+ */
+export async function listCertifications(
+  db: Pick<Pool, 'query'>,
+  limit?: number,
+  current = serviceDate(),
+) {
+  const { rows } = await db.query<CertificationRow>(
+    `SELECT ${columns} FROM certifications
+     ORDER BY array_position(ARRAY['english', 'dev', 'life'], category),
+       target_exam_date ASC NULLS LAST, id${limit === undefined ? '' : ' LIMIT $2'}`,
+    limit === undefined ? [current] : [current, limit],
+  );
+  return { today: current, certifications: rows };
+}
+
 export function registerCertificationRoutes(app: Express, pool: Pool, today: () => string) {
   app.get('/api/grade-scales', (_req, res) => {
     res.json({ scales: gradeScales });
@@ -118,14 +136,7 @@ export function registerCertificationRoutes(app: Express, pool: Pool, today: () 
 
   // Grouped by category in menu order, then the nearest target exam date first; no date goes last.
   app.get('/api/certifications', async (_req, res) => {
-    const current = today();
-    const { rows } = await pool.query<CertificationRow>(
-      `SELECT ${columns} FROM certifications
-       ORDER BY array_position(ARRAY['english', 'dev', 'life'], category),
-         target_exam_date ASC NULLS LAST, id`,
-      [current],
-    );
-    res.json({ today: current, certifications: rows });
+    res.json(await listCertifications(pool, undefined, today()));
   });
 
   app.get('/api/certifications/:id', async (req, res) => {
