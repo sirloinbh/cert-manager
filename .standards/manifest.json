@@ -1,5 +1,5 @@
 {
-  "centralSha": "7812b9c848637f018e66f23aad2d35417d3f38a8",
+  "centralSha": "060e0d50766fa2a1dbd65d4dd13a8fd52193adbb",
   "profile": "app",
   "project": "cert-manager",
   "files": {
@@ -42,6 +42,11 @@
       "mode": "full",
       "sha256": "e67554ab7dd656ab57a1690d5a0ef18df592c96c562f482f92beb78045286003",
       "source": "templates/common/.claude/settings.json.tmpl"
+    },
+    ".claude/skills/orca-lanes/SKILL.md": {
+      "mode": "full",
+      "sha256": "c82722c8e36622482062325abb0761deb43b7d5b23bc33f5f93d27e973c2612c",
+      "source": "templates/common/skills/orca-lanes/SKILL.md"
     },
     ".claude/skills/std-backlog/SKILL.md": {
       "mode": "full",
@@ -140,7 +145,7 @@
     },
     ".github/workflows/ci.yml": {
       "mode": "full",
-      "sha256": "e4d807ab7a779228bf44fe683e1cc566efa94d7ac2bfb728dd43ff484f878f32",
+      "sha256": "9dc6b50b8e70c7fb81954a6435109ba05cfda446e5d87a7f47a30d968793dddb",
       "source": "templates/app/.github/workflows/ci.yml.tmpl"
     },
     ".gitignore": {
@@ -165,7 +170,7 @@
     },
     ".prettierignore": {
       "mode": "section",
-      "sha256": "eecaa09e597906a8c0bfafaec67567ac980a312a46d0fc47f6d188aac62da3ff",
+      "sha256": "b2e51dd2a014403c87e744232b7c2b71f2e88c85ecf2a4cdfcffaa1e367732f1",
       "source": "templates/app/.prettierignore.tmpl"
     },
     ".standards/blocked-packages.json": {
@@ -345,7 +350,7 @@
     },
     "deploy/autodeploy.sh": {
       "mode": "full",
-      "sha256": "254d2fe0f58c699db96cb9c460345c0219841281b1337fab2fbc519c66acb220",
+      "sha256": "7b1247a48252b03dba1d68c7a1906849d7246ac2b0d63c1f47f50f79aeb92b72",
       "source": "templates/deploy/deploy/autodeploy.sh.tmpl"
     },
     "deploy/autodeploy.timer": {
@@ -400,7 +405,7 @@
     },
     "deploy/remote-deploy.sh": {
       "mode": "full",
-      "sha256": "9eb998d632fa03805f9c8de0d4897b94b864285cb6bf2f827f2ae1bcc0bff0b2",
+      "sha256": "3e137ebcd19678f9b925f4b8eef2fd15f973a0838ac2c6d7881ba153427e13ef",
       "source": "templates/deploy/deploy/remote-deploy.sh.tmpl"
     },
     "deploy/report.service": {
@@ -435,7 +440,7 @@
     },
     "e2e/support/jev.ts": {
       "mode": "full",
-      "sha256": "83ec5d7d0250919b6f4361125aa8cb6c31f6c8fbb75869ef6140d41c3130086a",
+      "sha256": "1d22cca3fb7e6c1c210c0d8f3652c9e9e1a8fe805c37aaf48692df1bd1cf12b7",
       "source": "templates/e2e/e2e/support/jev.ts"
     },
     "e2e/support/judged.ts": {
@@ -1086,6 +1091,11 @@
       "mode": "full",
       "sha256": "29763254f7b3d81db6eae67536e00362a9e495edf2bc5d66059ae6ef4277807b",
       "source": "templates/app/scripts/test/contract.test.mjs"
+    },
+    "skills/orca-lanes/SKILL.md": {
+      "mode": "full",
+      "sha256": "c82722c8e36622482062325abb0761deb43b7d5b23bc33f5f93d27e973c2612c",
+      "source": "templates/common/skills/orca-lanes/SKILL.md"
     },
     "skills/std-backlog/SKILL.md": {
       "mode": "full",
