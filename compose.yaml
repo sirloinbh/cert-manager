@@ -18,7 +18,7 @@ services:
   api:
     # Tagged by commit on the server, so a rollback starts the earlier image (deploy/remote-deploy.sh).
     image: cert-backend:${IMAGE_TAG:-local}
-    build: { context: ./backend, secrets: [npm_token] }
+    build: { context: ., dockerfile: backend/Dockerfile, secrets: [npm_token] }
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-cert}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-cert}
       PORT: 3106
@@ -31,7 +31,7 @@ services:
     restart: unless-stopped
   web:
     image: cert-frontend:${IMAGE_TAG:-local}
-    build: { context: ./frontend, secrets: [npm_token] }
+    build: { context: ., dockerfile: frontend/Dockerfile, secrets: [npm_token] }
     # Local default stays 127.0.0.1:8106; the server sets WEB_BIND/WEB_PORT in .env.
     ports: ['${WEB_BIND:-127.0.0.1}:${WEB_PORT:-8106}:80']
     depends_on: [api]
