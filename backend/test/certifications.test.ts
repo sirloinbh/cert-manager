@@ -20,7 +20,7 @@ function fakePool(answer: (query: Query) => { rows: unknown[]; rowCount?: number
 }
 
 const row = {
-  id: '7',
+  id: 7,
   name: '토익',
   category: 'english',
   issuer: 'YBM',
@@ -53,7 +53,7 @@ test('the list sends the service date and answers numeric ids under named keys',
 });
 
 test('a new goal fills omitted optional fields with their defaults and answers 201', async () => {
-  const { pool, queries } = fakePool(() => ({ rows: [{ ...row, id: '8' }] }));
+  const { pool, queries } = fakePool(() => ({ rows: [{ ...row, id: 8 }] }));
   await withApi(
     pool,
     async (call) => {

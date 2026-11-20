@@ -59,8 +59,8 @@ export async function fetchMissingEtymology(
   source: PoliteSource,
   log: (message: string) => void = () => {},
 ) {
-  const { rows } = await pool.query<{ id: string; lemma: string }>(
-    `SELECT id::text AS id, lemma FROM words WHERE etymology_source IS NULL ORDER BY frequency_rank`,
+  const { rows } = await pool.query<{ id: number; lemma: string }>(
+    `SELECT id, lemma FROM words WHERE etymology_source IS NULL ORDER BY frequency_rank`,
   );
   const result = {
     found: 0,
@@ -68,7 +68,7 @@ export async function fetchMissingEtymology(
     failed: [] as string[],
     stopped: null as string | null,
   };
-  let sourceId: string | undefined;
+  let sourceId: number | undefined;
   let failuresInARow = 0;
   for (const word of rows) {
     let text: string;
@@ -93,7 +93,7 @@ export async function fetchMissingEtymology(
     }
     failuresInARow = 0;
     if (!sourceId) {
-      const { rows: created } = await pool.query<{ id: string }>(
+      const { rows: created } = await pool.query<{ id: number }>(
         `INSERT INTO import_sources (kind, url, license, fetched_at)
          VALUES ('wiktionary', $1, $2, now()) RETURNING id`,
         [source.baseUrl, wiktionaryLicense],

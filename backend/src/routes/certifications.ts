@@ -4,7 +4,7 @@ import { z } from 'zod/v4';
 
 import { gradeScaleKeys, gradeScales, hasLevel } from '../grade-scales.js';
 import { HttpError, parseId } from '../standard/http.js';
-import { body, calendarDate, shortText, toId } from '../validation.js';
+import { body, calendarDate, shortText } from '../validation.js';
 
 // Certification goals (#30). Columns and rules: docs/design/scope-and-data-model.md section 5.
 
@@ -86,7 +86,7 @@ export const certificationInput = z
   });
 
 type CertificationRow = {
-  id: string;
+  id: number;
   name: string;
   category: (typeof categories)[number];
   issuer: string;
@@ -103,13 +103,11 @@ type CertificationRow = {
 };
 
 // $1 is today (YYYY-MM-DD in Asia/Seoul); daysUntilExam is negative once the date has passed.
-const columns = `id::text AS id, name, category, issuer, status, goal_text AS "goalText",
+const columns = `id, name, category, issuer, status, goal_text AS "goalText",
   target_score AS "targetScore", target_exam_date AS "targetExamDate",
   target_exam_date - $1::date AS "daysUntilExam",
   validity_kind AS "validityKind", validity_months AS "validityMonths", memo,
   grade_scale AS "gradeScale", target_grade AS "targetGrade"`;
-
-const toCertification = (row: CertificationRow) => ({ ...row, id: toId(row.id) });
 
 const notFoundMessage = 'Certification goal not found';
 
@@ -127,7 +125,7 @@ export function registerCertificationRoutes(app: Express, pool: Pool, today: () 
          target_exam_date ASC NULLS LAST, id`,
       [current],
     );
-    res.json({ today: current, certifications: rows.map(toCertification) });
+    res.json({ today: current, certifications: rows });
   });
 
   app.get('/api/certifications/:id', async (req, res) => {
@@ -138,7 +136,7 @@ export function registerCertificationRoutes(app: Express, pool: Pool, today: () 
       [current, id],
     );
     if (!rows[0]) throw new HttpError(404, notFoundMessage);
-    res.json({ today: current, certification: toCertification(rows[0]) });
+    res.json({ today: current, certification: rows[0] });
   });
 
   app.post('/api/certifications', async (req, res) => {
@@ -150,7 +148,7 @@ export function registerCertificationRoutes(app: Express, pool: Pool, today: () 
        RETURNING ${columns}`,
       [today(), ...values(input)],
     );
-    res.status(201).json({ certification: toCertification(rows[0]) });
+    res.status(201).json({ certification: rows[0] });
   });
 
   app.put('/api/certifications/:id', async (req, res) => {
@@ -170,7 +168,7 @@ export function registerCertificationRoutes(app: Express, pool: Pool, today: () 
       [today(), ...values(input), id],
     );
     if (!rows[0]) throw new HttpError(404, notFoundMessage);
-    res.json({ certification: toCertification(rows[0]) });
+    res.json({ certification: rows[0] });
   });
 
   // Exam attempts (#32) and study plans (#33) go with the goal.

@@ -72,7 +72,7 @@ test('lines ignore line-end style, trailing spaces and surrounding blank lines',
 
 test('the list groups tracks under albums with numeric ids', async () => {
   const row = {
-    albumId: '1',
+    albumId: 1,
     albumTitle: '앨범',
     albumKind: 'studio',
     releaseDate: '2020-01-01',
@@ -81,9 +81,9 @@ test('the list groups tracks under albums with numeric ids', async () => {
   };
   const { pool } = fakePool(() => ({
     rows: [
-      { ...row, songId: '5', title: '첫 곡' },
-      { ...row, songId: '6', title: '둘째 곡', trackNumber: 2, status: 'translated' },
-      { ...row, albumId: '2', albumTitle: '다른 앨범', songId: '5', title: '첫 곡' },
+      { ...row, songId: 5, title: '첫 곡' },
+      { ...row, songId: 6, title: '둘째 곡', trackNumber: 2, status: 'translated' },
+      { ...row, albumId: 2, albumTitle: '다른 앨범', songId: 5, title: '첫 곡' },
     ],
   }));
   await withApi(pool, async (call) => {

@@ -90,11 +90,11 @@ const fakePool = (lemmas: string[], fail = false) => {
   const pool = {
     query: async (text: string, values: unknown[]) => {
       if (text.includes('etymology_source IS NULL')) {
-        return { rows: lemmas.map((lemma, index) => ({ id: String(index + 1), lemma })) };
+        return { rows: lemmas.map((lemma, index) => ({ id: index + 1, lemma })) };
       }
       if (fail) throw new Error('database down');
       if (text.startsWith('UPDATE')) updates.push(values);
-      return { rows: [{ id: '7' }] };
+      return { rows: [{ id: 7 }] };
     },
   } as unknown as Pool;
   return { pool, updates };
@@ -131,8 +131,8 @@ test('a found word gets its text and page, a missing one an empty mark', async (
     },
   );
   assert.deepEqual(updates, [
-    ['1', 'From a made-up word.', 'https://en.wiktionary.org/wiki/carry', '7'],
-    ['2', '', '', '7'],
+    [1, 'From a made-up word.', 'https://en.wiktionary.org/wiki/carry', 7],
+    [2, '', '', 7],
   ]);
 });
 

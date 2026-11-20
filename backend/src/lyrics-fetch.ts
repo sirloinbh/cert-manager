@@ -112,7 +112,7 @@ export async function requestLyrics(query: LyricsQuery, source: PoliteSource) {
 }
 
 type Waiting = {
-  id: string;
+  id: number;
   title: string;
   artist: string;
   album: string | null;
@@ -122,7 +122,7 @@ type Waiting = {
 // Songs with any line are left alone: one chance to overwrite typed-in lyrics is one too many.
 async function songsWithoutLyrics(pool: Pool) {
   const { rows } = await pool.query<Waiting>(
-    `SELECT s.id::text AS id, s.title, ar.name AS artist, s.duration_seconds AS "durationSeconds",
+    `SELECT s.id, s.title, ar.name AS artist, s.duration_seconds AS "durationSeconds",
        (SELECT al.title FROM album_tracks t JOIN albums al ON al.id = t.album_id
         WHERE t.song_id = s.id ORDER BY al.release_date ASC NULLS LAST, al.id LIMIT 1) AS album
      FROM songs s JOIN artists ar ON ar.id = s.artist_id

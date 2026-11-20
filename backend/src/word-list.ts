@@ -53,7 +53,7 @@ export async function saveWordList(pool: Pool, words: ListedWord[], url: string)
     if (changed[0]) {
       throw new Error(`Word ranks changed, nothing saved. First: ${changed[0].lemma}`);
     }
-    const { rows } = await client.query<{ id: string }>(
+    const { rows } = await client.query<{ id: number }>(
       `INSERT INTO import_sources (kind, url, license, fetched_at)
        VALUES ('ngsl', $1, $2, now()) RETURNING id`,
       [url, ngslLicense],

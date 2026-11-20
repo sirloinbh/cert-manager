@@ -112,7 +112,7 @@ function parseBatch(content: string) {
 }
 
 type WordRow = {
-  id: string;
+  id: number;
   lemma: string;
   meaningKo: string | null;
   etymologySource: string | null;
@@ -162,7 +162,7 @@ export async function importWordBatches(pool: Pool, dir: string) {
       const batch = parseBatch(await readFile(join(dir, name), 'utf8'));
       await inTransaction(pool, async (client) => {
         const { rows } = await client.query<WordRow>(
-          `SELECT id::text AS id, lemma, meaning_ko AS "meaningKo", etymology_source AS "etymologySource"
+          `SELECT id, lemma, meaning_ko AS "meaningKo", etymology_source AS "etymologySource"
            FROM words WHERE lemma = ANY($1::text[]) FOR UPDATE`,
           [batch.words.map((word) => word.lemma)],
         );

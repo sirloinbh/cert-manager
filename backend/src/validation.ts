@@ -27,10 +27,3 @@ export const dayQuery = z.object({ day: calendarDate('Date').optional() });
 
 // Express leaves req.body undefined without a JSON body; parse {} so field messages stay English.
 export const body = (value: unknown) => value ?? {};
-
-// pg returns bigint as a string; ids stay within 15 digits, so they are exact as numbers.
-export function toId(value: string) {
-  const id = Number(value);
-  if (!Number.isSafeInteger(id)) throw new Error(`id out of range: ${value}`);
-  return id;
-}

@@ -3,7 +3,7 @@ import type { Pool } from 'pg';
 import { z } from 'zod/v4';
 
 import { HttpError, parseId } from '../standard/http.js';
-import { body, dayQuery, toId } from '../validation.js';
+import { body, dayQuery } from '../validation.js';
 import { readWordSources } from './words.js';
 
 // The day's words on the dashboard (#37). Columns and rules: docs/design/scope-and-data-model.md section 6.
@@ -49,8 +49,8 @@ export function registerDailyWordRoutes(app: Express, pool: Pool, today: () => s
     const day = dayQuery.parse(req.query).day ?? current;
     if (day > current) throw new HttpError(400, 'Words for a future date are not available');
     if (day === current) await chooseWords(pool, day);
-    const { rows } = await pool.query<{ id: string }>(
-      `SELECT w.id::text AS id, w.lemma, w.frequency_rank AS rank, w.part_of_speech AS "partOfSpeech",
+    const { rows } = await pool.query<{ id: number }>(
+      `SELECT w.id, w.lemma, w.frequency_rank AS rank, w.part_of_speech AS "partOfSpeech",
          w.meaning_ko AS "meaningKo", w.example_en AS "exampleEn", w.example_ko AS "exampleKo",
          w.ai_generated AS "aiGenerated", w.etymology_source AS "etymologySource",
          w.etymology_url AS "etymologyUrl", w.learned_at AS "learnedAt"
@@ -71,7 +71,7 @@ export function registerDailyWordRoutes(app: Express, pool: Pool, today: () => s
       day,
       previousDay: days.rows[0]?.previousDay ?? null,
       nextDay: days.rows[0]?.nextDay ?? null,
-      words: rows.map((row) => ({ ...row, id: toId(row.id) })),
+      words: rows.map((row) => row),
       sources: rows.length > 0 ? await readWordSources(pool) : [],
     });
   });

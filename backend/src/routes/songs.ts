@@ -4,7 +4,7 @@ import { z } from 'zod/v4';
 
 import { inTransaction, lockSong, setTranslations, toLines } from '../lyrics-store.js';
 import { HttpError, parseId } from '../standard/http.js';
-import { body, toId } from '../validation.js';
+import { body } from '../validation.js';
 
 // Songs and lyrics (#35). Columns and rules: docs/design/scope-and-data-model.md section 6.
 // Lyrics live only in the local database; nothing here copies them anywhere else.
@@ -59,18 +59,18 @@ const statusColumn = `CASE
   END`;
 
 type TrackRow = {
-  albumId: string;
+  albumId: number;
   albumTitle: string;
   albumKind: 'studio' | 'taylors_version';
   releaseDate: string | null;
-  songId: string;
+  songId: number;
   trackNumber: number;
   title: string;
   status: 'none' | 'untranslated' | 'translated';
 };
 
 type SongRow = {
-  id: string;
+  id: number;
   title: string;
   artistName: string;
   durationSeconds: number | null;
@@ -82,7 +82,7 @@ type SongRow = {
 
 async function readSong(pool: Pool, id: number) {
   const { rows } = await pool.query<SongRow>(
-    `SELECT s.id::text AS id, s.title, a.name AS "artistName", s.duration_seconds AS "durationSeconds",
+    `SELECT s.id, s.title, a.name AS "artistName", s.duration_seconds AS "durationSeconds",
        s.lyrics_source AS "lyricsSource", s.lyrics_source_url AS "lyricsSourceUrl", s.note,
        ${statusColumn} AS status
      FROM songs s JOIN artists a ON a.id = s.artist_id
@@ -90,8 +90,8 @@ async function readSong(pool: Pool, id: number) {
     [id],
   );
   if (!rows[0]) throw new HttpError(404, notFoundMessage);
-  const albums = await pool.query<{ id: string; title: string; trackNumber: number }>(
-    `SELECT al.id::text AS id, al.title, t.track_number AS "trackNumber"
+  const albums = await pool.query<{ id: number; title: string; trackNumber: number }>(
+    `SELECT al.id, al.title, t.track_number AS "trackNumber"
      FROM album_tracks t JOIN albums al ON al.id = t.album_id
      WHERE t.song_id = $1
      ORDER BY al.release_date ASC NULLS LAST, al.id`,
@@ -108,8 +108,8 @@ async function readSong(pool: Pool, id: number) {
   );
   return {
     ...rows[0],
-    id: toId(rows[0].id),
-    albums: albums.rows.map((album) => ({ ...album, id: toId(album.id) })),
+    id: rows[0].id,
+    albums: albums.rows.map((album) => album),
     lines: lines.rows,
   };
 }
@@ -118,8 +118,8 @@ export function registerSongRoutes(app: Express, pool: Pool) {
   // Albums by release date, each with its tracks in order. The screen searches this list itself.
   app.get('/api/songs', async (_req, res) => {
     const { rows } = await pool.query<TrackRow>(
-      `SELECT al.id::text AS "albumId", al.title AS "albumTitle", al.kind AS "albumKind",
-         al.release_date AS "releaseDate", s.id::text AS "songId", t.track_number AS "trackNumber",
+      `SELECT al.id AS "albumId", al.title AS "albumTitle", al.kind AS "albumKind",
+         al.release_date AS "releaseDate", s.id AS "songId", t.track_number AS "trackNumber",
          s.title, ${statusColumn} AS status
        FROM albums al
        JOIN album_tracks t ON t.album_id = al.id
@@ -142,7 +142,7 @@ export function registerSongRoutes(app: Express, pool: Pool) {
       }
     >();
     for (const row of rows) {
-      const id = toId(row.albumId);
+      const id = row.albumId;
       const album = albums.get(id) ?? {
         id,
         title: row.albumTitle,
@@ -151,7 +151,7 @@ export function registerSongRoutes(app: Express, pool: Pool) {
         tracks: [],
       };
       album.tracks.push({
-        songId: toId(row.songId),
+        songId: row.songId,
         trackNumber: row.trackNumber,
         title: row.title,
         status: row.status,
