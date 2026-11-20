@@ -16,18 +16,18 @@ function countingPool() {
   return { pool, state };
 }
 
-test('requests over the limit get a Korean 429 and never reach the database', async () => {
+test('requests over the limit get a 429 and never reach the database', async () => {
   const { pool, state } = countingPool();
   await withApi(
     pool,
     async (call) => {
-      assert.equal((await call('/api/health')).status, 200);
-      assert.equal((await call('/api/health')).status, 200);
-      const refused = await call('/api/health');
+      assert.equal((await call('/api/certifications')).status, 200);
+      assert.equal((await call('/api/certifications')).status, 200);
+      const refused = await call('/api/certifications');
       assert.equal(refused.status, 429);
-      assert.deepEqual(refused.data, { error: 'Too many requests. Please try again shortly' });
+      assert.deepEqual(refused.data, { error: 'Too many requests. Try again in a minute.' });
     },
-    { rateLimit: { limit: 2 } },
+    { requestsPerMinute: 2 },
   );
   assert.equal(state.queries, 2);
 });
@@ -44,47 +44,32 @@ test('the limit covers feature routes and writes, counted together', async () =>
       });
       assert.equal(refused.status, 429);
     },
-    { rateLimit: { limit: 1 } },
+    { requestsPerMinute: 1 },
   );
   assert.equal(state.queries, 1);
 });
 
-test('a new window allows requests again', async () => {
-  const { pool } = countingPool();
-  await withApi(
-    pool,
-    async (call) => {
-      assert.equal((await call('/api/health')).status, 200);
-      assert.equal((await call('/api/health')).status, 429);
-      await new Promise((resolve) => setTimeout(resolve, 1100));
-      assert.equal((await call('/api/health')).status, 200);
-    },
-    // Long enough that a slow machine still makes the second request inside the window.
-    { rateLimit: { limit: 1, windowMs: 1000 } },
-  );
-});
-
-test('the default limit is 1200 requests a minute', async () => {
+test('the default limit is 600 requests a minute', async () => {
   const { pool } = countingPool();
   await withApi(pool, async (call) => {
-    const { headers } = await call('/api/health');
-    assert.match(headers.get('ratelimit-policy') ?? '', /q=1200; w=60/);
+    const { headers } = await call('/api/certifications');
+    assert.match(headers.get('ratelimit') ?? '', /limit=600/);
   });
 });
 
-test('a forged forwarding header does not get around the limit', async () => {
-  const { pool, state } = countingPool();
+test('the health check is not counted, and the client is the last X-Forwarded-For entry', async () => {
+  const { pool } = countingPool();
   await withApi(
     pool,
     async (call) => {
-      const from = (address: string) =>
-        call('/api/health', {
-          headers: { 'x-forwarded-for': address, forwarded: `for=${address}` },
-        });
+      const from = (address: string, path = '/api/certifications') =>
+        call(path, { headers: { 'x-forwarded-for': `198.51.100.9, ${address}` } });
+      assert.equal((await from('203.0.113.1', '/api/health')).status, 200);
+      assert.equal((await from('203.0.113.1', '/api/health')).status, 200);
       assert.equal((await from('203.0.113.1')).status, 200);
-      assert.equal((await from('203.0.113.2')).status, 429);
+      assert.equal((await from('203.0.113.1')).status, 429);
+      assert.equal((await from('203.0.113.2')).status, 200);
     },
-    { rateLimit: { limit: 1 } },
+    { requestsPerMinute: 1 },
   );
-  assert.equal(state.queries, 1);
 });

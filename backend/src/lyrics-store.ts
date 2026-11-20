@@ -1,10 +1,12 @@
 import type { Pool, PoolClient } from 'pg';
 
+import { withTransaction } from './standard/db.js';
 import { HttpError } from './standard/http.js';
 
 // Line rules and database steps shared by the song routes and the lyrics scripts (#35, #64).
 
 /** Lines without surrounding blank lines. Windows line ends and trailing spaces do not count as content. */
+
 export function toLines(text: string) {
   const lines = text.split(/\r\n|\r|\n/).map((line) => line.trimEnd());
   while (lines.length > 0 && lines[0] === '') lines.shift();
@@ -12,19 +14,8 @@ export function toLines(text: string) {
   return lines;
 }
 
-export async function inTransaction(pool: Pool, work: (client: PoolClient) => Promise<void>) {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    await work(client);
-    await client.query('COMMIT');
-  } catch (error) {
-    await client.query('ROLLBACK');
-    throw error;
-  } finally {
-    client.release();
-  }
-}
+export const inTransaction = (pool: Pool, work: (client: PoolClient) => Promise<void>) =>
+  withTransaction<void, PoolClient>(pool, work);
 
 // Every write takes this lock first, so one finishes before the next reads the lines.
 export async function lockSong(client: PoolClient, id: number) {

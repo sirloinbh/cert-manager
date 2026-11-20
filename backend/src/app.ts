@@ -3,7 +3,6 @@ import express from 'express';
 import type { Pool } from 'pg';
 import { types } from 'pg';
 
-import { apiRateLimit, type RateLimitOptions } from './rate-limit.js';
 import { registerCertificationRoutes } from './routes/certifications.js';
 import { registerDailyWordRoutes } from './routes/daily-words.js';
 import { registerExamAttemptRoutes } from './routes/exam-attempts.js';
@@ -13,6 +12,7 @@ import { registerUserActionRoutes } from './routes/user-actions.js';
 import { registerWordRoutes } from './routes/words.js';
 import { setInt8Parser } from './standard/db.js';
 import { errorHandler, notFound, requestLog, serviceDate } from './standard/http.js';
+import { apiRateLimit } from './standard/rate-limit.js';
 
 // DATE columns stay YYYY-MM-DD strings so the service time zone never shifts them.
 types.setTypeParser(1082, (value) => value);
@@ -22,7 +22,7 @@ export function createApp(
   pool: Pool,
   options: {
     today?: () => string;
-    rateLimit?: RateLimitOptions;
+    requestsPerMinute?: number;
     auth?: express.RequestHandler;
   } = {},
 ) {
@@ -32,7 +32,7 @@ export function createApp(
   // project-standards#552: a request ID and one JSON log line for every request, a refused one included.
   app.use(requestLog);
   // Before the body parser and every route, so a refused request costs neither parsing nor a query.
-  app.use(apiRateLimit(options.rateLimit));
+  apiRateLimit(app, { limitPerMinute: options.requestsPerMinute });
   app.use(express.json({ limit: '256kb' }));
   // #116: the shared sign-in guards every /api route except /api/health, before any route registers.
   if (options.auth) app.use('/api', options.auth);

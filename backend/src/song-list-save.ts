@@ -1,6 +1,7 @@
-import type { Pool } from 'pg';
+import type { Pool, PoolClient } from 'pg';
 
 import type { ListAlbum, ListTrack } from './song-list.js';
+import { withTransaction } from './standard/db.js';
 
 export type SongListInput = {
   artist: { id: string; name: string };
@@ -13,10 +14,8 @@ export type SongListInput = {
  * Never touches lyrics. Returns the titles of songs that hold lyrics but are no longer on any album.
  */
 export async function saveSongList(pool: Pool, input: SongListInput) {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const { rows: artists } = await client.query<{ id: string }>(
+  return withTransaction(pool, async (client: PoolClient) => {
+    const { rows: artists } = await client.query<{ id: number }>(
       `INSERT INTO artists (name, musicbrainz_id) VALUES ($1, $2)
        ON CONFLICT (musicbrainz_id) DO UPDATE SET name = EXCLUDED.name, updated_at = now()
        RETURNING id`,
@@ -24,7 +23,7 @@ export async function saveSongList(pool: Pool, input: SongListInput) {
     );
     const artistId = artists[0]?.id;
     for (const { album, date, tracks } of input.albums) {
-      const { rows: albums } = await client.query<{ id: string }>(
+      const { rows: albums } = await client.query<{ id: number }>(
         `INSERT INTO albums (artist_id, title, kind, release_date, musicbrainz_id)
          VALUES ($1, $2, $3, $4, $5)
          ON CONFLICT (musicbrainz_id) DO UPDATE SET title = EXCLUDED.title, kind = EXCLUDED.kind,
@@ -36,7 +35,7 @@ export async function saveSongList(pool: Pool, input: SongListInput) {
       // The album's tracks are replaced, so a corrected list leaves nothing behind.
       await client.query('DELETE FROM album_tracks WHERE album_id = $1', [albumId]);
       for (const track of tracks) {
-        const { rows: songs } = await client.query<{ id: string }>(
+        const { rows: songs } = await client.query<{ id: number }>(
           `INSERT INTO songs (artist_id, title, duration_seconds, musicbrainz_id)
            VALUES ($1, $2, $3, $4)
            ON CONFLICT (musicbrainz_id) DO UPDATE SET title = EXCLUDED.title,
@@ -74,12 +73,6 @@ export async function saveSongList(pool: Pool, input: SongListInput) {
        VALUES ('musicbrainz', $1, 'CC0', now())`,
       [input.sourceUrl],
     );
-    await client.query('COMMIT');
     return { keptSongs: kept.rows.map((row) => row.title) };
-  } catch (error) {
-    await client.query('ROLLBACK');
-    throw error;
-  } finally {
-    client.release();
-  }
+  });
 }
