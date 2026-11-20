@@ -147,11 +147,11 @@ test(
           body: { name: '#32 토익', category: 'english', validityKind: 'none' },
         });
         assert.equal(stopped.status, 200);
-        const { rows } = await pool.query<{ count: string }>(
+        const { rows } = await pool.query<{ count: number }>(
           'SELECT count(*) FROM exam_attempts WHERE certification_id = $1 AND expires_on IS NOT NULL',
           [toeic],
         );
-        assert.equal(rows[0]?.count, '0');
+        assert.equal(rows[0]?.count, 0);
 
         // Attempts go with their goal.
         const removed = await call(`/api/certifications/${toeic}`, { method: 'DELETE' });
