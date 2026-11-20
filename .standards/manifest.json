@@ -1,5 +1,5 @@
 {
-  "centralSha": "9c1f654987fbeb535abcfddb0cb2bf5828c53c10",
+  "centralSha": "c8ec08e7d9887071c29524c1817ccced8e22a625",
   "profile": "app",
   "project": "cert-manager",
   "files": {
@@ -345,7 +345,7 @@
     },
     "deploy/autodeploy.sh": {
       "mode": "full",
-      "sha256": "e4d3a647ad82ff495cc31bf942ea00d5251682cf4b81616780eb6fe1ecaac1d0",
+      "sha256": "254d2fe0f58c699db96cb9c460345c0219841281b1337fab2fbc519c66acb220",
       "source": "templates/deploy/deploy/autodeploy.sh.tmpl"
     },
     "deploy/autodeploy.timer": {
