@@ -20,16 +20,16 @@ function fakePool(answer: (query: Query) => { rows: unknown[]; rowCount?: number
 }
 
 const stageRow = {
-  id: '4',
-  certificationId: '7',
+  id: 4,
+  certificationId: 7,
   title: '1주차',
   position: 1,
   startDate: null,
   endDate: null,
 };
 const taskRow = {
-  id: '9',
-  stageId: '4',
+  id: 9,
+  stageId: 4,
   title: '기출 풀기',
   position: 1,
   dueDate: '2026-11-01',
@@ -39,11 +39,11 @@ const taskRow = {
 const today = () => '2026-10-30';
 
 test('the plan nests each stage’s tasks and answers numeric ids', async () => {
-  const other = { ...taskRow, id: '10', stageId: '5' };
+  const other = { ...taskRow, id: 10, stageId: 5 };
   const { pool, queries } = fakePool(({ text }) => {
     if (text.startsWith('SELECT 1')) return { rows: [{}], rowCount: 1 };
     if (text.includes('study_tasks')) return { rows: [taskRow, other] };
-    return { rows: [stageRow, { ...stageRow, id: '5', position: 2 }] };
+    return { rows: [stageRow, { ...stageRow, id: 5, position: 2 }] };
   });
   await withApi(
     pool,
@@ -85,7 +85,7 @@ test('the plan of a goal that does not exist is a 404', async () => {
 });
 
 test('today’s tasks send the service date and name their goal', async () => {
-  const row = { ...taskRow, certificationId: '7', certificationName: '토익', daysUntilDue: -1 };
+  const row = { ...taskRow, certificationId: 7, certificationName: '토익', daysUntilDue: -1 };
   const { pool, queries } = fakePool(() => ({ rows: [row] }));
   await withApi(
     pool,

@@ -11,7 +11,7 @@ function fakePool() {
   const pool = {
     query: async (_text: string, values: unknown[] = []) => {
       queries.push({ values });
-      return { rows: [{ id: '8', name: '토익' }] };
+      return { rows: [{ id: 8, name: '토익' }] };
     },
   } as unknown as Pool;
   return { pool, queries };

@@ -19,7 +19,7 @@ function fakePool(answer: (query: Query) => { rows: unknown[]; rowCount?: number
 }
 
 const row = {
-  id: '3',
+  id: 3,
   title: '실기 접수',
   note: '',
   linkUrl: 'https://www.q-net.or.kr/',

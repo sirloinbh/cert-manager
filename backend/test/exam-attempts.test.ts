@@ -20,8 +20,8 @@ function fakePool(answer: (query: Query) => { rows: unknown[]; rowCount?: number
 }
 
 const row = {
-  id: '3',
-  certificationId: '7',
+  id: 3,
+  certificationId: 7,
   examDate: '2026-03-15',
   outcome: 'scored',
   score: 900,
