@@ -1,5 +1,5 @@
 {
-  "centralSha": "52d0d2c2eb7310dae0d93356742a36fc4914fb30",
+  "centralSha": "b205088594b7c7295df8eba87cb06a37e0a32e0e",
   "profile": "app",
   "project": "cert-manager",
   "files": {
@@ -395,7 +395,7 @@
     },
     "deploy/install-backup.sh": {
       "mode": "full",
-      "sha256": "dbdc02c7cdaabac5e01500e300725c142e270bdfe896c342de062fd2070b384e",
+      "sha256": "56dc973ace8318158f9b41880115b899600987c5ab14a58a6c0a1f5c49e8ca30",
       "source": "templates/deploy/deploy/install-backup.sh.tmpl"
     },
     "deploy/notify.sh": {
@@ -410,18 +410,18 @@
     },
     "deploy/report.service": {
       "mode": "full",
-      "sha256": "c2437e08570d539421de3cbb99579c904544cb603e8ab447c5140b1b01c79a39",
-      "source": "templates/app/deploy/report.service.tmpl"
+      "sha256": "c97a45bd3c31bd4fabc86832351040dbde4dbc71992f5e1c15351cd3d560f815",
+      "source": "templates/deploy/deploy/report.service.tmpl"
     },
     "deploy/report.sh": {
       "mode": "full",
-      "sha256": "bfde17117c6dc365192e0a248a4ec6fbed3f6aa357e3ad9ae6d31c6fb4deb31b",
-      "source": "templates/app/deploy/report.sh.tmpl"
+      "sha256": "467845343f27fbf0ec647299fb779178fb1616a4bd1e6409d97d39c120eccc4e",
+      "source": "templates/deploy/deploy/report.sh.tmpl"
     },
     "deploy/report.timer": {
       "mode": "full",
-      "sha256": "9a33812acaec33926ff48362de29df84bfb69d29ba73e4cc99b1f9e019d86148",
-      "source": "templates/app/deploy/report.timer.tmpl"
+      "sha256": "97884ca2091c59c54784d58d418b515cb841216343c97d95088ec415d5347bf2",
+      "source": "templates/deploy/deploy/report.timer.tmpl"
     },
     "deploy/restore-check.service": {
       "mode": "full",
