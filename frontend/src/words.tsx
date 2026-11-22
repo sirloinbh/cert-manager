@@ -10,6 +10,7 @@ import { Label } from './components/ui/label';
 import { Notice } from './components/ui/notice';
 import { SkeletonList } from './components/ui/skeleton';
 import { RequestError } from './lib/api';
+import { apiKey, useApiQuery } from './lib/query';
 import { errorText } from './lib/use-notice';
 import { quantity } from './plural';
 import { useLoad } from './use-load';
@@ -21,7 +22,9 @@ import {
   type Word,
   wordApi,
   type WordPaths,
+  type WordRow,
   type WordSource,
+  wordsPath,
 } from './word-data';
 
 // Screens for the word list (#36): most frequent first with search, and one word with its word parts.
@@ -64,10 +67,12 @@ export function SourceNote({ sources }: { sources: WordSource[] }) {
   );
 }
 
-const loadWords = () => wordApi.list();
-
 export function WordList({ paths }: { paths: WordPaths }) {
-  const loaded = useLoad('all', loadWords);
+  // Cached for a short while: coming back to the list shows its rows at once and refreshes them in the background.
+  const loaded = useApiQuery<{ words: WordRow[]; sources: WordSource[] }>(
+    apiKey(wordsPath),
+    wordsPath,
+  );
   // In the URL, so coming back from a word finds the same search.
   const [params, setParams] = useSearchParams();
   const search = params.get('q') ?? '';
@@ -75,7 +80,7 @@ export function WordList({ paths }: { paths: WordPaths }) {
   const [paging, setPaging] = useState({ search, pages: 1 });
   const pages = paging.search === search ? paging.pages : 1;
   const searchId = useId();
-  const words = useMemo(() => (loaded.state === 'ok' ? loaded.data.words : []), [loaded]);
+  const words = useMemo(() => loaded.data?.words ?? [], [loaded.data]);
   const matching = useMemo(() => searchWords(words, search), [words, search]);
   const filled = useMemo(() => words.filter((word) => word.meaningKo !== null).length, [words]);
   const shown = matching.slice(0, pages * pageSize);
@@ -93,13 +98,13 @@ export function WordList({ paths }: { paths: WordPaths }) {
           </p>
         ) : null}
       </header>
-      {loaded.state === 'loading' ? <SkeletonList rows={4} /> : null}
-      {loaded.state === 'error' ? (
+      {loaded.isPending ? <SkeletonList rows={4} /> : null}
+      {loaded.isError ? (
         <Notice
           notice={{ kind: 'error', text: errorText(loaded.error, 'Could not load the words') }}
         />
       ) : null}
-      {loaded.state === 'ok' && words.length === 0 ? (
+      {loaded.isSuccess && words.length === 0 ? (
         <EmptyState
           className="break-keep"
           icon={<BookOpenText />}
@@ -165,9 +170,7 @@ export function WordList({ paths }: { paths: WordPaths }) {
           Show more ({quantity(matching.length - shown.length, 'word')} left)
         </Button>
       ) : null}
-      {loaded.state === 'ok' && words.length > 0 ? (
-        <SourceNote sources={loaded.data.sources} />
-      ) : null}
+      {loaded.data && words.length > 0 ? <SourceNote sources={loaded.data.sources} /> : null}
     </section>
   );
 }
