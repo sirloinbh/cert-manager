@@ -205,7 +205,7 @@ test(
       nextFile.morphemes.map((part) => part.key).filter((key) => key.includes('zz')),
       ['root:zzcarry', 'root:zzport'],
     );
-    await rm(join(dir, second.file ?? ''));
+    await rm(join(dir, next.file ?? ''));
     await writeFile(
       join(dir, 'second.json'),
       JSON.stringify({
