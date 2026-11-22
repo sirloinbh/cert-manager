@@ -15,7 +15,7 @@ Harden startup and route order. The `127.0.0.1` bind without sign-in and the war
 
 ## Verification
 
-- `prettier --check .`, `contract:check`, backend `tsc -p tsconfig.check.json`, `sign-in` and `health` tests: pass. Full `npm run check` could not run on this Mac: `node_modules/eslint` is incomplete (no package.json, module not found) and `node_modules/.bin` is missing, so lint was left to CI.
+- `npm run check`: pass (format, lint, contract, typecheck, tests, skills tests, build).
 - No local PostgreSQL on this Mac: DB integration tests skip locally and run in CI.
 
 ## Limits
