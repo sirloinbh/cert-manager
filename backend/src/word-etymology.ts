@@ -16,10 +16,16 @@ const wiktionaryLicense = 'CC BY-SA 4.0';
 // One large file at a time from a volunteer-run site.
 const requestGap = 1000;
 
-// The site's folders are the word's first one and two letters, capitals kept (checked: I/I/I.jsonl).
+// The site's folders are the word's first one and two letters (code points, not UTF-16 units), capitals kept
+// (checked: I/I/I.jsonl). Each path segment is encoded on its own, so `?` or `#` in a lemma stay in the path.
 export function entryUrl(baseUrl: string, lemma: string) {
-  return `${baseUrl}/${lemma.slice(0, 1)}/${lemma.slice(0, 2)}/${encodeURIComponent(lemma)}.jsonl`;
+  const letters = Array.from(lemma);
+  const one = encodeURIComponent(letters.slice(0, 1).join(''));
+  const two = encodeURIComponent(letters.slice(0, 2).join(''));
+  return `${baseUrl}/${one}/${two}/${encodeURIComponent(lemma)}.jsonl`;
 }
+
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 // The text can start with a generated tree of ancestor words, one to a line, which ends at
 // "English <word>". Without such a line there is no telling tree from sentences, so nothing is kept:
@@ -28,7 +34,7 @@ function withoutTree(text: string, lemma: string) {
   if (!text.startsWith('Etymology tree\n')) return text.trim();
   const lines = text.split('\n');
   // The word itself, so a short sentence opening with "English" is not taken for the end.
-  const treeEnd = new RegExp(`^English ${lemma}(?: ?[a-z]{2,5}\\.)*$`);
+  const treeEnd = new RegExp(`^English ${escapeRegExp(lemma)}(?: ?[a-z]{2,5}\\.)*$`);
   const end = lines.map((line) => treeEnd.test(line)).lastIndexOf(true);
   return end === -1
     ? ''
