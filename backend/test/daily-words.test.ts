@@ -41,18 +41,22 @@ test('a day that is not a real date, or has not come yet, is refused before any 
   assert.deepEqual(queries, []);
 });
 
-test('opening today chooses the words; opening an earlier day never does', async () => {
+test('GET never writes, and only POST chooses today’s words', async () => {
   const { pool, queries } = fakePool();
+  const inserts = () => queries.filter((query) => query.text.includes('INSERT'));
   await withApi(
     pool,
     async (call) => {
       await call('/api/daily-words?day=2026-10-31');
-      assert.equal(queries.filter((query) => query.text.includes('INSERT')).length, 0);
       await call('/api/daily-words');
-      assert.deepEqual(queries.find((query) => query.text.includes('INSERT'))?.values, [
-        '2026-11-01',
-        5,
-      ]);
+      assert.equal(inserts().length, 0);
+      const chosen = await call('/api/daily-words', { method: 'POST' });
+      assert.equal(chosen.status, 200);
+      assert.equal(chosen.data.day, '2026-11-01');
+      assert.deepEqual(
+        inserts().map((query) => query.values),
+        [['2026-11-01', 5]],
+      );
     },
     { today },
   );

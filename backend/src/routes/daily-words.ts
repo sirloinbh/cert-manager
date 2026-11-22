@@ -16,7 +16,7 @@ export const learnedInput = z.object(
 );
 
 /**
- * Chooses the day's words the first time that day is opened. Two requests at once choose the same
+ * Chooses the day's words the first time they are asked for (POST /api/daily-words). Two requests at once choose the same
  * words, so the second inserts nothing. Words never shown come first, then the ones not shown for the
  * longest time; among those, words with a meaning, then the most frequent. A day already chosen stays
  * as it is, even when it got fewer words than usual.
@@ -42,13 +42,9 @@ async function chooseWords(pool: Pool, day: string) {
 }
 
 export function registerDailyWordRoutes(app: Express, pool: Pool, today: () => string) {
-  // Today's words, or an earlier day's with ?day=. Only today can choose new words.
+  // The words saved for a day, with its neighbours. Reads only; nothing is chosen here.
   // Today always counts as the next day of an earlier one, even before its words are chosen.
-  app.get('/api/daily-words', async (req, res) => {
-    const current = today();
-    const day = dayQuery.parse(req.query).day ?? current;
-    if (day > current) throw new HttpError(400, 'Words for a future date are not available');
-    if (day === current) await chooseWords(pool, day);
+  async function readDay(day: string, current: string) {
     const { rows } = await pool.query<{ id: number }>(
       `SELECT w.id, w.lemma, w.frequency_rank AS rank, w.part_of_speech AS "partOfSpeech",
          w.meaning_ko AS "meaningKo", w.example_en AS "exampleEn", w.example_ko AS "exampleKo",
@@ -66,14 +62,31 @@ export function registerDailyWordRoutes(app: Express, pool: Pool, today: () => s
          ) END AS "nextDay"`,
       [day, current],
     );
-    res.json({
+    return {
       today: current,
       day,
       previousDay: days.rows[0]?.previousDay ?? null,
       nextDay: days.rows[0]?.nextDay ?? null,
       words: rows.map((row) => row),
       sources: rows.length > 0 ? await readWordSources(pool) : [],
-    });
+    };
+  }
+
+  // Today's words, or an earlier day's with ?day=. Reads only (#145): a day that has no words yet answers an
+  // empty list, and POST /api/daily-words chooses them.
+  app.get('/api/daily-words', async (req, res) => {
+    const current = today();
+    const day = dayQuery.parse(req.query).day ?? current;
+    if (day > current) throw new HttpError(400, 'Words for a future date are not available');
+    res.json(await readDay(day, current));
+  });
+
+  // Chooses today's words if they are not chosen yet, and answers today the way GET does. Safe to repeat: a
+  // day already chosen stays as it is.
+  app.post('/api/daily-words', async (_req, res) => {
+    const current = today();
+    await chooseWords(pool, current);
+    res.json(await readDay(current, current));
   });
 
   // Marking it learned again keeps the first time; undoing clears it.

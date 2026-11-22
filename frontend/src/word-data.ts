@@ -102,6 +102,8 @@ export const wordApi = {
 export const dailyWordApi = {
   get: (day?: string) =>
     requestJson<DailyWordsDay>(day ? `/api/daily-words?day=${day}` : '/api/daily-words'),
+  // GET only reads (#145); this chooses today's words when today has none yet. Safe to repeat.
+  choose: () => requestJson<DailyWordsDay>('/api/daily-words', { method: 'POST' }),
   setLearned: (id: number, learned: boolean) =>
     requestJson(`${base}/${id}/learned`, { method: 'PUT', body: { learned } }),
 };
