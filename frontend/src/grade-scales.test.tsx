@@ -202,7 +202,7 @@ test('AWS Specialty sits outside the ladder, and the levels show English labels'
   const ladder = screen.getByRole('heading', { level: 3, name: 'AWS certifications grades' })
     .parentElement as HTMLElement;
   const lists = within(ladder).getAllByRole('list');
-  const steps = within(lists[0] as HTMLElement).getAllByRole('listitem');
+  const steps = within(lists[0]).getAllByRole('listitem');
   expect(steps.map((row) => row.textContent)).toEqual([
     expect.stringContaining('Professional'),
     expect.stringContaining('Associate'),
@@ -210,7 +210,7 @@ test('AWS Specialty sits outside the ladder, and the levels show English labels'
   expect(within(ladder).getByRole('heading', { level: 4 })).toHaveTextContent(
     'Not part of the steps',
   );
-  expect(within(lists[1] as HTMLElement).getByText('Specialty')).toBeInTheDocument();
+  expect(within(lists[1]).getByText('Specialty')).toBeInTheDocument();
 });
 
 test('Information Processing levels show English labels and keep their saved values', async () => {
