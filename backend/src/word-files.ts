@@ -50,25 +50,50 @@ const batchSchema = z.object({
 });
 type Batch = z.infer<typeof batchSchema>;
 
+// The lemmas of the batch files still waiting for import (the files directly in the folder, not imported/).
+// An unreadable file is the importer's to refuse, so it only counts as a waiting file here.
+async function waitingBatches(dir: string) {
+  const files: string[] = [];
+  const lemmas = new Set<string>();
+  for (const name of (await readdir(dir)).filter((entry) => entry.endsWith('.json')).sort()) {
+    files.push(name);
+    try {
+      const value = JSON.parse(
+        (await readFile(join(dir, name), 'utf8')).replace(/^\uFEFF/, ''),
+      ) as {
+        words?: { lemma?: unknown }[];
+      };
+      for (const word of value.words ?? [])
+        if (typeof word.lemma === 'string') lemmas.add(word.lemma);
+    } catch {
+      // Not a batch this code can read.
+    }
+  }
+  return { files, lemmas: [...lemmas] };
+}
+
 /**
  * Writes the next words that have an etymology looked up and no meaning yet. The existing word parts
- * go along, so the same part does not get a new name. A file already there is someone's work, so it stays.
+ * go along, so the same part does not get a new name. A file already there is someone's work, so it stays,
+ * and its words are not handed out again: `waiting` names the files still waiting for import, so an export
+ * that finds nothing new says why.
  */
 export async function exportWordBatch(pool: Pool, dir: string, size: number) {
   await mkdir(dir, { recursive: true });
+  const waiting = await waitingBatches(dir);
   const { rows } = await pool.query<{
     lemma: string;
     rank: number;
     etymologySource: string;
   }>(
     `SELECT lemma, frequency_rank AS rank, etymology_source AS "etymologySource" FROM words
-     WHERE meaning_ko IS NULL AND etymology_source IS NOT NULL
+     WHERE meaning_ko IS NULL AND etymology_source IS NOT NULL AND lemma <> ALL($2::text[])
      ORDER BY frequency_rank LIMIT $1`,
-    [size],
+    [size, waiting.lemmas],
   );
   const first = rows[0];
   const last = rows[rows.length - 1];
-  if (!first || !last) return { file: null, written: false };
+  if (!first || !last) return { file: null, written: false, waiting: waiting.files };
   const { rows: morphemes } = await pool.query(
     `SELECT key, form, kind, meaning_ko AS "meaningKo", origin FROM morphemes ORDER BY key`,
   );
@@ -88,10 +113,10 @@ export async function exportWordBatch(pool: Pool, dir: string, size: number) {
   };
   try {
     await writeFile(join(dir, file), `${JSON.stringify(content, null, 2)}\n`, { flag: 'wx' });
-    return { file, written: true };
+    return { file, written: true, waiting: waiting.files };
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
-    return { file, written: false };
+    return { file, written: false, waiting: waiting.files };
   }
 }
 
@@ -169,27 +194,59 @@ export async function importWordBatches(pool: Pool, dir: string) {
         const found = new Map(rows.map((row) => [row.lemma, row]));
         const problem = batchProblem(batch, found);
         if (problem) throw new RejectedBatch(problem);
-        for (const word of batch.words) {
-          const id = found.get(word.lemma)?.id;
+        // Three statements for the whole batch instead of about two per word part (#149).
+        const words = batch.words.map((word) => ({ ...word, id: found.get(word.lemma)?.id }));
+        await client.query(
+          `UPDATE words w SET part_of_speech = v.part_of_speech, meaning_ko = v.meaning_ko,
+             example_en = v.example_en, example_ko = v.example_ko, ai_generated = true, updated_at = now()
+           FROM unnest($1::bigint[], $2::text[], $3::text[], $4::text[], $5::text[])
+             AS v(id, part_of_speech, meaning_ko, example_en, example_ko)
+           WHERE w.id = v.id`,
+          [
+            words.map((word) => word.id),
+            words.map((word) => word.partOfSpeech),
+            words.map((word) => word.meaningKo),
+            words.map((word) => word.exampleEn),
+            words.map((word) => word.exampleKo),
+          ],
+        );
+        // A part already there keeps its wording: the same key is the same part, and the first one in the batch wins.
+        const parts = new Map<string, Batch['words'][number]['morphemes'][number]>();
+        for (const word of words)
+          for (const part of word.morphemes) parts.set(part.key, parts.get(part.key) ?? part);
+        if (parts.size > 0) {
+          const list = [...parts.values()];
           await client.query(
-            `UPDATE words SET part_of_speech = $2, meaning_ko = $3, example_en = $4, example_ko = $5,
-               ai_generated = true, updated_at = now()
-             WHERE id = $1`,
-            [id, word.partOfSpeech, word.meaningKo, word.exampleEn, word.exampleKo],
+            `INSERT INTO morphemes (key, form, kind, meaning_ko, origin)
+             SELECT * FROM unnest($1::text[], $2::text[], $3::text[], $4::text[], $5::text[])
+             ON CONFLICT (key) DO NOTHING`,
+            [
+              list.map((part) => part.key),
+              list.map((part) => part.form),
+              list.map((part) => part.kind),
+              list.map((part) => part.meaningKo),
+              list.map((part) => part.origin),
+            ],
           );
-          for (const [index, part] of word.morphemes.entries()) {
-            // A part already there keeps its wording: the same key is the same part.
-            await client.query(
-              `INSERT INTO morphemes (key, form, kind, meaning_ko, origin) VALUES ($1, $2, $3, $4, $5)
-               ON CONFLICT (key) DO NOTHING`,
-              [part.key, part.form, part.kind, part.meaningKo, part.origin],
-            );
-            await client.query(
-              `INSERT INTO word_morphemes (word_id, morpheme_id, position)
-               SELECT $1, id, $3 FROM morphemes WHERE key = $2`,
-              [id, part.key, index + 1],
-            );
-          }
+          const links = words.flatMap((word) =>
+            word.morphemes.map((part, index) => ({
+              id: word.id,
+              key: part.key,
+              position: index + 1,
+            })),
+          );
+          await client.query(
+            `INSERT INTO word_morphemes (word_id, morpheme_id, position)
+             SELECT v.word_id, m.id, v.position
+             FROM unnest($1::bigint[], $2::text[], $3::integer[]) AS v(word_id, key, position)
+             JOIN morphemes m ON m.key = v.key
+             ON CONFLICT DO NOTHING`,
+            [
+              links.map((link) => link.id),
+              links.map((link) => link.key),
+              links.map((link) => link.position),
+            ],
+          );
         }
       });
     } catch (error) {
