@@ -65,19 +65,24 @@ function open(
     word?: Word;
     sources?: WordSource[];
     failed?: boolean;
+    /** Fails this many list requests, then answers. */
+    listFailures?: number;
     missing?: boolean;
   } = {},
 ) {
-  fakeRoutes([
+  let listed = 0;
+  const api = fakeRoutes([
     ['GET', '/api/health', () => reply(200, { ok: true, today: '2026-11-01' })],
     ['GET', '/api/user-actions', () => reply(200, { today: '2026-11-01', actions: [] })],
     [
       'GET',
       '/api/words',
-      () =>
-        options.failed
+      () => {
+        listed += 1;
+        return options.failed || listed <= (options.listFailures ?? 0)
           ? reply(500, { error: 'Word server error' })
-          : reply(200, { words: options.words ?? rows, sources: options.sources ?? sources }),
+          : reply(200, { words: options.words ?? rows, sources: options.sources ?? sources });
+      },
     ],
     [
       'GET',
@@ -94,7 +99,11 @@ function open(
   ]);
   window.history.pushState({}, '', path);
   render(<App />);
+  return api;
 }
+
+const listRequests = (api: { sent: { path: string }[] }) =>
+  api.sent.filter((item) => item.path === '/api/words').length;
 
 const wordItems = () =>
   within(screen.getByRole('region', { name: 'Vocabulary' })).getAllByRole('listitem');
@@ -164,9 +173,29 @@ test('an empty list explains itself, and a failed one says why', async () => {
   expect(screen.queryByLabelText('Search words')).not.toBeInTheDocument();
 });
 
-test('a failed list shows the reason', async () => {
-  open('/words', { failed: true });
-  expect(await screen.findByText('Word server error')).toBeInTheDocument();
+test('a failed list shows the reason after one more try', async () => {
+  const api = open('/words', { failed: true });
+  // A server error is retried once, after a short wait, before it is shown.
+  expect(await screen.findByText('Word server error', {}, { timeout: 4000 })).toBeInTheDocument();
+  expect(listRequests(api)).toBe(2);
+});
+
+test('a failed first read is tried again and the list then appears', async () => {
+  const api = open('/words', { listFailures: 1 });
+  expect(await screen.findByLabelText('Search words', {}, { timeout: 4000 })).toBeInTheDocument();
+  expect(screen.queryByText('Word server error')).not.toBeInTheDocument();
+  expect(listRequests(api)).toBe(2);
+});
+
+test('coming back to the list shows its rows at once, without asking the server again', async () => {
+  const api = open('/words');
+  fireEvent.click(await screen.findByRole('link', { name: /export/ }));
+  await screen.findByRole('heading', { level: 1, name: 'export' });
+  fireEvent.click(screen.getByRole('link', { name: 'Word list' }));
+  // No waiting: the rows come from the cache.
+  expect(screen.getByLabelText('Search words')).toBeInTheDocument();
+  expect(wordItems()).toHaveLength(3);
+  expect(listRequests(api)).toBe(1);
 });
 
 test('a word shows meaning, example, AI mark and sources', async () => {

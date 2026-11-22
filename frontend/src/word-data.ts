@@ -94,8 +94,10 @@ export function serviceToday(now = new Date()) {
 
 const base = '/api/words';
 
+/** The word list's API path; the list screen loads it through the shared query layer. */
+export const wordsPath = base;
+
 export const wordApi = {
-  list: () => requestJson<{ words: WordRow[]; sources: WordSource[] }>(base),
   get: (id: number) => requestJson<{ word: Word; sources: WordSource[] }>(`${base}/${id}`),
 };
 

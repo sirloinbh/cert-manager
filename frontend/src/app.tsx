@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { Award, BookOpenText, LayoutDashboard, Music, Settings2 } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
 import { BrowserRouter, generatePath, Navigate, Route, Routes } from 'react-router';
@@ -17,6 +17,7 @@ import { Toaster } from './components/ui/sonner';
 import { DailyWords } from './daily-words';
 import { ExpiringCertifications } from './exam-attempts';
 import { type Health, healthText } from './health';
+import { createQueryClient } from './lib/query';
 import { AccountActions, SignInGate } from './sign-in';
 import type { SongPaths } from './song-data';
 import { SongDetail, SongList } from './songs';
@@ -193,9 +194,8 @@ function AppRoutes() {
 }
 
 export function App() {
-  // One client for the whole app, kept in state so a re-render does not make a new one. It uses React Query's defaults
-  // for now; the synced shared `createQueryClient()` replaces it when the query layer arrives (#161).
-  const [queryClient] = useState(() => new QueryClient());
+  // One client for the whole app, kept in state so a re-render does not make a new one.
+  const [queryClient] = useState(() => createQueryClient());
   return (
     <QueryClientProvider client={queryClient}>
       <AppRoutes />
