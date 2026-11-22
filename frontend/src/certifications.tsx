@@ -639,7 +639,7 @@ function FormFields({
               <option value="">Not set</option>
               {[...scale.levels].reverse().map((level) => (
                 <option key={level.value} value={level.value}>
-                  {level.value}
+                  {level.label}
                 </option>
               ))}
             </select>

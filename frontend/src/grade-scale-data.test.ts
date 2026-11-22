@@ -15,29 +15,29 @@ const scale = (fields: Partial<GradeScale>): GradeScale => ({
 
 const toeic = scale({
   levels: [
-    { value: 'B1', minScore: 550, maxScore: 784 },
-    { value: 'B2', minScore: 785, maxScore: 944 },
+    { value: 'B1', label: 'B1', minScore: 550, maxScore: 784 },
+    { value: 'B2', label: 'B2', minScore: 785, maxScore: 944 },
   ],
 });
 const speaking = scale({
   levels: [
-    { value: 'IM1', minScore: 110, maxScore: 130 },
-    { value: 'IM2', minScore: 110, maxScore: 130 },
-    { value: 'AH', minScore: 200, maxScore: 200 },
+    { value: 'IM1', label: 'IM1', minScore: 110, maxScore: 130 },
+    { value: 'IM2', label: 'IM2', minScore: 110, maxScore: 130 },
+    { value: 'AH', label: 'AH', minScore: 200, maxScore: 200 },
   ],
 });
 const aws = scale({
   levels: [
-    { value: 'Foundational', minScore: null, maxScore: null },
-    { value: 'Associate', minScore: null, maxScore: null },
-    { value: 'Specialty', minScore: null, maxScore: null, offLadder: true },
+    { value: 'Foundational', label: 'Foundational', minScore: null, maxScore: null },
+    { value: 'Associate', label: 'Associate', minScore: null, maxScore: null },
+    { value: 'Specialty', label: 'Specialty', minScore: null, maxScore: null, offLadder: true },
   ],
 });
 const licences = scale({
   ranked: false,
   levels: [
-    { value: '2종 보통', minScore: null, maxScore: null },
-    { value: '1종 보통', minScore: null, maxScore: null },
+    { value: '2종 보통', label: '2종 보통', minScore: null, maxScore: null },
+    { value: '1종 보통', label: '1종 보통', minScore: null, maxScore: null },
   ],
 });
 
@@ -108,7 +108,7 @@ test('an attempt meets every target the goal has', () => {
 });
 
 test('score ranges read as one number when the level has one score', () => {
-  expect(scoreRange({ value: 'AH', minScore: 200, maxScore: 200 })).toBe('200');
-  expect(scoreRange({ value: 'B2', minScore: 785, maxScore: 944 })).toBe('785-944');
-  expect(scoreRange({ value: '기사', minScore: null, maxScore: null })).toBe('');
+  expect(scoreRange({ value: 'AH', label: 'AH', minScore: 200, maxScore: 200 })).toBe('200');
+  expect(scoreRange({ value: 'B2', label: 'B2', minScore: 785, maxScore: 944 })).toBe('785-944');
+  expect(scoreRange({ value: '기사', label: '기사', minScore: null, maxScore: null })).toBe('');
 });

@@ -16,8 +16,8 @@ const scales: GradeScale[] = [
     sourceUrl: 'https://example.com/toeic',
     ranked: true,
     levels: [
-      { value: 'B1', minScore: 550, maxScore: 784 },
-      { value: 'B2', minScore: 785, maxScore: 944 },
+      { value: 'B1', label: 'B1', minScore: 550, maxScore: 784 },
+      { value: 'B2', label: 'B2', minScore: 785, maxScore: 944 },
     ],
   },
   {
@@ -27,10 +27,50 @@ const scales: GradeScale[] = [
     sourceUrl: 'https://example.com/speaking',
     ranked: true,
     levels: [
-      { value: 'IM1', minScore: 110, maxScore: 130 },
-      { value: 'IM2', minScore: 110, maxScore: 130 },
-      { value: 'IM3', minScore: 110, maxScore: 130 },
-      { value: 'IH', minScore: 140, maxScore: 150 },
+      { value: 'IM1', label: 'IM1', minScore: 110, maxScore: 130 },
+      { value: 'IM2', label: 'IM2', minScore: 110, maxScore: 130 },
+      { value: 'IM3', label: 'IM3', minScore: 110, maxScore: 130 },
+      { value: 'IH', label: 'IH', minScore: 140, maxScore: 150 },
+    ],
+  },
+  {
+    key: 'information_processing',
+    label: 'National Technical Qualification (Information Processing)',
+    note: 'Information note',
+    sourceUrl: 'https://example.com/ip',
+    ranked: true,
+    levels: [
+      { value: '기능사', label: 'Craftsman (Gineungsa)', minScore: null, maxScore: null },
+      { value: '기사', label: 'Engineer (Gisa)', minScore: null, maxScore: null },
+    ],
+  },
+  {
+    key: 'aws',
+    label: 'AWS certifications',
+    note: 'AWS note',
+    sourceUrl: 'https://example.com/aws',
+    ranked: true,
+    levels: [
+      { value: 'Associate', label: 'Associate', minScore: null, maxScore: null },
+      { value: 'Professional', label: 'Professional', minScore: null, maxScore: null },
+      {
+        value: 'Specialty',
+        label: 'Specialty',
+        minScore: null,
+        maxScore: null,
+        offLadder: true,
+      },
+    ],
+  },
+  {
+    key: 'driver_license',
+    label: 'Driver license types',
+    note: 'License note',
+    sourceUrl: 'https://example.com/driver',
+    ranked: false,
+    levels: [
+      { value: '2종 보통', label: 'Class 2 Regular', minScore: null, maxScore: null },
+      { value: '1종 보통', label: 'Class 1 Regular', minScore: null, maxScore: null },
     ],
   },
 ];
@@ -155,6 +195,46 @@ test('the detail page shows the scale from the top with the target and its sourc
     'https://example.com/toeic',
   );
   expect(screen.getByText('Target grade')).toBeInTheDocument();
+});
+
+test('AWS Specialty sits outside the ladder, and the levels show English labels', async () => {
+  await openDetail({ goal: goal({ gradeScale: 'aws', targetGrade: 'Professional' }) });
+  const ladder = screen.getByRole('heading', { level: 3, name: 'AWS certifications grades' })
+    .parentElement as HTMLElement;
+  const lists = within(ladder).getAllByRole('list');
+  const steps = within(lists[0] as HTMLElement).getAllByRole('listitem');
+  expect(steps.map((row) => row.textContent)).toEqual([
+    expect.stringContaining('Professional'),
+    expect.stringContaining('Associate'),
+  ]);
+  expect(within(ladder).getByRole('heading', { level: 4 })).toHaveTextContent(
+    'Not part of the steps',
+  );
+  expect(within(lists[1] as HTMLElement).getByText('Specialty')).toBeInTheDocument();
+});
+
+test('Information Processing levels show English labels and keep their saved values', async () => {
+  await openDetail({ goal: goal({ gradeScale: 'information_processing', targetGrade: '기사' }) });
+  const ladder = screen.getByRole('heading', {
+    level: 3,
+    name: 'National Technical Qualification (Information Processing) grades',
+  }).parentElement as HTMLElement;
+  const rows = within(ladder).getAllByRole('listitem');
+  expect(rows[0]).toHaveTextContent('Engineer (Gisa)');
+  expect(rows[0]).toHaveTextContent('Target');
+  expect(rows[1]).toHaveTextContent('Craftsman (Gineungsa)');
+  expect(ladder).not.toHaveTextContent('기사');
+});
+
+test('license types are a plain list in their own order, headed without "grades"', async () => {
+  fakeApi({ goal: goal({ gradeScale: 'driver_license', targetGrade: null }) });
+  window.history.pushState({}, '', '/certifications/1');
+  render(<App />);
+  const ladder = (await screen.findByRole('heading', { level: 3, name: 'Driver license types' }))
+    .parentElement as HTMLElement;
+  const rows = within(ladder).getAllByRole('listitem');
+  expect(rows[0]).toHaveTextContent('Class 2 Regular');
+  expect(rows[1]).toHaveTextContent('Class 1 Regular');
 });
 
 test('a score fills its grade, and the saved record reaches the target', async () => {

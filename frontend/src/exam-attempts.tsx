@@ -232,7 +232,7 @@ function AttemptForm({
                   <option value="">None</option>
                   {[...gradeScale.levels].reverse().map((level) => (
                     <option key={level.value} value={level.value}>
-                      {level.value}
+                      {level.label}
                     </option>
                   ))}
                   {/* An older format such as "Level 7" stays selectable until the user changes it. */}
@@ -247,9 +247,9 @@ function AttemptForm({
                   className="text-caption break-keep text-muted-foreground"
                 >
                   {fitting.length > 1
-                    ? `A score of ${score} is one of ${fitting.map((level) => level.value).join(', ')}. Choose the grade shown on your score report.`
+                    ? `A score of ${score} is one of ${fitting.map((level) => level.label).join(', ')}. Choose the grade shown on your score report.`
                     : suggested
-                      ? `The standard grade for a score of ${score} is ${suggested}.`
+                      ? `The standard grade for a score of ${score} is ${fitting[0]?.label ?? suggested}.`
                       : 'Choose from the list.'}
                 </p>
               </>

@@ -3,7 +3,10 @@ import { requestJson } from './lib/api';
 // Grade scales (#51): API call and rules. The list itself comes from the server (backend/src/grade-scales.ts).
 
 export type GradeLevel = {
+  /** Stable: what is saved with a goal or an attempt. */
   value: string;
+  /** What the screens show. */
+  label: string;
   minScore: number | null;
   maxScore: number | null;
   offLadder?: boolean;
