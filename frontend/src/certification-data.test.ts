@@ -2,6 +2,7 @@ import { expect, test } from 'vitest';
 
 import {
   type Certification,
+  deadlineCountdown,
   examCountdown,
   groupByCategory,
   upcomingExams,
@@ -31,6 +32,15 @@ test('the countdown reads as days left, the exam day, days passed or no date', (
   expect(examCountdown(0)).toBe('Exam today');
   expect(examCountdown(-5)).toBe('5 days ago');
   expect(examCountdown(null)).toBe('Exam date not set');
+});
+
+test('one day and one month are singular', () => {
+  expect(examCountdown(1)).toBe('1 day left');
+  expect(examCountdown(-1)).toBe('1 day ago');
+  expect(deadlineCountdown(1)).toBe('1 day left');
+  expect(deadlineCountdown(-1)).toBe('1 day overdue');
+  expect(validityText({ validityKind: 'months', validityMonths: 1 })).toBe('1 month');
+  expect(validityText({ validityKind: 'months', validityMonths: 36 })).toBe('36 months');
 });
 
 test('validity shows months, never expires or unknown', () => {

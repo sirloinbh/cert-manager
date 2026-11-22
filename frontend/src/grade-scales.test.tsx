@@ -139,7 +139,7 @@ const change = (label: string, value: string) =>
 const addRecord = async () => {
   fireEvent.click(await screen.findByRole('button', { name: 'Add attempt' }));
   change('Exam date', '2026-03-15');
-  change('Result', 'scored');
+  change('Outcome', 'scored');
 };
 
 const sentAttempt = (api: { sent: Sent[] }) =>
@@ -232,7 +232,7 @@ test('a goal with both targets needs both', async () => {
 test('a waiting attempt fills its grade once the result and score are in', async () => {
   await openDetail({ attempts: [attempt({ outcome: 'waiting', grade: null })] });
   fireEvent.click(await screen.findByRole('button', { name: 'Edit attempt on March 15, 2026' }));
-  change('Result', 'scored');
+  change('Outcome', 'scored');
   change('Score', '800');
   expect(screen.getByLabelText('Grade')).toHaveValue('B2');
   change('Score', '');
@@ -265,7 +265,7 @@ test('a grade typed before the list arrives stays afterwards', async () => {
   window.history.pushState({}, '', '/certifications/1');
   render(<App />);
   fireEvent.click(await screen.findByRole('button', { name: 'Add attempt' }));
-  change('Result', 'scored');
+  change('Outcome', 'scored');
   change('Grade', 'B1');
   release();
   await waitFor(() => expect(screen.getByLabelText('Grade').tagName).toBe('SELECT'));
@@ -275,7 +275,7 @@ test('a grade typed before the list arrives stays afterwards', async () => {
 test('marking the goal passed sends only the status, so its scale and target stay', async () => {
   const api = await openDetail();
   await addRecord();
-  change('Result', 'passed');
+  change('Outcome', 'passed');
   change('Grade', 'B2');
   fireEvent.click(screen.getByRole('button', { name: 'Save' }));
   const dialog = await screen.findByRole('dialog', { name: 'Change the goal status to Passed?' });
@@ -304,7 +304,7 @@ test('a goal without a scale keeps the free text field and no ladder', async () 
   window.history.pushState({}, '', '/certifications/1');
   render(<App />);
   fireEvent.click(await screen.findByRole('button', { name: 'Add attempt' }));
-  change('Result', 'scored');
+  change('Outcome', 'scored');
   expect(screen.getByLabelText('Grade').tagName).toBe('INPUT');
   expect(screen.queryByText(/ grades$/, { selector: 'h3' })).not.toBeInTheDocument();
 });

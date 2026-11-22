@@ -132,7 +132,7 @@ test('a new score fills the expiry from the goal, two years after the exam', asy
   expect(screen.queryByLabelText('Score')).not.toBeInTheDocument();
   expect(screen.queryByLabelText('Expiry date')).not.toBeInTheDocument();
 
-  change('Result', 'scored');
+  change('Outcome', 'scored');
   change('Score', '910');
   expect(screen.getByLabelText('Expiry date')).toHaveValue('2026-02-28');
   change('Exam date', '2026-03-15');
@@ -157,7 +157,7 @@ test('the prefilled expiry can be changed or cleared', async () => {
   const api = await openDetail();
   fireEvent.click(await screen.findByRole('button', { name: 'Add attempt' }));
   change('Exam date', '2026-03-15');
-  change('Result', 'scored');
+  change('Outcome', 'scored');
   change('Expiry date', '');
   // A cleared date stays cleared when the exam date changes afterwards.
   change('Exam date', '2026-03-16');
@@ -210,7 +210,7 @@ test('saving a pass asks before changing the goal, and the answer is respected',
   const api = await openDetail();
   fireEvent.click(await screen.findByRole('button', { name: 'Add attempt' }));
   change('Exam date', '2026-03-15');
-  change('Result', 'passed');
+  change('Outcome', 'passed');
   fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
   const dialog = await screen.findByRole('dialog', { name: 'Change the goal status to Passed?' });
@@ -240,7 +240,7 @@ test('declining the question leaves the goal alone', async () => {
   const api = await openDetail();
   fireEvent.click(await screen.findByRole('button', { name: 'Add attempt' }));
   change('Exam date', '2026-03-15');
-  change('Result', 'passed');
+  change('Outcome', 'passed');
   fireEvent.click(screen.getByRole('button', { name: 'Save' }));
   const dialog = await screen.findByRole('dialog', { name: 'Change the goal status to Passed?' });
   fireEvent.click(within(dialog).getByRole('button', { name: 'Keep as is' }));
@@ -258,7 +258,7 @@ test('closing the question with Escape leaves the goal alone and returns focus',
   const api = await openDetail();
   fireEvent.click(await screen.findByRole('button', { name: 'Add attempt' }));
   change('Exam date', '2026-03-15');
-  change('Result', 'passed');
+  change('Outcome', 'passed');
   fireEvent.click(screen.getByRole('button', { name: 'Save' }));
   const dialog = await screen.findByRole('dialog', { name: 'Change the goal status to Passed?' });
   fireEvent.keyDown(dialog, { key: 'Escape' });
@@ -288,7 +288,7 @@ test('editing an attempt that is already a pass does not ask again', async () =>
 test('a result entered later fills the expiry that was empty while waiting', async () => {
   await openDetail({ attempts: [attempt({ id: 1, outcome: 'waiting', grade: null })] });
   fireEvent.click(await screen.findByRole('button', { name: 'Edit attempt on March 15, 2026' }));
-  change('Result', 'scored');
+  change('Outcome', 'scored');
   expect(screen.getByLabelText('Expiry date')).toHaveValue('2028-03-15');
 });
 
@@ -408,7 +408,7 @@ test('a failed status change keeps the question open and says why', async () => 
   await openDetail({ goalUpdateFails: 'Could not update the goal' });
   fireEvent.click(await screen.findByRole('button', { name: 'Add attempt' }));
   change('Exam date', '2026-03-15');
-  change('Result', 'passed');
+  change('Outcome', 'passed');
   fireEvent.click(screen.getByRole('button', { name: 'Save' }));
   const dialog = await screen.findByRole('dialog', { name: 'Change the goal status to Passed?' });
   fireEvent.click(within(dialog).getByRole('button', { name: 'Change' }));
@@ -436,7 +436,7 @@ test('a goal with no known validity saves what was typed, or nothing', async () 
   });
   fireEvent.click(await screen.findByRole('button', { name: 'Add attempt' }));
   change('Exam date', '2026-03-15');
-  change('Result', 'scored');
+  change('Outcome', 'scored');
   expect(screen.getByLabelText('Expiry date')).toHaveValue('');
   expect(screen.queryByRole('button', { name: /Fill in/ })).not.toBeInTheDocument();
   change('Expiry date', '2027-01-01');

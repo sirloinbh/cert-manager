@@ -24,6 +24,7 @@ import { controlClass } from './form-fields';
 import { RequestError } from './lib/api';
 import { errorText, useNotice } from './lib/use-notice';
 import { cn } from './lib/utils';
+import { quantity } from './plural';
 import {
   durationText,
   linesAsText,
@@ -72,8 +73,8 @@ export function SongList({ paths }: { paths: SongPaths }) {
         </p>
         {progress.total > 0 ? (
           <p role="status" className="text-caption text-muted-foreground">
-            {progress.total} songs · {progress.withLyrics} with lyrics · {progress.translated}{' '}
-            translated
+            {quantity(progress.total, 'song')} · {progress.withLyrics} with lyrics ·{' '}
+            {progress.translated} translated
           </p>
         ) : null}
       </header>
@@ -227,8 +228,8 @@ function PasteForm({
         />
         <p id={`${id}-hint`} className="text-caption break-keep text-muted-foreground">
           {kind === 'lyrics'
-            ? `${typed} lines. Translations of lines whose text changed are cleared.`
-            : `Write one line per original line (${originals}). Currently ${typed} lines. Blank lines are not counted.`}
+            ? `${quantity(typed, 'line')}. Translations of lines whose text changed are cleared.`
+            : `Write one line per original line (${originals}). Currently ${quantity(typed, 'line')}. Blank lines are not counted.`}
         </p>
       </div>
       <Notice notice={notice.notice} />
@@ -356,7 +357,7 @@ function SongPage({ id, paths }: { id: string; paths: SongPaths }) {
           className="break-keep"
           icon={<Music />}
           title="No lyrics yet"
-          description="Paste the lyrics and they show line by line. Lyrics are stored only in the app on this PC."
+          description="Paste the lyrics and they show line by line. Lyrics are saved on the server and can be read only after signing in."
         />
       ) : (
         <section aria-labelledby={titleId} className="flex flex-col gap-3">
@@ -410,7 +411,7 @@ function SongPage({ id, paths }: { id: string; paths: SongPaths }) {
               {paste.kind === 'lyrics' ? 'Paste lyrics' : 'Paste translation'}
             </DialogTitle>
             <DialogDescription className="break-keep">
-              {song.title}. Stored only in the app on this PC.
+              {song.title}. Saved on the server.
             </DialogDescription>
           </DialogHeader>
           {paste.open ? (

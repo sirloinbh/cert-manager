@@ -129,13 +129,19 @@ test('the bell counts what is waiting, and the panel shows the details', async (
 
 test('a passed deadline says so', async () => {
   openApp({ actions: [late] });
-  const panel = await openPanel('1 manual task alerts');
+  const panel = await openPanel('1 manual task alert');
   expect(within(panel).getByText(/7 days overdue/)).toBeInTheDocument();
 });
 
 test('waiting alerts are announced once when the app opens', async () => {
   openApp({ actions: [register, open] });
   expect(await screen.findByText('You have 2 manual tasks')).toBeInTheDocument();
+});
+
+test('one waiting alert is announced in the singular', async () => {
+  openApp({ actions: [open] });
+  expect(await screen.findByText('You have 1 manual task')).toBeInTheDocument();
+  await openPanel('1 manual task alert');
 });
 
 test('with nothing waiting there is no count and no announcement', async () => {
@@ -160,12 +166,12 @@ test('completing an alert lowers the count right away and moves focus to the tit
     expect(within(panel).getByRole('heading', { name: 'Manual tasks' })).toHaveFocus(),
   );
   fireEvent.keyDown(panel, { key: 'Escape' });
-  expect(await screen.findByRole('button', { name: '1 manual task alerts' })).toBeInTheDocument();
+  expect(await screen.findByRole('button', { name: '1 manual task alert' })).toBeInTheDocument();
 });
 
 test('the last alert leaves the empty notice', async () => {
   openApp({ actions: [open] });
-  const panel = await openPanel('1 manual task alerts');
+  const panel = await openPanel('1 manual task alert');
   fireEvent.click(within(panel).getByRole('button', { name: "Complete '기한 확인'" }));
   expect(await within(panel).findByText('No manual tasks right now.')).toBeInTheDocument();
 });
@@ -176,7 +182,7 @@ test('a completion in progress cannot be sent twice', async () => {
     release = resolve;
   });
   const api = openApp({ actions: [open], completeHold });
-  const panel = await openPanel('1 manual task alerts');
+  const panel = await openPanel('1 manual task alert');
   const button = within(panel).getByRole('button', { name: "Complete '기한 확인'" });
   fireEvent.click(button);
   await waitFor(() => expect(button).toHaveAttribute('aria-disabled', 'true'));
@@ -188,7 +194,7 @@ test('a completion in progress cannot be sent twice', async () => {
 
 test('a failed completion keeps the alert and says why', async () => {
   openApp({ actions: [open], completeFails: true });
-  const panel = await openPanel('1 manual task alerts');
+  const panel = await openPanel('1 manual task alert');
   const button = within(panel).getByRole('button', { name: "Complete '기한 확인'" });
   fireEvent.click(button);
   expect(await screen.findByText('Save server error')).toBeInTheDocument();
@@ -250,7 +256,7 @@ test('a failed first load looks different from nothing to do, and a retry recove
   expect(within(panel).queryByText('Alert server error')).not.toBeInTheDocument();
   expect(within(panel).queryByRole('button', { name: 'Reload' })).not.toBeInTheDocument();
   expect(
-    await screen.findByRole('button', { name: '1 manual task alerts', hidden: true }),
+    await screen.findByRole('button', { name: '1 manual task alert', hidden: true }),
   ).toBeInTheDocument();
 });
 
@@ -281,9 +287,9 @@ test('a failed read after an empty list does not say there is nothing to do', as
 
 test('opening the panel reads the list again', async () => {
   const api = openApp({ actions: [open] });
-  await screen.findByRole('button', { name: '1 manual task alerts' });
+  await screen.findByRole('button', { name: '1 manual task alert' });
   const before = api.sent.filter((item) => item.path === '/api/user-actions').length;
-  await openPanel('1 manual task alerts');
+  await openPanel('1 manual task alert');
   await waitFor(() =>
     expect(api.sent.filter((item) => item.path === '/api/user-actions').length).toBe(before + 1),
   );
@@ -291,7 +297,7 @@ test('opening the panel reads the list again', async () => {
 
 test('coming back to the tab reads the list again', async () => {
   const api = openApp({ actions: [open] });
-  await screen.findByRole('button', { name: '1 manual task alerts' });
+  await screen.findByRole('button', { name: '1 manual task alert' });
   const before = api.sent.filter((item) => item.path === '/api/user-actions').length;
   document.dispatchEvent(new Event('visibilitychange'));
   await waitFor(() =>
@@ -301,7 +307,7 @@ test('coming back to the tab reads the list again', async () => {
 
 test('leaving the tab does not read the list', async () => {
   const api = openApp({ actions: [open] });
-  await screen.findByRole('button', { name: '1 manual task alerts' });
+  await screen.findByRole('button', { name: '1 manual task alert' });
   const before = api.sent.filter((item) => item.path === '/api/user-actions').length;
   const hidden = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
   document.dispatchEvent(new Event('visibilitychange'));

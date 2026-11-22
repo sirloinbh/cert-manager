@@ -32,6 +32,7 @@ import { formatDate } from './date-format';
 import { RequestError } from './lib/api';
 import { errorText, useNotice } from './lib/use-notice';
 import { cn } from './lib/utils';
+import { quantity } from './plural';
 import {
   isOverdue,
   periodText,
@@ -352,7 +353,7 @@ export function StudyPlan({ certification }: { certification: Certification }) {
                     title="Delete this stage?"
                     description={
                       <span className="wrap-anywhere break-keep">
-                        {`This deletes the '${stage.title}' stage and its ${stage.tasks.length} tasks. This cannot be undone.`}
+                        {`This deletes the '${stage.title}' stage and its ${quantity(stage.tasks.length, 'task')}. This cannot be undone.`}
                       </span>
                     }
                     onConfirm={() =>

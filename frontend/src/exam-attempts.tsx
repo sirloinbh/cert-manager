@@ -181,7 +181,7 @@ function AttemptForm({
           />
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor={`${id}-outcome`}>Result</Label>
+          <Label htmlFor={`${id}-outcome`}>Outcome</Label>
           <select
             id={`${id}-outcome`}
             className={cn(controlClass, 'h-9')}
