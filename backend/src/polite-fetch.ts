@@ -33,13 +33,23 @@ export async function politeGet(
   let limitedTries = 0;
   let busyTries = 0;
   for (;;) {
-    const response = await fetch(url, {
-      headers: { 'User-Agent': userAgent, ...(options.accept ? { Accept: options.accept } : {}) },
-      signal: AbortSignal.timeout(requestTimeout),
-    });
-    await options.sleep(options.gap);
-    if (response.status === 404) return null;
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        headers: { 'User-Agent': userAgent, ...(options.accept ? { Accept: options.accept } : {}) },
+        signal: AbortSignal.timeout(requestTimeout),
+      });
+    } finally {
+      // The gap also follows a network error, so a caller that retries cannot burst (#147).
+      await options.sleep(options.gap);
+    }
+    if (response.status === 404) {
+      await response.body?.cancel();
+      return null;
+    }
     if (response.ok) return response;
+    // Nothing reads the body of a failed response, so free the connection.
+    await response.body?.cancel();
     if (response.status !== 429 && response.status !== 503) {
       throw new ServiceError(`${options.name} ${response.status}`);
     }
