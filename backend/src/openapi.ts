@@ -16,7 +16,7 @@ import { dayQuery } from './validation.js';
 
 // Every registered route must appear here exactly once (checked when building).
 // Every route that reads an id, a body or a query also answers 400 when validation fails.
-export const operations: Record<string, Operation> = {
+const routes: Record<string, Operation> = {
   'GET /api/health': {
     summary: 'Check the server and database connection',
     status: [200, 500],
@@ -156,6 +156,16 @@ export const operations: Record<string, Operation> = {
     status: [200, 400, 404],
   },
 };
+
+// #143: the shared sign-in can answer 503 (unavailable or not configured) on every guarded route; the builder adds 401.
+export const operations: Record<string, Operation> = Object.fromEntries(
+  Object.entries(routes).map(([route, op]) => [
+    route,
+    op.public || op.status.includes(503)
+      ? op
+      : { ...op, status: [...op.status, 503] as Operation['status'] },
+  ]),
+);
 
 const statusText: Record<number, string> = {
   200: 'Success',

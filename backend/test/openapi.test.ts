@@ -86,6 +86,12 @@ test('guarded routes document the sign-in, 401 and 429; the public route does no
   assert.deepEqual(paths['/api/health']!.get!.security, []);
   assert.ok(!('401' in paths['/api/health']!.get!.responses));
   assert.ok('429' in paths['/api/me']!.get!.responses);
+  // #143: every guarded operation lists 401 and 503; the public one lists neither.
+  for (const [path, methods] of Object.entries(paths))
+    for (const op of Object.values(methods)) {
+      const listed = '401' in op.responses && '503' in op.responses;
+      assert.equal(listed, path !== '/api/health', path);
+    }
 });
 
 test('a type JSON Schema cannot express fails instead of being skipped', () => {

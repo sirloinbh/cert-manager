@@ -73,6 +73,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       },
@@ -125,6 +135,16 @@
           },
           "429": {
             "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
             "content": {
               "application/json": {
                 "schema": {
@@ -211,6 +231,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
@@ -274,6 +304,16 @@
           },
           "429": {
             "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
             "content": {
               "application/json": {
                 "schema": {
@@ -369,6 +409,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
@@ -423,6 +473,16 @@
           },
           "429": {
             "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
             "content": {
               "application/json": {
                 "schema": {
@@ -509,6 +569,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
@@ -563,6 +633,16 @@
           },
           "429": {
             "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
             "content": {
               "application/json": {
                 "schema": {
@@ -649,6 +729,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
@@ -710,6 +800,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
@@ -733,6 +833,16 @@
           },
           "429": {
             "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
             "content": {
               "application/json": {
                 "schema": {
@@ -798,6 +908,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
@@ -852,6 +972,16 @@
           },
           "429": {
             "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
             "content": {
               "application/json": {
                 "schema": {
@@ -938,6 +1068,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
@@ -999,6 +1139,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
@@ -1050,6 +1200,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
@@ -1080,6 +1240,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
@@ -1103,6 +1273,16 @@
           },
           "429": {
             "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
             "content": {
               "application/json": {
                 "schema": {
@@ -1201,6 +1381,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
@@ -1262,6 +1452,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
@@ -1292,6 +1492,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
@@ -1315,6 +1525,16 @@
           },
           "429": {
             "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
             "content": {
               "application/json": {
                 "schema": {
@@ -1380,6 +1600,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
@@ -1403,6 +1633,16 @@
           },
           "429": {
             "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
             "content": {
               "application/json": {
                 "schema": {
@@ -1464,6 +1704,16 @@
           },
           "429": {
             "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
             "content": {
               "application/json": {
                 "schema": {
@@ -1552,6 +1802,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
@@ -1626,6 +1886,16 @@
           },
           "429": {
             "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
             "content": {
               "application/json": {
                 "schema": {
@@ -1714,6 +1984,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
@@ -1788,6 +2068,16 @@
           },
           "429": {
             "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
             "content": {
               "application/json": {
                 "schema": {
@@ -1876,6 +2166,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
@@ -1957,6 +2257,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
@@ -2031,6 +2341,16 @@
           },
           "429": {
             "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
             "content": {
               "application/json": {
                 "schema": {
@@ -2306,7 +2626,7 @@
           "linkUrl": {
             "default": "",
             "type": "string",
-            "pattern": "^(https?:\\/\\/\\S+)?$"
+            "pattern": "^([hH][tT][tT][pP][sS]?:\\/\\/\\S+)?$"
           },
           "remindFrom": {
             "type": "string",
