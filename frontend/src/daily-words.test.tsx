@@ -59,6 +59,7 @@ const json = (body: object, status = 200) =>
 function serve(save: () => Promise<Response> = () => json({ word: {} })) {
   const fetcher = vi.fn((path: string, init?: RequestInit) => {
     if (init?.method === 'PUT') return save();
+    if (init?.method === 'POST') return json(todayAnswer);
     return json(path.includes('2026-11-01') ? yesterday : todayAnswer);
   });
   vi.stubGlobal('fetch', fetcher);
@@ -266,4 +267,27 @@ test('after a failed move, the new day still brings today and not the day that f
   } finally {
     vi.useRealTimers();
   }
+});
+
+test('a today without words asks for them to be chosen, once', async () => {
+  const fetcher = vi.fn((path: string, init?: RequestInit) =>
+    json(init?.method === 'POST' ? todayAnswer : { ...todayAnswer, words: [] }),
+  );
+  vi.stubGlobal('fetch', fetcher);
+  render(
+    <MemoryRouter>
+      <DailyWords paths={paths} />
+      <Toaster />
+    </MemoryRouter>,
+  );
+  expect(await screen.findByRole('link', { name: 'export' })).toBeInTheDocument();
+  const posts = fetcher.mock.calls.filter(([, init]) => init?.method === 'POST');
+  expect(posts).toHaveLength(1);
+  expect(posts[0]?.[0]).toBe('/api/daily-words');
+});
+
+test('words that are already chosen are only read', async () => {
+  const fetcher = serve();
+  await screen.findByRole('link', { name: 'export' });
+  expect(fetcher.mock.calls.some(([, init]) => init?.method === 'POST')).toBe(false);
 });

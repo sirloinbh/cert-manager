@@ -24,9 +24,11 @@ import { SourceNote } from './words';
 // The dashboard card for the day's words (#37). The meaning stays folded, so the word can be tried first.
 
 // The key is "<day or today>/<attempt>": moving again, even to the same day, asks again after a failure.
-const loadDay = (key: string) => {
+// Reading never chooses words (#145): when today has none yet, ask for them to be chosen.
+const loadDay = async (key: string) => {
   const day = key.slice(0, key.indexOf('/'));
-  return dailyWordApi.get(day === 'today' ? undefined : day);
+  const answer = await dailyWordApi.get(day === 'today' ? undefined : day);
+  return answer.day === answer.today && answer.words.length === 0 ? dailyWordApi.choose() : answer;
 };
 
 // Not the disabled attribute: the arrow just pressed would lose keyboard focus at the first or last day.

@@ -146,9 +146,13 @@ const routes: Record<string, Operation> = {
   'GET /api/words/:id': { summary: 'Get one word', status: [200, 400, 404] },
   'GET /api/daily-words': {
     summary:
-      'Get the words of a day (today by default), choosing them the first time today is opened',
+      'Get the words saved for a day (today by default); read only, a day with no words answers an empty list',
     query: dayQuery,
     status: [200, 400],
+  },
+  'POST /api/daily-words': {
+    summary: "Choose today's words if they are not chosen yet and answer them; safe to repeat",
+    status: [200],
   },
   'PUT /api/words/:id/learned': {
     summary: 'Mark a word learned or not learned',
