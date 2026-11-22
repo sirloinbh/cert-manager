@@ -1,5 +1,6 @@
 import { Pool } from 'pg';
 
+import { politeGet } from './polite-fetch.js';
 import { scriptDatabaseUrl } from './script-database.js';
 import {
   albumTracks,
@@ -16,28 +17,20 @@ import { saveSongList, type SongListInput } from './song-list-save.js';
 
 const api = 'https://musicbrainz.org/ws/2';
 const artist = { id: '20244d07-534f-4eff-b4d4-930878889970', name: 'Taylor Swift' };
-const userAgent = 'cert-manager/0.1 (https://github.com/sirloinbh/cert-manager)';
 // MusicBrainz allows one request a second on average.
 const requestGap = 1100;
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-const maxAttempts = 6;
-
-// A busy MusicBrainz answers 503; it asks to slow down, so each retry waits longer.
 async function get<T>(path: string): Promise<T> {
-  for (let attempt = 1; ; attempt += 1) {
-    const response = await fetch(`${api}${path}`, {
-      headers: { 'User-Agent': userAgent, Accept: 'application/json' },
-    });
-    await sleep(requestGap);
-    if (response.ok) return (await response.json()) as T;
-    if (response.status !== 503 || attempt === maxAttempts) {
-      throw new Error(`MusicBrainz ${response.status}: ${path}`);
-    }
-    const asked = Number(response.headers.get('retry-after'));
-    await sleep(Math.max(asked * 1000 || 0, attempt * 5000));
-  }
+  const response = await politeGet(`${api}${path}`, {
+    name: 'MusicBrainz',
+    gap: requestGap,
+    sleep,
+    accept: 'application/json',
+  });
+  if (!response) throw new Error(`MusicBrainz 404: ${path}`);
+  return (await response.json()) as T;
 }
 
 async function allReleases(releaseGroupId: string) {

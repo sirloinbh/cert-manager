@@ -27,10 +27,14 @@ const loadActions = () => userActionApi.list();
 function ActionItem({
   action,
   pending,
+  busy,
   onComplete,
 }: {
   action: UserAction;
+  /** Some completion is running, so every row ignores clicks. */
   pending: boolean;
+  /** This row's own completion is running: only this row is announced as busy. */
+  busy: boolean;
   onComplete: () => void;
 }) {
   const overdue = action.daysUntilDue !== null && action.daysUntilDue < 0;
@@ -55,7 +59,7 @@ function ActionItem({
           size="sm"
           // Not disabled: a disabled button would drop keyboard focus while the request runs.
           aria-disabled={pending || undefined}
-          aria-busy={pending || undefined}
+          aria-busy={busy || undefined}
           className={pending ? 'pointer-events-none opacity-60' : undefined}
           aria-label={`Complete '${action.title}'`}
           onClick={pending ? undefined : onComplete}
@@ -214,6 +218,7 @@ export function UserActionAlerts() {
                   key={action.id}
                   action={action}
                   pending={pendingId !== undefined}
+                  busy={pendingId === action.id}
                   onComplete={() => void complete(action)}
                 />
               ))}

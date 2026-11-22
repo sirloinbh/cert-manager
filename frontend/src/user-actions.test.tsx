@@ -330,6 +330,12 @@ test('one completion at a time: other rows wait too', async () => {
   fireEvent.click(within(panel).getByRole('button', { name: "Complete '기한 확인'" }));
   const other = within(panel).getByRole('button', { name: "Complete '실기 1회 접수'" });
   await waitFor(() => expect(other).toHaveAttribute('aria-disabled', 'true'));
+  // Only the row being completed is announced as busy.
+  expect(within(panel).getByRole('button', { name: "Complete '기한 확인'" })).toHaveAttribute(
+    'aria-busy',
+    'true',
+  );
+  expect(other).not.toHaveAttribute('aria-busy');
   fireEvent.click(other);
   release();
   await waitFor(() => expect(within(panel).queryByText('기한 확인')).not.toBeInTheDocument());
