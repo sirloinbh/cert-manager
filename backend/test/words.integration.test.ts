@@ -79,7 +79,11 @@ test(
     assert.equal(listed.rowCount, 4, 'running the list again adds nothing');
 
     // A word not looked up yet is not handed out for filling in.
-    assert.deepEqual(await exportWordBatch(pool, dir, 10), { file: null, written: false });
+    assert.deepEqual(await exportWordBatch(pool, dir, 10), {
+      file: null,
+      written: false,
+      waiting: [],
+    });
 
     const sleep = async () => {};
     const looked = await fetchMissingEtymology(pool, { baseUrl, sleep });
@@ -103,8 +107,12 @@ test(
     );
 
     const exported = await exportWordBatch(pool, dir, 2);
-    assert.deepEqual(exported, { file: 'words-900001-900002.json', written: true });
-    assert.equal((await exportWordBatch(pool, dir, 2)).written, false, 'work in progress stays');
+    assert.deepEqual(exported, { file: 'words-900001-900002.json', written: true, waiting: [] });
+    assert.deepEqual(
+      await exportWordBatch(pool, dir, 2),
+      { file: null, written: false, waiting: ['words-900001-900002.json'] },
+      'work in progress stays and its words are not handed out again',
+    );
     const name = exported.file ?? '';
     const batchFile = JSON.parse(await readFile(join(dir, name), 'utf8')) as {
       morphemes: unknown[];

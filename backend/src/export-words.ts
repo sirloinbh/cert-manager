@@ -12,8 +12,12 @@ if (!Number.isInteger(size) || size < 1 || size > 1000) {
 
 const pool = new Pool({ connectionString: scriptDatabaseUrl() });
 try {
-  const { file, written } = await exportWordBatch(pool, wordBatchesDir, size);
-  if (!file)
+  const { file, written, waiting } = await exportWordBatch(pool, wordBatchesDir, size);
+  if (!file && waiting.length > 0)
+    console.log(
+      `No new words: ${waiting.join(', ')} ${waiting.length === 1 ? 'is' : 'are'} waiting for import.`,
+    );
+  else if (!file)
     console.log('No words to fill in. Only words whose etymology was looked up are exported.');
   else console.log(`${written ? 'New file' : 'Existing file'}: ${wordBatchesDir}${file}`);
 } finally {
