@@ -218,7 +218,10 @@ test('AWS Specialty sits outside the ladder, and the levels show English labels'
 });
 
 test('Information Processing levels show English labels and keep their saved values', async () => {
-  await openDetail({ goal: goal({ gradeScale: 'information_processing', targetGrade: '기사' }) });
+  await openDetail({
+    goal: goal({ gradeScale: 'information_processing', targetGrade: '기사' }),
+    attempts: [attempt({ outcome: 'passed', grade: '기능사' })],
+  });
   const ladder = screen.getByRole('heading', {
     level: 3,
     name: 'National Technical Qualification (Information Processing) grades',
@@ -228,6 +231,11 @@ test('Information Processing levels show English labels and keep their saved val
   expect(rows[0]).toHaveTextContent('Target');
   expect(rows[1]).toHaveTextContent('Craftsman (Gineungsa)');
   expect(ladder).not.toHaveTextContent('기사');
+  // The goal's target grade and a saved result show the label too, not the saved Korean value.
+  expect(screen.getByText('Target grade').nextElementSibling).toHaveTextContent('Engineer (Gisa)');
+  // Once in the ladder and once as the saved result.
+  expect(await screen.findAllByText('Craftsman (Gineungsa)')).toHaveLength(2);
+  expect(document.body).not.toHaveTextContent('기능사');
 });
 
 test('license types are a plain list in their own order, headed without "grades"', async () => {

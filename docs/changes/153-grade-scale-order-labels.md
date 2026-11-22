@@ -12,6 +12,7 @@ The grade ladder put AWS `Specialty` above Professional although it is not a ste
 - `frontend/src/grade-scale-data.ts`: `GradeLevel.label`.
 - `frontend/src/grade-scales.tsx`: a ranked scale shows its steps from the top; off-ladder levels are listed apart under "Not part of the steps"; an unranked scale is a plain list in its own order; the heading says "… grades" only for ranked scales; rows show the label.
 - `frontend/src/exam-attempts.tsx`, `frontend/src/certifications.tsx` (one-line edits approved by the coordinator for this issue): the grade and target-grade selects, and the score hint, show `level.label`; the saved value is unchanged.
+- `frontend/src/grade-scale-data.ts` `gradeLabel()`: the goal detail "Target grade", the goal list summary and a saved attempt result also show the label instead of the saved Korean value (found in the browser check). `certifications.tsx` and `exam-attempts.tsx` use it.
 - Tests: backend test that every level has an English label; screen tests for Specialty outside the AWS ladder, Information Processing English labels, and the plain license list.
 
 ## Notes
@@ -22,3 +23,4 @@ The grade ladder put AWS `Specialty` above Professional although it is not a ste
 ## Verification
 
 - `npm run check`: see the PR.
+- Real browser (Chrome 158 via the playwright tool, mock API + Vite dev server) at 390×844 and 1440×900: AWS shows Professional, Associate, Foundational with Target on Professional and Specialty under "Not part of the steps"; Information Processing shows `Professional Engineer (Gisulsa)` … `Craftsman (Gineungsa)`; driver licenses are a plain list under the heading "Driver license types"; the goal list, detail field and the edit form's target-grade select show English labels (values submitted unchanged); no Korean text on the page and no horizontal scroll at either size. The first pass found the raw `기사` in the detail field, which led to `gradeLabel()`.

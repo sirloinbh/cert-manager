@@ -45,7 +45,7 @@ import {
   reachedTarget,
 } from './exam-attempt-data';
 import { controlClass, toNumber } from './form-fields';
-import { type GradeScale, gradesForScore } from './grade-scale-data';
+import { gradeLabel, type GradeScale, gradesForScore } from './grade-scale-data';
 import { GradeLadder } from './grade-scales';
 import { RequestError } from './lib/api';
 import { errorText, useNotice } from './lib/use-notice';
@@ -89,9 +89,9 @@ function ExpiryLine({ attempt, state }: { attempt: ExamAttempt; state: ExpirySta
   );
 }
 
-function resultText(attempt: ExamAttempt) {
+function resultText(attempt: ExamAttempt, scale: GradeScale | undefined) {
   const score = attempt.score === null ? '' : `${attempt.score}`;
-  return [score, attempt.grade ?? ''].filter(Boolean).join(' · ');
+  return [score, attempt.grade ? gradeLabel(scale, attempt.grade) : ''].filter(Boolean).join(' · ');
 }
 
 // The API takes four-digit years only; the browser stops a later date before it is sent.
@@ -445,7 +445,7 @@ export function ExamAttempts({
         <ul className="flex flex-col gap-3">
           {attempts.map((attempt) => {
             const state = expiryState(attempt, certification.validityKind);
-            const result = resultText(attempt);
+            const result = resultText(attempt, gradeScale);
             return (
               <li
                 key={attempt.id}

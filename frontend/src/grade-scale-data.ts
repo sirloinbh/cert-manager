@@ -48,6 +48,10 @@ export function reachedGrade(
   return reached >= wanted;
 }
 
+/** The English label of a saved grade; a value the scale does not list (or no scale yet) is shown as saved. */
+export const gradeLabel = (scale: GradeScale | undefined, value: string) =>
+  scale?.levels.find((level) => level.value === value)?.label ?? value;
+
 export function scoreRange(level: GradeLevel) {
   if (level.minScore === null || level.maxScore === null) return '';
   return level.minScore === level.maxScore

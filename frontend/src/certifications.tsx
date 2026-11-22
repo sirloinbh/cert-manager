@@ -32,6 +32,7 @@ import { Spinner } from './components/ui/spinner';
 import { formatDate } from './date-format';
 import { ExamAttempts } from './exam-attempts';
 import { controlClass, toNumber } from './form-fields';
+import { gradeLabel, type GradeScale } from './grade-scale-data';
 import { RequestError } from './lib/api';
 import { errorText, useNotice } from './lib/use-notice';
 import { cn } from './lib/utils';
@@ -97,8 +98,9 @@ function BackLink({ to, children }: { to: string; children: ReactNode }) {
   );
 }
 
-function goalSummary(item: Certification) {
-  const grade = item.targetGrade ? `Target grade ${item.targetGrade}` : '';
+function goalSummary(item: Certification, scales: GradeScale[]) {
+  const scale = scales.find((candidate) => candidate.key === item.gradeScale);
+  const grade = item.targetGrade ? `Target grade ${gradeLabel(scale, item.targetGrade)}` : '';
   return [item.issuer, item.goalText, grade].filter(Boolean).join(' · ');
 }
 
@@ -120,6 +122,7 @@ function ExamDate({ item }: { item: Certification }) {
 
 export function CertificationList({ paths }: { paths: CertificationPaths }) {
   const loaded = useLoad('all', loadList);
+  const { scales } = useGradeScales();
   const addButton = (
     <Button asChild>
       <Link to={paths.create}>
@@ -182,9 +185,9 @@ export function CertificationList({ paths }: { paths: CertificationPaths }) {
                             {item.name}
                           </Link>
                         </h3>
-                        {goalSummary(item) ? (
+                        {goalSummary(item, scales) ? (
                           <p className="text-body-sm break-keep text-muted-foreground">
-                            {goalSummary(item)}
+                            {goalSummary(item, scales)}
                           </p>
                         ) : null}
                       </div>
@@ -389,7 +392,13 @@ export function CertificationDetail({ paths }: { paths: CertificationPaths }) {
         {item.gradeScale === 'none' ? null : (
           <Field
             label="Target grade"
-            value={item.targetGrade ?? <span className="text-muted-foreground">Not set</span>}
+            value={
+              item.targetGrade === null ? (
+                <span className="text-muted-foreground">Not set</span>
+              ) : (
+                gradeLabel(gradeScale, item.targetGrade)
+              )
+            }
           />
         )}
         <Field label="Target exam date" value={<ExamDate item={item} />} />
