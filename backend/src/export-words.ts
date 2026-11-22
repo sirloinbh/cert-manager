@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
 
-import { scriptDatabaseUrl } from './script-database.js';
+import { scriptDatabaseUrl } from './scripts/script-database.js';
 import { exportWordBatch, wordBatchesDir } from './word-files.js';
 
 // Writes the next words to fill in (#36). Size: npm run words:export -w backend -- 50

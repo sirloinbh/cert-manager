@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { Pool } from 'pg';
 
 import { politeGet } from './polite-fetch.js';
-import { scriptDatabaseUrl } from './script-database.js';
+import { scriptDatabaseUrl } from './scripts/script-database.js';
 import { ngslFileName, ngslUrl, parseWordList, saveWordList } from './word-list.js';
 
 // Loads the NGSL word list into the database named by DATABASE_URL (#36). Safe to run again.

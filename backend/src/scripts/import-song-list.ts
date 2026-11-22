@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
 
-import { politeGet } from './polite-fetch.js';
+import { politeGet } from '../polite-fetch.js';
 import { scriptDatabaseUrl } from './script-database.js';
 import {
   albumTracks,

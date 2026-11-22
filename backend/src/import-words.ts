@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
 
-import { scriptDatabaseUrl } from './script-database.js';
+import { scriptDatabaseUrl } from './scripts/script-database.js';
 import { importWordBatches, wordBatchesDir } from './word-files.js';
 
 // Saves filled-in word batches (#36). A batch that does not fit is not saved.

@@ -1,4 +1,5 @@
 {
   "extends": "@sirloinbh/tsconfig/node-api.json",
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/scripts"]
 }
