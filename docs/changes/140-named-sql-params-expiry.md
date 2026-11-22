@@ -16,11 +16,11 @@ The certification and exam attempt routes refer to SQL parameters by position (`
 
 ## Decision
 
-A validity change overwrites expiry dates the user typed by hand for passed or scored attempts, because the app cannot tell a typed date from a derived one. Reverse: store whether an expiry was typed (needs a migration).
+User decision 2026-11-22 (option A, recorded as a comment on #140): a validity change overwrites expiry dates the user typed by hand for passed or scored attempts, because the app cannot tell a typed date from a derived one. Reverse: store whether an expiry was typed (needs a migration).
 
 ## Verification
 
-- `npm run check`: see the PR.
+- `npm run check`: pass.
 - No local PostgreSQL on this Mac: the integration tests skip locally and run in CI.
 
 ## Limits
