@@ -1,5 +1,5 @@
 {
-  "centralSha": "041ef58c426458478b30297db6a11f01e84655b9",
+  "centralSha": "7638be209d5d91dd0565ec4041bfe7c9553e6bd1",
   "profile": "app",
   "project": "cert-manager",
   "files": {
@@ -480,7 +480,7 @@
         "engines.node": "24.21.0",
         "engines.npm": "11.19.0",
         "dependencies.@sirloinbh/auth-client": "1.0.0",
-        "dependencies.@sirloinbh/design-tokens": "1.0.0",
+        "dependencies.@sirloinbh/design-tokens": "1.1.0",
         "devDependencies.@sirloinbh/tsconfig": "1.0.0",
         "dependencies.class-variance-authority": "0.7.1",
         "dependencies.clsx": "2.1.1",
@@ -1047,7 +1047,7 @@
         "devDependencies.typescript-eslint": "8.71.2",
         "devDependencies.@playwright/test": "1.63.0",
         "devDependencies.@axe-core/playwright": "4.13.0",
-        "devDependencies.@lhci/cli": "0.16.0",
+        "devDependencies.@lhci/cli": "0.16.1",
         "devDependencies.concurrently": "9.2.5"
       },
       "source": "templates/index.json"
@@ -1152,7 +1152,7 @@
     "@sirloinbh/eslint-config": "1.1.0",
     "@sirloinbh/prettier-config": "1.0.0",
     "@sirloinbh/tsconfig": "1.0.0",
-    "@sirloinbh/design-tokens": "1.0.0",
+    "@sirloinbh/design-tokens": "1.1.0",
     "@sirloinbh/auth-client": "1.0.0"
   },
   "registry": {
