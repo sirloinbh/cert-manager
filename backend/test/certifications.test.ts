@@ -174,8 +174,9 @@ test('the status route changes only the status and answers the stored goal', asy
   // Only the status (and its timestamp) is written; no other column appears in the SET list.
   const update = queries[0]?.text ?? '';
   const assigned = /SET (.*?) WHERE/s.exec(update)?.[1] ?? '';
-  assert.equal(assigned.replaceAll(/\s+/g, ' ').trim(), 'status = $2, updated_at = now()');
-  assert.deepEqual(queries[0]?.values, ['2026-10-30', 'passed', 7]);
+  assert.equal(assigned.replaceAll(/\s+/g, ' ').trim(), 'status = $1, updated_at = now()');
+  // Named parameters are numbered by first use: status, id, then :today from RETURNING.
+  assert.deepEqual(queries[0]?.values, ['passed', 7, '2026-10-30']);
 });
 
 test('the status route rejects a bad status, a missing goal and a malformed id', async () => {

@@ -209,10 +209,11 @@ export function registerCertificationRoutes(app: Express, pool: Pool, today: () 
   app.patch('/api/certifications/:id/status', async (req, res) => {
     const id = parseId(req.params.id, 'certification goal');
     const { status } = certificationStatusInput.parse(body(req.body));
-    const { rows } = await pool.query<CertificationRow>(
-      `UPDATE certifications SET status = $2, updated_at = now() WHERE id = $3 RETURNING ${columns}`,
-      [today(), status, id],
+    const query = named(
+      `UPDATE certifications SET status = :status, updated_at = now() WHERE id = :id RETURNING ${columns}`,
+      { today: today(), status, id },
     );
+    const { rows } = await pool.query<CertificationRow>(query.text, query.values);
     if (!rows[0]) throw new HttpError(404, notFoundMessage);
     res.json({ certification: rows[0] });
   });
