@@ -21,7 +21,7 @@ Screens showed wrong plurals ("1 days left", "1 manual tasks"), claimed lyrics a
 
 - `rg "on this PC" frontend/src` finds nothing.
 - `npm run check`: pass (53 test files, 368 passed, 3 skipped). DB integration tests skip locally (no PostgreSQL on this Mac) and run in CI.
-- Browser check at 390×844 and 1440×900: pending (see the PR).
+- Browser check (Chrome via Playwright, vite on 127.0.0.1:5499 with a fixture-only mock API, no local DB), 390×844 and 1440×900, 2026-11-22: certification list and detail ("1 day left", "1 month", "9 days left", stage period with an en dash), exam attempt dialog ("Outcome" label), lyrics dialog ("Saved on the server", "0 lines"), songs list ("1 song"), words list ("1 word", "license not recorded"), manual task bell panel ("1 manual task alert", "1 day left"). No horizontal overflow on any page or dialog at either size; dialogs stay inside the viewport. The only console error is a 403 on the Pretendard font, caused by the shared `node_modules` symlink being outside vite's allowed paths in this lane, not by this change.
 
 ## Limits
 
