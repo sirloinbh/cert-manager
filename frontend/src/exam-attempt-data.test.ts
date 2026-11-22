@@ -9,6 +9,7 @@ import {
   expiryState,
   type LatestAttempt,
   reachedGoal,
+  reachedTarget,
 } from './exam-attempt-data';
 
 const attempt = (fields: Partial<ExamAttempt> = {}): ExamAttempt => ({
@@ -34,6 +35,29 @@ test.each([
   ['2026-11-15', 2, '2027-01-15'],
 ])('%s plus %i months is %s', (date, months, expected) => {
   expect(addMonths(date, months)).toBe(expected);
+});
+
+test.each([
+  ['0026-01-10', 1, '0026-02-10'],
+  ['0099-12-31', 2, '0100-02-28'],
+  ['0004-02-29', 12, '0005-02-28'],
+])('a year below 100 stays in that year: %s plus %i months is %s', (date, months, expected) => {
+  expect(addMonths(date, months)).toBe(expected);
+});
+
+test.each([
+  ['failed', true, false],
+  ['waiting', true, false],
+  ['passed', true, true],
+  ['scored', true, true],
+  ['scored', false, false],
+] as const)('%s attempt, score above target %s: goal reached %s', (outcome, above, reached) => {
+  const result = reachedTarget(
+    { outcome, score: above ? 900 : 500, grade: '' },
+    { targetScore: 800, targetGrade: null },
+    undefined,
+  );
+  expect(result).toBe(reached);
 });
 
 test.each([
