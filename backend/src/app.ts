@@ -38,13 +38,14 @@ export function createApp(
   // Before the body parser and every route, so a refused request costs neither parsing nor a query.
   apiRateLimit(app, { limitPerMinute: options.requestsPerMinute });
   app.use(express.json({ limit: '256kb' }));
-  // #116: the shared sign-in guards every /api route except /api/health, before any route registers.
-  if (options.auth) app.use('/api', options.auth);
-  app.get('/api/me', meHandler);
+  // #139: health is registered before the guard, so it is public by route order, not by the guard's skip list.
   app.get('/api/health', async (_req, res) => {
     await pool.query('SELECT 1');
     res.json({ ok: true, service: 'cert-manager', today: today() });
   });
+  // #116: the shared sign-in guards every /api route except /api/health, before any route registers.
+  if (options.auth) app.use('/api', options.auth);
+  app.get('/api/me', meHandler);
   registerCertificationRoutes(app, pool, today);
   registerExamAttemptRoutes(app, pool, today);
   registerStudyPlanRoutes(app, pool, today);
