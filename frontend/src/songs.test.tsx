@@ -235,6 +235,8 @@ test('pasting lyrics saves them and shows the lines right away', async () => {
     target: { value: 'The road is quiet\n\nI walk alone' },
   });
   expect(screen.getByText(/^2 lines\./)).toBeInTheDocument();
+  // The lyrics live in the server database, not only on this device.
+  expect(screen.getByText(/Saved on the server/)).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Save' }));
   expect(await screen.findByText('The road is quiet')).toBeInTheDocument();
   expect(api.sent.find((item) => item.method === 'PUT')).toEqual({

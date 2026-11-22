@@ -11,6 +11,7 @@ import { Notice } from './components/ui/notice';
 import { SkeletonList } from './components/ui/skeleton';
 import { RequestError } from './lib/api';
 import { errorText } from './lib/use-notice';
+import { quantity } from './plural';
 import { useLoad } from './use-load';
 import {
   kindLabels,
@@ -33,7 +34,7 @@ const linkClass =
 // The license of both sources asks for this wherever their material is shown.
 export function SourceNote({ sources }: { sources: WordSource[] }) {
   const license = (kind: WordSource['kind']) =>
-    sources.find((source) => source.kind === kind)?.license ?? 'CC BY-SA 4.0';
+    sources.find((source) => source.kind === kind)?.license ?? 'license not recorded';
   return (
     <footer className="flex flex-col gap-1 border-t pt-4 text-caption break-keep text-muted-foreground">
       <p>
@@ -88,7 +89,7 @@ export function WordList({ paths }: { paths: WordPaths }) {
         </p>
         {words.length > 0 ? (
           <p role="status" className="text-caption text-muted-foreground">
-            {words.length} words · {filled} with meanings
+            {quantity(words.length, 'word')} · {filled} with meanings
           </p>
         ) : null}
       </header>
@@ -161,7 +162,7 @@ export function WordList({ paths }: { paths: WordPaths }) {
           className="w-fit self-center"
           onClick={() => setPaging({ search, pages: pages + 1 })}
         >
-          Show more ({matching.length - shown.length} words left)
+          Show more ({quantity(matching.length - shown.length, 'word')} left)
         </Button>
       ) : null}
       {loaded.state === 'ok' && words.length > 0 ? (
@@ -314,7 +315,7 @@ function WordPage({ id, paths }: { id: string; paths: WordPaths }) {
               text:
                 loaded.error instanceof RequestError && loaded.error.status === 404
                   ? 'Word not found.'
-                  : errorText(loaded.error, 'Could not load the words'),
+                  : errorText(loaded.error, 'Could not load the word'),
             }}
           />
         )}

@@ -58,7 +58,7 @@ export const isOverdue = (task: Pick<StudyTask, 'completedAt' | 'daysUntilDue'>)
 /** The stage's period in words; empty when neither date is set. */
 export function periodText(stage: Pick<StudyStage, 'startDate' | 'endDate'>) {
   if (stage.startDate && stage.endDate)
-    return `${formatDate(stage.startDate)} ~ ${formatDate(stage.endDate)}`;
+    return `${formatDate(stage.startDate)} – ${formatDate(stage.endDate)}`;
   if (stage.startDate) return `From ${formatDate(stage.startDate)}`;
   return stage.endDate ? `Until ${formatDate(stage.endDate)}` : '';
 }

@@ -60,7 +60,13 @@ const word: Word = {
 
 function open(
   path: string,
-  options: { words?: WordRow[]; word?: Word; failed?: boolean; missing?: boolean } = {},
+  options: {
+    words?: WordRow[];
+    word?: Word;
+    sources?: WordSource[];
+    failed?: boolean;
+    missing?: boolean;
+  } = {},
 ) {
   fakeRoutes([
     ['GET', '/api/health', () => reply(200, { ok: true, today: '2026-11-01' })],
@@ -71,7 +77,7 @@ function open(
       () =>
         options.failed
           ? reply(500, { error: 'Word server error' })
-          : reply(200, { words: options.words ?? rows, sources }),
+          : reply(200, { words: options.words ?? rows, sources: options.sources ?? sources }),
     ],
     [
       'GET',
@@ -79,7 +85,10 @@ function open(
       ({ path }) => {
         if (options.missing) return reply(404, { error: 'Word not found' });
         const id = Number(path.split('/').pop());
-        return reply(200, { word: { ...(options.word ?? word), id }, sources });
+        return reply(200, {
+          word: { ...(options.word ?? word), id },
+          sources: options.sources ?? sources,
+        });
       },
     ],
   ]);
@@ -115,6 +124,14 @@ test('the list shows words by frequency with their sources', async () => {
   expect(screen.getByRole('link', { name: 'NGSL 1.2' })).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Wiktionary' })).toBeInTheDocument();
   expect(screen.getByText(/Browne, Culligan, Phillips/)).toHaveTextContent('CC BY-SA 4.0');
+});
+
+test('a source without a recorded license says so instead of assuming one', async () => {
+  open('/words', { sources: [] });
+  expect(await screen.findByText(/Browne, Culligan, Phillips/)).toHaveTextContent(
+    'license not recorded',
+  );
+  expect(screen.queryByText(/CC BY-SA/)).not.toBeInTheDocument();
 });
 
 test('long lists come in pages, and a search starts over', async () => {

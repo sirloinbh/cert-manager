@@ -1,4 +1,5 @@
 import { requestJson } from './lib/api';
+import { quantity } from './plural';
 
 // Certification goals (#30): API calls and display rules. The screens are in certifications.tsx.
 
@@ -70,19 +71,20 @@ export const validityLabels: Record<ValidityKind, string> = {
 export function examCountdown(days: number | null) {
   if (days === null) return 'Exam date not set';
   if (days === 0) return 'Exam today';
-  return days > 0 ? `${days} days left` : `${-days} days ago`;
+  return days > 0 ? `${quantity(days, 'day')} left` : `${quantity(-days, 'day')} ago`;
 }
 
 /** Days left until a last day, such as an expiry or a due date. */
 export function deadlineCountdown(days: number) {
   if (days === 0) return 'Due today';
-  return days > 0 ? `${days} days left` : `${-days} days overdue`;
+  return days > 0 ? `${quantity(days, 'day')} left` : `${quantity(-days, 'day')} overdue`;
 }
 
 export function validityText(
   certification: Pick<Certification, 'validityKind' | 'validityMonths'>,
 ) {
-  if (certification.validityKind === 'months') return `${certification.validityMonths} months`;
+  if (certification.validityKind === 'months' && certification.validityMonths !== null)
+    return quantity(certification.validityMonths, 'month');
   return certification.validityKind === 'none' ? 'No expiry' : 'Unknown';
 }
 
