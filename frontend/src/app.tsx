@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Award, BookOpenText, LayoutDashboard, Music, Settings2 } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
 import { BrowserRouter, generatePath, Navigate, Route, Routes } from 'react-router';
@@ -118,7 +119,7 @@ function Page({
   );
 }
 
-export function App() {
+function AppRoutes() {
   const health = useHealth();
   return (
     // The song search box takes its value from the URL, and React says not to update a typed value in a transition.
@@ -188,5 +189,16 @@ export function App() {
         <Toaster />
       </SignInGate>
     </BrowserRouter>
+  );
+}
+
+export function App() {
+  // One client for the whole app, kept in state so a re-render does not make a new one. It uses React Query's defaults
+  // for now; the synced shared `createQueryClient()` replaces it when the query layer arrives (#161).
+  const [queryClient] = useState(() => new QueryClient());
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AppRoutes />
+    </QueryClientProvider>
   );
 }
