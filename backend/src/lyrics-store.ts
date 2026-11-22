@@ -14,8 +14,9 @@ export function toLines(text: string) {
   return lines;
 }
 
-export const inTransaction = (pool: Pool, work: (client: PoolClient) => Promise<void>) =>
-  withTransaction<void, PoolClient>(pool, work);
+/** One transaction with the central rollback handling: the first error wins, a client whose ROLLBACK failed is destroyed. */
+export const inTransaction = <T>(pool: Pool, work: (client: PoolClient) => Promise<T>) =>
+  withTransaction<T, PoolClient>(pool, work);
 
 // Every write takes this lock first, so one finishes before the next reads the lines.
 export async function lockSong(client: PoolClient, id: number) {

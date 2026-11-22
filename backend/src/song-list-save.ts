@@ -34,18 +34,32 @@ export async function saveSongList(pool: Pool, input: SongListInput) {
       const albumId = albums[0]?.id;
       // The album's tracks are replaced, so a corrected list leaves nothing behind.
       await client.query('DELETE FROM album_tracks WHERE album_id = $1', [albumId]);
-      for (const track of tracks) {
-        const { rows: songs } = await client.query<{ id: number }>(
+      if (tracks.length > 0) {
+        // One statement for the songs and one for the album tracks, not two per track (#146).
+        // albumTracks() keeps one track per recording, so no row is affected twice by the upsert.
+        const { rows: songs } = await client.query<{ id: number; musicbrainz_id: string }>(
           `INSERT INTO songs (artist_id, title, duration_seconds, musicbrainz_id)
-           VALUES ($1, $2, $3, $4)
+           SELECT $1::bigint, v.title, v.duration_seconds, v.musicbrainz_id
+           FROM unnest($2::text[], $3::int[], $4::uuid[]) AS v(title, duration_seconds, musicbrainz_id)
            ON CONFLICT (musicbrainz_id) DO UPDATE SET title = EXCLUDED.title,
              duration_seconds = EXCLUDED.duration_seconds, updated_at = now()
-           RETURNING id`,
-          [artistId, track.title, track.durationSeconds, track.recordingId],
+           RETURNING id, musicbrainz_id::text`,
+          [
+            artistId,
+            tracks.map((track) => track.title),
+            tracks.map((track) => track.durationSeconds),
+            tracks.map((track) => track.recordingId),
+          ],
         );
+        const songIds = new Map(songs.map((song) => [song.musicbrainz_id, song.id]));
         await client.query(
-          'INSERT INTO album_tracks (album_id, song_id, track_number) VALUES ($1, $2, $3)',
-          [albumId, songs[0]?.id, track.trackNumber],
+          `INSERT INTO album_tracks (album_id, song_id, track_number)
+           SELECT $1::bigint, v.song_id, v.track_number FROM unnest($2::bigint[], $3::int[]) AS v(song_id, track_number)`,
+          [
+            albumId,
+            tracks.map((track) => songIds.get(track.recordingId.toLowerCase())),
+            tracks.map((track) => track.trackNumber),
+          ],
         );
       }
     }
