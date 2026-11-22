@@ -81,10 +81,10 @@ export function reachedTarget(
   scale: GradeScale | undefined,
 ) {
   if (goal.targetScore === null && goal.targetGrade === null) return false;
+  // A failed or pending attempt reaches nothing, whatever its score.
+  if (!hasExpiry(attempt.outcome)) return false;
   const score = goal.targetScore === null || reachedGoal(attempt.score, goal.targetScore);
-  const grade =
-    goal.targetGrade === null ||
-    (hasExpiry(attempt.outcome) && reachedGrade(scale, attempt.grade, goal.targetGrade));
+  const grade = goal.targetGrade === null || reachedGrade(scale, attempt.grade, goal.targetGrade);
   return score && grade;
 }
 
@@ -95,11 +95,13 @@ export function reachedTarget(
  */
 export function addMonths(date: string, months: number) {
   const [year = 0, month = 1, day = 1] = date.split('-').map(Number);
-  const target = new Date(Date.UTC(year, month - 1 + months, 1));
+  // Date.UTC maps years 0-99 to 1900-1999, so a half-typed year like 0026 needs setUTCFullYear.
+  const target = new Date(0);
+  target.setUTCFullYear(year, month - 1 + months, 1);
   if (Number.isNaN(target.getTime()) || target.getUTCFullYear() > 9999) return '';
-  const lastDay = new Date(
-    Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0),
-  ).getUTCDate();
+  const lastDayDate = new Date(0);
+  lastDayDate.setUTCFullYear(target.getUTCFullYear(), target.getUTCMonth() + 1, 0);
+  const lastDay = lastDayDate.getUTCDate();
   target.setUTCDate(Math.min(day, lastDay));
   return target.toISOString().slice(0, 10);
 }

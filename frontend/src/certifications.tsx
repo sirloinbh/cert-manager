@@ -309,10 +309,8 @@ export function CertificationDetail({ paths }: { paths: CertificationPaths }) {
   const gradeScale = scales.find((scale) => scale.key === item.gradeScale);
   const markPassed = async () => {
     try {
-      const { certification } = await certificationApi.update(item.id, {
-        ...toInput(toForm(item)),
-        status: 'passed',
-      });
+      // Status only: a full PUT would overwrite edits made in another tab.
+      const { certification } = await certificationApi.setStatus(item.id, 'passed');
       setChanged(certification);
       toast.success('Goal status changed to Passed');
     } catch (error) {
@@ -492,7 +490,7 @@ function FormFields({
   const [pending, setPending] = useState(false);
   const notice = useNotice();
   const id = useId();
-  const { scales, failed } = useGradeScales();
+  const { scales, failed, loaded } = useGradeScales();
   const scale = scales.find((item) => item.key === form.gradeScale);
   const set =
     <K extends keyof FormState>(key: K) =>
@@ -622,9 +620,12 @@ function FormFields({
           <p id={`${id}-scale-hint`} className="text-caption break-keep text-muted-foreground">
             {failed
               ? 'Could not load the grade list, so you cannot choose one now. The value already chosen is saved as it is.'
-              : scales.length === 0
+              : !loaded
                 ? 'Loading the grade list.'
-                : (scale?.note ?? 'Choose one if the certification has scores, levels, or steps.')}
+                : scales.length === 0
+                  ? 'No grade scales are available.'
+                  : (scale?.note ??
+                    'Choose one if the certification has scores, levels, or steps.')}
           </p>
         </div>
         {scale ? (

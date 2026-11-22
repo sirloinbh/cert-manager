@@ -116,3 +116,42 @@ test(
     );
   },
 );
+
+test(
+  'changing only the status keeps every other field as stored in the real database',
+  { skip: !url },
+  async (t) => {
+    const pool = new Pool({ connectionString: url });
+    let id = 0;
+    t.after(async () => {
+      if (id) await pool.query('DELETE FROM certifications WHERE id = $1', [id]);
+      await pool.end();
+    });
+    await withApi(pool, async (call) => {
+      const created = await call('/api/certifications', {
+        method: 'POST',
+        body: { name: '#152 토익', category: 'english', goalText: '900', targetScore: 900 },
+      });
+      assert.equal(created.status, 201, JSON.stringify(created.data));
+      id = (created.data.certification as Certification).id;
+      // Another tab edits the memo after this page loaded the goal.
+      await pool.query("UPDATE certifications SET memo = 'edited elsewhere' WHERE id = $1", [id]);
+
+      const patched = await call(`/api/certifications/${id}/status`, {
+        method: 'PATCH',
+        body: { status: 'passed' },
+      });
+      assert.equal(patched.status, 200, JSON.stringify(patched.data));
+      assert.deepEqual(
+        (({ status, memo, goalText, targetScore }) => ({ status, memo, goalText, targetScore }))(
+          patched.data.certification as Record<string, unknown>,
+        ),
+        { status: 'passed', memo: 'edited elsewhere', goalText: '900', targetScore: 900 },
+      );
+      const stored = await pool.query('SELECT status, memo FROM certifications WHERE id = $1', [
+        id,
+      ]);
+      assert.deepEqual(stored.rows[0], { status: 'passed', memo: 'edited elsewhere' });
+    });
+  },
+);

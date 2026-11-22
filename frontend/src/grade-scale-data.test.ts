@@ -104,7 +104,7 @@ test('an attempt meets every target the goal has', () => {
       { targetScore: 700, targetGrade: null },
       toeic,
     ),
-  ).toBe(true);
+  ).toBe(false);
 });
 
 test('score ranges read as one number when the level has one score', () => {

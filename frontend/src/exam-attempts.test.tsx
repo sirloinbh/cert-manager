@@ -75,12 +75,12 @@ function fakeApi(
       if (path === '/api/study-tasks/today') return reply(200, { today, tasks: [] });
       if (path === '/api/certifications/1/plan') return reply(200, { today, stages: [] });
       if (path === '/api/certifications') return reply(200, { today, certifications: [goal] });
-      if (path === '/api/certifications/1') {
-        if (method === 'PUT' && options.goalUpdateFails)
-          return reply(500, { error: options.goalUpdateFails });
-        if (method === 'PUT') goal = { ...goal, ...(body as Partial<Certification>) };
-        return reply(200, { today, certification: goal });
+      if (path === '/api/certifications/1/status' && method === 'PATCH') {
+        if (options.goalUpdateFails) return reply(500, { error: options.goalUpdateFails });
+        goal = { ...goal, status: body?.status as Certification['status'] };
+        return reply(200, { certification: goal });
       }
+      if (path === '/api/certifications/1') return reply(200, { today, certification: goal });
       if (path === '/api/certifications/1/attempts' && method === 'GET') {
         listed += 1;
         if (options.reloadFails && listed > 1) return reply(500, { error: 'Could not reload' });
@@ -215,14 +215,22 @@ test('saving a pass asks before changing the goal, and the answer is respected',
 
   const dialog = await screen.findByRole('dialog', { name: 'Change the goal status to Passed?' });
   expect(
-    api.sent.some((item) => item.path === '/api/certifications/1' && item.method === 'PUT'),
+    api.sent.some(
+      (item) => item.path === '/api/certifications/1/status' && item.method === 'PATCH',
+    ),
   ).toBe(false);
   fireEvent.click(within(dialog).getByRole('button', { name: 'Change' }));
   await waitFor(() =>
     expect(
-      api.sent.find((item) => item.path === '/api/certifications/1' && item.method === 'PUT')?.body,
-    ).toMatchObject({ name: '토익', status: 'passed', validityMonths: 24 }),
+      api.sent.find(
+        (item) => item.path === '/api/certifications/1/status' && item.method === 'PATCH',
+      )?.body,
+    ).toEqual({ status: 'passed' }),
   );
+  // A full PUT would overwrite edits made in another tab.
+  expect(
+    api.sent.some((item) => item.path === '/api/certifications/1' && item.method === 'PUT'),
+  ).toBe(false);
   // The page shows the new status without leaving; Passed also labels the attempt itself.
   await waitFor(() => expect(screen.getAllByText('Passed')).toHaveLength(2));
   await waitFor(() => expect(screen.getByRole('heading', { name: 'Exam attempts' })).toHaveFocus());
@@ -238,7 +246,9 @@ test('declining the question leaves the goal alone', async () => {
   fireEvent.click(within(dialog).getByRole('button', { name: 'Keep as is' }));
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   expect(
-    api.sent.some((item) => item.path === '/api/certifications/1' && item.method === 'PUT'),
+    api.sent.some(
+      (item) => item.path === '/api/certifications/1/status' && item.method === 'PATCH',
+    ),
   ).toBe(false);
   // With no button that opened it, focus would otherwise fall back to the start of the page.
   await waitFor(() => expect(screen.getByRole('heading', { name: 'Exam attempts' })).toHaveFocus());
@@ -254,7 +264,9 @@ test('closing the question with Escape leaves the goal alone and returns focus',
   fireEvent.keyDown(dialog, { key: 'Escape' });
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   expect(
-    api.sent.some((item) => item.path === '/api/certifications/1' && item.method === 'PUT'),
+    api.sent.some(
+      (item) => item.path === '/api/certifications/1/status' && item.method === 'PATCH',
+    ),
   ).toBe(false);
   await waitFor(() => expect(screen.getByRole('heading', { name: 'Exam attempts' })).toHaveFocus());
 });
