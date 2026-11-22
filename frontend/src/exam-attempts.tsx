@@ -45,7 +45,7 @@ import {
   reachedTarget,
 } from './exam-attempt-data';
 import { controlClass, toNumber } from './form-fields';
-import { type GradeScale, gradesForScore } from './grade-scale-data';
+import { gradeLabel, type GradeScale, gradesForScore } from './grade-scale-data';
 import { GradeLadder } from './grade-scales';
 import { RequestError } from './lib/api';
 import { errorText, useNotice } from './lib/use-notice';
@@ -89,9 +89,9 @@ function ExpiryLine({ attempt, state }: { attempt: ExamAttempt; state: ExpirySta
   );
 }
 
-function resultText(attempt: ExamAttempt) {
+function resultText(attempt: ExamAttempt, scale: GradeScale | undefined) {
   const score = attempt.score === null ? '' : `${attempt.score}`;
-  return [score, attempt.grade ?? ''].filter(Boolean).join(' · ');
+  return [score, attempt.grade ? gradeLabel(scale, attempt.grade) : ''].filter(Boolean).join(' · ');
 }
 
 // The API takes four-digit years only; the browser stops a later date before it is sent.
@@ -232,7 +232,7 @@ function AttemptForm({
                   <option value="">None</option>
                   {[...gradeScale.levels].reverse().map((level) => (
                     <option key={level.value} value={level.value}>
-                      {level.value}
+                      {level.label}
                     </option>
                   ))}
                   {/* An older format such as "Level 7" stays selectable until the user changes it. */}
@@ -247,9 +247,9 @@ function AttemptForm({
                   className="text-caption break-keep text-muted-foreground"
                 >
                   {fitting.length > 1
-                    ? `A score of ${score} is one of ${fitting.map((level) => level.value).join(', ')}. Choose the grade shown on your score report.`
+                    ? `A score of ${score} is one of ${fitting.map((level) => level.label).join(', ')}. Choose the grade shown on your score report.`
                     : suggested
-                      ? `The standard grade for a score of ${score} is ${suggested}.`
+                      ? `The standard grade for a score of ${score} is ${fitting[0]?.label ?? suggested}.`
                       : 'Choose from the list.'}
                 </p>
               </>
@@ -445,7 +445,7 @@ export function ExamAttempts({
         <ul className="flex flex-col gap-3">
           {attempts.map((attempt) => {
             const state = expiryState(attempt, certification.validityKind);
-            const result = resultText(attempt);
+            const result = resultText(attempt, gradeScale);
             return (
               <li
                 key={attempt.id}

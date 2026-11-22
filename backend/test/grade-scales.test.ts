@@ -37,6 +37,21 @@ test('the API lists every scale with its levels and source', async () => {
   assert.equal(queries.length, 0);
 });
 
+test('every level has a stable value and an English label', () => {
+  for (const scale of gradeScales) {
+    for (const level of scale.levels) {
+      assert.ok(level.label.length > 0, `${scale.key} ${level.value}`);
+      assert.doesNotMatch(level.label, /[가-힣]/, `${scale.key} ${level.value} label is English`);
+    }
+    assert.doesNotMatch(scale.note, /[가-힣]/, `${scale.key} note is English`);
+  }
+  const labelOf = (key: string, value: string) =>
+    gradeScales.find((scale) => scale.key === key)?.levels.find((level) => level.value === value)
+      ?.label;
+  assert.equal(labelOf('information_processing', '기능사'), 'Craftsman (Gineungsa)');
+  assert.equal(labelOf('driver_license', '1종 특수'), 'Class 1 Special');
+});
+
 test('a goal saves its scale and a target grade from that scale', async () => {
   const { pool, queries } = fakePool();
   await withApi(pool, async (call) => {

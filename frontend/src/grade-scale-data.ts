@@ -3,7 +3,10 @@ import { requestJson } from './lib/api';
 // Grade scales (#51): API call and rules. The list itself comes from the server (backend/src/grade-scales.ts).
 
 export type GradeLevel = {
+  /** Stable: what is saved with a goal or an attempt. */
   value: string;
+  /** What the screens show. */
+  label: string;
   minScore: number | null;
   maxScore: number | null;
   offLadder?: boolean;
@@ -44,6 +47,10 @@ export function reachedGrade(
   if (scale.levels[reached]?.offLadder || scale.levels[wanted]?.offLadder) return false;
   return reached >= wanted;
 }
+
+/** The English label of a saved grade; a value the scale does not list (or no scale yet) is shown as saved. */
+export const gradeLabel = (scale: GradeScale | undefined, value: string) =>
+  scale?.levels.find((level) => level.value === value)?.label ?? value;
 
 export function scoreRange(level: GradeLevel) {
   if (level.minScore === null || level.maxScore === null) return '';
