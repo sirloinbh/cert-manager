@@ -2,6 +2,7 @@ import type { Express } from 'express';
 import type { Pool } from 'pg';
 import { z } from 'zod/v4';
 
+import { withTransaction } from '../standard/db.js';
 import { HttpError, parseId } from '../standard/http.js';
 import { body, calendarDate } from '../validation.js';
 
@@ -130,21 +131,28 @@ export function registerStudyPlanRoutes(app: Express, pool: Pool, today: () => s
     });
   });
 
-  // A new stage or task goes last. The goal or stage must exist, or the SELECT inserts nothing.
+  // A new stage or task goes last. The parent goal or stage row is locked first, in one transaction, so two quick
+  // adds run one after the other and the second one sees the first one's position (#141). The INSERT is a separate
+  // statement because it must read MAX(position) after the lock is held, not from the snapshot taken before.
   app.post('/api/certifications/:id/stages', async (req, res) => {
     const id = parseId(req.params.id, 'certification goal');
     const input = stageInput.parse(body(req.body));
-    const { rows } = await pool.query<StageRow>(
-      `INSERT INTO study_stages AS s (certification_id, title, position, start_date, end_date)
-       SELECT c.id, $2::text,
-         (SELECT COALESCE(MAX(e.position), 0) + 1 FROM study_stages e WHERE e.certification_id = c.id),
-         $3::date, $4::date
-       FROM certifications c WHERE c.id = $1
-       RETURNING ${stageColumns}`,
-      [id, input.title, input.startDate, input.endDate],
-    );
-    if (!rows[0]) throw new HttpError(404, goalNotFound);
-    res.status(201).json({ stage: { ...rows[0], tasks: [] } });
+    const stage = await withTransaction(pool, async (client) => {
+      const goal = await client.query('SELECT 1 FROM certifications WHERE id = $1 FOR UPDATE', [
+        id,
+      ]);
+      if (!goal.rowCount) throw new HttpError(404, goalNotFound);
+      const { rows } = await client.query<StageRow>(
+        `INSERT INTO study_stages AS s (certification_id, title, position, start_date, end_date)
+         VALUES ($1, $2::text,
+           (SELECT COALESCE(MAX(e.position), 0) + 1 FROM study_stages e WHERE e.certification_id = $1),
+           $3::date, $4::date)
+         RETURNING ${stageColumns}`,
+        [id, input.title, input.startDate, input.endDate],
+      );
+      return rows[0];
+    });
+    res.status(201).json({ stage: { ...stage, tasks: [] } });
   });
 
   app.put('/api/study-stages/:id', async (req, res) => {
@@ -171,17 +179,20 @@ export function registerStudyPlanRoutes(app: Express, pool: Pool, today: () => s
   app.post('/api/study-stages/:id/tasks', async (req, res) => {
     const id = parseId(req.params.id, 'study stage');
     const input = taskInput.parse(body(req.body));
-    const { rows } = await pool.query<TaskRow>(
-      `INSERT INTO study_tasks AS t (stage_id, title, position, due_date)
-       SELECT s.id, $2::text,
-         (SELECT COALESCE(MAX(e.position), 0) + 1 FROM study_tasks e WHERE e.stage_id = s.id),
-         $3::date
-       FROM study_stages s WHERE s.id = $1
-       RETURNING ${taskColumns('$4')}`,
-      [id, input.title, input.dueDate, today()],
-    );
-    if (!rows[0]) throw new HttpError(404, stageNotFound);
-    res.status(201).json({ task: rows[0] });
+    const task = await withTransaction(pool, async (client) => {
+      const stage = await client.query('SELECT 1 FROM study_stages WHERE id = $1 FOR UPDATE', [id]);
+      if (!stage.rowCount) throw new HttpError(404, stageNotFound);
+      const { rows } = await client.query<TaskRow>(
+        `INSERT INTO study_tasks AS t (stage_id, title, position, due_date)
+         VALUES ($1, $2::text,
+           (SELECT COALESCE(MAX(e.position), 0) + 1 FROM study_tasks e WHERE e.stage_id = $1),
+           $3::date)
+         RETURNING ${taskColumns('$4')}`,
+        [id, input.title, input.dueDate, today()],
+      );
+      return rows[0];
+    });
+    res.status(201).json({ task });
   });
 
   app.put('/api/study-tasks/:id', async (req, res) => {

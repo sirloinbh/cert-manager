@@ -10,11 +10,15 @@ type Query = { text: string; values: unknown[] };
 // A fake pool that records each query and answers with the given rows.
 function fakePool(answer: (query: Query) => { rows: unknown[]; rowCount?: number }) {
   const queries: Query[] = [];
+  const query = async (text: string, values: unknown[] = []) => {
+    // BEGIN and COMMIT of a transaction are not what these tests look at.
+    if (/^(BEGIN|COMMIT|ROLLBACK)$/.test(text)) return { rows: [], rowCount: 0 };
+    queries.push({ text, values });
+    return answer({ text, values });
+  };
   const pool = {
-    query: async (text: string, values: unknown[] = []) => {
-      queries.push({ text, values });
-      return answer({ text, values });
-    },
+    query,
+    connect: async () => ({ query, release: () => undefined }),
   } as unknown as Pool;
   return { pool, queries };
 }
@@ -103,9 +107,11 @@ test('today’s tasks send the service date and name their goal', async () => {
 });
 
 test('new stages and tasks trim the title and default their dates to null', async () => {
-  const { pool, queries } = fakePool(({ text }) => ({
-    rows: [text.includes('study_tasks') ? taskRow : stageRow],
-  }));
+  const { pool, queries } = fakePool(({ text }) =>
+    text.startsWith('SELECT 1')
+      ? { rows: [{}], rowCount: 1 }
+      : { rows: [text.includes('study_tasks') ? taskRow : stageRow] },
+  );
   await withApi(
     pool,
     async (call) => {
@@ -125,8 +131,11 @@ test('new stages and tasks trim the title and default their dates to null', asyn
     },
     { today },
   );
-  assert.deepEqual(queries[0]?.values, [7, '1주차', null, null]);
-  assert.deepEqual(queries[1]?.values, [4, '기출 풀기', null, '2026-10-30']);
+  // Each add locks its parent row first (#141), then inserts.
+  assert.match(queries[0]?.text ?? '', /FROM certifications WHERE id = \$1 FOR UPDATE/);
+  assert.deepEqual(queries[1]?.values, [7, '1주차', null, null]);
+  assert.match(queries[2]?.text ?? '', /FROM study_stages WHERE id = \$1 FOR UPDATE/);
+  assert.deepEqual(queries[3]?.values, [4, '기출 풀기', null, '2026-10-30']);
 });
 
 test('an array in place of the title answers one message, not one per check', async () => {

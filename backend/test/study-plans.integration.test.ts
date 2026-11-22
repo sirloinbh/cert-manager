@@ -206,3 +206,52 @@ test(
     );
   },
 );
+
+test(
+  'two quick adds to the same goal or stage both succeed with positions 1 and 2',
+  { skip: !url },
+  async (t) => {
+    const pool = new Pool({ connectionString: url });
+    const created: number[] = [];
+    t.after(async () => {
+      await pool.query('DELETE FROM certifications WHERE id = ANY($1::bigint[])', [created]);
+      await pool.end();
+    });
+    await withApi(pool, async (call) => {
+      const goal = await call('/api/certifications', {
+        method: 'POST',
+        body: { name: '#141 동시', category: 'dev' },
+      });
+      assert.equal(goal.status, 201);
+      const goalId = (goal.data.certification as { id: number }).id;
+      created.push(goalId);
+
+      const stages = await Promise.all(
+        ['a', 'b'].map((title) =>
+          call(`/api/certifications/${goalId}/stages`, { method: 'POST', body: { title } }),
+        ),
+      );
+      assert.deepEqual(
+        stages.map((response) => response.status),
+        [201, 201],
+        JSON.stringify(stages.map((response) => response.data)),
+      );
+      const stagePositions = stages.map((r) => (r.data.stage as Stage).position).sort();
+      assert.deepEqual(stagePositions, [1, 2]);
+
+      const stageId = (stages[0]?.data.stage as Stage).id;
+      const tasks = await Promise.all(
+        ['x', 'y'].map((title) =>
+          call(`/api/study-stages/${stageId}/tasks`, { method: 'POST', body: { title } }),
+        ),
+      );
+      assert.deepEqual(
+        tasks.map((response) => response.status),
+        [201, 201],
+        JSON.stringify(tasks.map((response) => response.data)),
+      );
+      const taskPositions = tasks.map((r) => (r.data.task as Task).position).sort();
+      assert.deepEqual(taskPositions, [1, 2]);
+    });
+  },
+);
