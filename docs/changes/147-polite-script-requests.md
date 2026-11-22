@@ -6,4 +6,5 @@
 
 ## Checks
 
-- See the PR for the `npm run check` result. No DB is available locally, so DB integration tests are skipped here and run in CI.
+- `npm run check` passed: format, lint, contract, type check, build; backend 126 passed and 13 skipped, skills 4 passed.
+- The 13 DB integration tests were skipped (no local PostgreSQL, `TEST_DATABASE_URL` unset); CI runs them. This change does not touch the DB.
