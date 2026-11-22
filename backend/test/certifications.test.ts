@@ -66,8 +66,8 @@ test('a new goal fills omitted optional fields with their defaults and answers 2
     },
     { today },
   );
+  // Parameters are numbered by first use in the INSERT: the columns in order, then :today from RETURNING.
   assert.deepEqual(queries[0]?.values, [
-    '2026-10-30',
     '정보처리기사',
     'dev',
     '',
@@ -80,6 +80,7 @@ test('a new goal fills omitted optional fields with their defaults and answers 2
     '',
     'none',
     null,
+    '2026-10-30',
   ]);
 });
 
@@ -198,8 +199,11 @@ test('update replaces every field of the goal and delete answers 204', async () 
     },
     { today },
   );
+  // First use in the UPDATE: the goal id, the validity pair (for the attempts), the columns, then :today.
   assert.deepEqual(queries[0]?.values, [
-    '2026-10-30',
+    7,
+    'months',
+    24,
     '토익',
     'english',
     'YBM',
@@ -207,12 +211,10 @@ test('update replaces every field of the goal and delete answers 204', async () 
     '900점 이상',
     900,
     '2026-12-13',
-    'months',
-    24,
     '접수 11월 초',
     'toeic',
     'B2',
-    7,
+    '2026-10-30',
   ]);
   assert.deepEqual(queries[1]?.values, [7]);
 });

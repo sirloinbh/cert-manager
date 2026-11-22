@@ -35,12 +35,12 @@ const attempt = { ...row, id: 3, certificationId: 7 };
 const today = () => '2026-10-30';
 const path = '/api/certifications/7/attempts';
 
-// values() order in the route: goal, exam date, outcome, score, grade, expiry, expiry given, memo, today.
+// Parameters are numbered by first use in the SQL: exam date, outcome, score, grade, expiry given, expiry, memo, goal id, today.
 const fieldsOf = (values: unknown[]) => ({
-  score: values[3],
-  grade: values[4],
+  score: values[2],
+  grade: values[3],
   expiresOn: values[5],
-  expiryGiven: values[6],
+  expiryGiven: values[4],
 });
 
 test('the list checks the goal, then answers its attempts with numeric ids', async () => {
@@ -101,7 +101,7 @@ test('an attempt waiting for its result keeps no grade to know', async () => {
     const { status } = await call(path, { method: 'POST', body: { examDate: '2026-12-13' } });
     assert.equal(status, 201);
   });
-  assert.equal(queries[0]?.values[2], 'waiting');
+  assert.equal(queries[0]?.values[1], 'waiting');
   assert.equal(fieldsOf(queries[0]?.values ?? []).score, null);
   assert.equal(fieldsOf(queries[0]?.values ?? []).grade, null);
 });
@@ -124,7 +124,15 @@ test('invalid attempts are a Korean 400 and never reach the database', async () 
     ],
     [
       { examDate: '2026-03-15', outcome: 'passed', expiresOn: '2026-03-14' },
-      'Expiry date must be after the exam date',
+      'Expiry date must be on or after the exam date',
+    ],
+    [
+      { examDate: '2026-03-15', outcome: 'failed', expiresOn: '2028-03-15' },
+      'Only a passed or scored attempt can have an expiry date',
+    ],
+    [
+      { examDate: '2026-03-15', expiresOn: '2028-03-15' },
+      'Only a passed or scored attempt can have an expiry date',
     ],
     [[1], 'Request body must be a JSON object'],
   ];
@@ -154,7 +162,7 @@ test('each invalid attempt answers exactly these messages', async () => {
     [{ examDate: 'abc' }, 'Exam date must be in YYYY-MM-DD format, Exam date is not a real date'],
     // After the exam date, so the rule across fields stays out of it: whether that rule runs after
     // this failure differs between zod 3.25.76 and 4.6.7.
-    [{ examDate, expiresOn: '2026-04-31' }, 'Expiry date is not a real date'],
+    [{ examDate, outcome: 'passed', expiresOn: '2026-04-31' }, 'Expiry date is not a real date'],
     [
       { examDate, grade: 'x'.repeat(201) },
       'Grade must be 200 characters or fewer, Leave the score and grade empty while the outcome is Pending',
