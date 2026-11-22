@@ -465,3 +465,58 @@ test('a record with no text is searched too, and timed lyrics lose their marks',
     },
   );
 });
+
+// A pool whose transactions are recorded. `lockedSongs` are the songs that still exist.
+function recordingPool(count: number, existing: number[]) {
+  const queries: string[] = [];
+  const pool = {
+    query: async () => ({ rows: pending(count), rowCount: count }),
+    connect: async () => {
+      let song = 0;
+      return {
+        query: async (text: string, values?: unknown[]) => {
+          queries.push(text.trim().split(/\s+/).slice(0, 3).join(' '));
+          if (text.includes('FOR UPDATE')) {
+            song = Number(values?.[0]);
+            return { rowCount: existing.includes(song) ? 1 : 0, rows: [] };
+          }
+          return { rowCount: 0, rows: [] };
+        },
+        release: () => undefined,
+      };
+    },
+  } as unknown as Pool;
+  return { pool, queries };
+}
+
+test('the provenance row is written with the first save, so a later failure keeps it (#148)', async () => {
+  await withLrclib(
+    (url, res) =>
+      url.searchParams.get('track_name') === '곡 3'
+        ? json(res, 429, {}, { 'Retry-After': '3600' })
+        : json(res, 200, item({ trackName: url.searchParams.get('track_name') })),
+    async (source) => {
+      const { pool, queries } = recordingPool(3, [1, 2, 3]);
+      const result = await fetchMissingLyrics(pool, source);
+      assert.deepEqual(result.saved, ['곡 1', '곡 2']);
+      assert.match(result.stopped ?? '', /429/);
+      assert.equal(queries.filter((q) => q === 'INSERT INTO import_sources').length, 1);
+      const firstSource = queries.indexOf('INSERT INTO import_sources');
+      assert.equal(queries[firstSource + 1], 'COMMIT', 'in the same transaction as the save');
+    },
+  );
+});
+
+test('a song deleted during the run is skipped and the run goes on (#148)', async () => {
+  const logged: string[] = [];
+  await withLrclib(
+    (url, res) => json(res, 200, item({ trackName: url.searchParams.get('track_name') })),
+    async (source) => {
+      const { pool } = recordingPool(2, [2]);
+      const result = await fetchMissingLyrics(pool, source, (line) => logged.push(line));
+      assert.deepEqual(result.gone, ['곡 1']);
+      assert.deepEqual(result.saved, ['곡 2']);
+    },
+  );
+  assert.ok(logged.includes('Gone: 곡 1 (deleted during the run)'));
+});
