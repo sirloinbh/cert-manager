@@ -313,6 +313,12 @@ test(
       assert.equal(status, 200);
       return data as unknown as DayAnswer;
     };
+    // POST chooses today's words (once) and answers them; GET only reads (#145).
+    const choose = async (call: Parameters<Parameters<typeof withApi>[1]>[0]) => {
+      const { status, data } = await call('/api/daily-words', { method: 'POST' });
+      assert.equal(status, 200);
+      return data as unknown as DayAnswer;
+    };
     const names = (answer: DayAnswer) => answer.words.map((word) => word.lemma);
 
     await withApi(
@@ -321,11 +327,16 @@ test(
         // Before anything is chosen, an earlier day stays empty and chooses nothing.
         assert.deepEqual(names(await open(call, '2026-10-31')), []);
 
+        // Opening today only reads: nothing is chosen until the POST.
+        assert.deepEqual(names(await open(call)), []);
+        assert.deepEqual(names(await open(call)), [], 'a second GET still chooses nothing');
+
         // Requests at the same moment choose once.
-        const [first, second] = await Promise.all([open(call), open(call)]);
+        const [first, second] = await Promise.all([choose(call), choose(call)]);
         assert.deepEqual(names(first as DayAnswer), lemmas.slice(0, 5));
         assert.deepEqual(names(second as DayAnswer), lemmas.slice(0, 5));
-        assert.deepEqual(names(await open(call)), lemmas.slice(0, 5), 'the same words all day');
+        assert.deepEqual(names(await choose(call)), lemmas.slice(0, 5), 'the same words all day');
+        assert.deepEqual(names(await open(call)), lemmas.slice(0, 5), 'GET reads what was chosen');
 
         // Learned today: still in today's list, and marked.
         const learned = (first as DayAnswer).words[1];
@@ -355,7 +366,7 @@ test(
         current = '2026-11-02';
         const notChosenYet = await open(call, '2026-11-01');
         assert.equal(notChosenYet.nextDay, '2026-11-02', 'today is reachable before it is chosen');
-        const next = await open(call);
+        const next = await choose(call);
         assert.equal(next.day, '2026-11-02');
         assert.deepEqual(names(next), [lemmas[7], lemmas[5], lemmas[6], lemmas[8], lemmas[9]]);
         assert.equal(next.previousDay, '2026-11-01');
@@ -369,7 +380,7 @@ test(
 
         // When every word has been shown, the ones not shown for longest come back, never the learned one.
         current = '2026-11-03';
-        assert.deepEqual(names(await open(call)), [
+        assert.deepEqual(names(await choose(call)), [
           ...lemmas.slice(10),
           lemmas[0],
           lemmas[2],
@@ -384,7 +395,7 @@ test(
         assert.equal((undone.data.word as { learnedAt: string | null }).learnedAt, null);
         await pool.query("UPDATE words SET meaning_ko = '뜻' WHERE lemma = $1", [lemmas[11]]);
         current = '2026-11-04';
-        assert.deepEqual(names(await open(call)), [
+        assert.deepEqual(names(await choose(call)), [
           lemmas[1],
           lemmas[4],
           lemmas[7],
@@ -397,7 +408,7 @@ test(
           lemmas,
         ]);
         current = '2026-11-05';
-        const empty = await open(call);
+        const empty = await choose(call);
         assert.deepEqual(names(empty), []);
         assert.equal(empty.previousDay, '2026-11-04');
         assert.equal(

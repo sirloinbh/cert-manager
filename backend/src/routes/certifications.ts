@@ -3,6 +3,7 @@ import type { Pool } from 'pg';
 import { z } from 'zod/v4';
 
 import { gradeScaleKeys, gradeScales, hasLevel } from '../grade-scales.js';
+import { named } from '../named-params.js';
 import { HttpError, parseId, serviceDate } from '../standard/http.js';
 import { body, calendarDate, shortText } from '../validation.js';
 
@@ -102,10 +103,10 @@ type CertificationRow = {
   targetGrade: string | null;
 };
 
-// $1 is today (YYYY-MM-DD in Asia/Seoul); daysUntilExam is negative once the date has passed.
+// :today is today (YYYY-MM-DD in Asia/Seoul); daysUntilExam is negative once the date has passed.
 const columns = `id, name, category, issuer, status, goal_text AS "goalText",
   target_score AS "targetScore", target_exam_date AS "targetExamDate",
-  target_exam_date - $1::date AS "daysUntilExam",
+  target_exam_date - :today::date AS "daysUntilExam",
   validity_kind AS "validityKind", validity_months AS "validityMonths", memo,
   grade_scale AS "gradeScale", target_grade AS "targetGrade"`;
 
@@ -120,12 +121,13 @@ export async function listCertifications(
   limit?: number,
   current = serviceDate(),
 ) {
-  const { rows } = await db.query<CertificationRow>(
+  const query = named(
     `SELECT ${columns} FROM certifications
      ORDER BY array_position(ARRAY['english', 'dev', 'life'], category),
-       target_exam_date ASC NULLS LAST, id${limit === undefined ? '' : ' LIMIT $2'}`,
-    limit === undefined ? [current] : [current, limit],
+       target_exam_date ASC NULLS LAST, id${limit === undefined ? '' : ' LIMIT :limit'}`,
+    { today: current, limit },
   );
+  const { rows } = await db.query<CertificationRow>(query.text, query.values);
   return { today: current, certifications: rows };
 }
 
@@ -142,42 +144,56 @@ export function registerCertificationRoutes(app: Express, pool: Pool, today: () 
   app.get('/api/certifications/:id', async (req, res) => {
     const id = parseId(req.params.id, 'certification goal');
     const current = today();
-    const { rows } = await pool.query<CertificationRow>(
-      `SELECT ${columns} FROM certifications WHERE id = $2`,
-      [current, id],
-    );
+    const query = named(`SELECT ${columns} FROM certifications WHERE id = :id`, {
+      today: current,
+      id,
+    });
+    const { rows } = await pool.query<CertificationRow>(query.text, query.values);
     if (!rows[0]) throw new HttpError(404, notFoundMessage);
     res.json({ today: current, certification: rows[0] });
   });
 
   app.post('/api/certifications', async (req, res) => {
     const input = certificationInput.parse(body(req.body));
-    const { rows } = await pool.query<CertificationRow>(
+    const query = named(
       `INSERT INTO certifications (name, category, issuer, status, goal_text, target_score,
          target_exam_date, validity_kind, validity_months, memo, grade_scale, target_grade)
-       VALUES ($2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+       VALUES (:name, :category, :issuer, :status, :goalText, :targetScore, :targetExamDate,
+         :validityKind, :validityMonths, :memo, :gradeScale, :targetGrade)
        RETURNING ${columns}`,
-      [today(), ...values(input)],
+      { today: today(), ...input },
     );
+    const { rows } = await pool.query<CertificationRow>(query.text, query.values);
     res.status(201).json({ certification: rows[0] });
   });
 
   app.put('/api/certifications/:id', async (req, res) => {
     const id = parseId(req.params.id, 'certification goal');
     const input = certificationInput.parse(body(req.body));
-    // One statement, so a goal that stops expiring and its attempts' expiry dates change together.
-    const { rows } = await pool.query<CertificationRow>(
-      `WITH cleared AS (
-         UPDATE exam_attempts SET expires_on = NULL, updated_at = now()
-         WHERE certification_id = $14 AND $9::text = 'none' AND expires_on IS NOT NULL
+    // One statement, so the goal and its attempts' expiry dates change together. When the validity kind or months
+    // change, the expiry of every passed or scored attempt is recomputed from the new rule (exam date + months, or
+    // none when the goal does not expire or its validity is unknown). `old` is the goal before this UPDATE.
+    const query = named(
+      `WITH old AS (
+         SELECT validity_kind, validity_months FROM certifications WHERE id = :id
+       ), recomputed AS (
+         UPDATE exam_attempts a SET updated_at = now(),
+           expires_on = CASE WHEN :validityKind::text = 'months'
+             THEN (a.exam_date + make_interval(months => :validityMonths::integer))::date END
+         FROM old
+         WHERE a.certification_id = :id AND a.outcome IN ('passed', 'scored')
+           AND (old.validity_kind IS DISTINCT FROM :validityKind::text
+             OR old.validity_months IS DISTINCT FROM :validityMonths::integer)
        )
-       UPDATE certifications SET name = $2, category = $3, issuer = $4, status = $5, goal_text = $6,
-         target_score = $7, target_exam_date = $8, validity_kind = $9, validity_months = $10,
-         memo = $11, grade_scale = $12, target_grade = $13, updated_at = now()
-       WHERE id = $14
+       UPDATE certifications SET name = :name, category = :category, issuer = :issuer, status = :status,
+         goal_text = :goalText, target_score = :targetScore, target_exam_date = :targetExamDate,
+         validity_kind = :validityKind, validity_months = :validityMonths, memo = :memo,
+         grade_scale = :gradeScale, target_grade = :targetGrade, updated_at = now()
+       WHERE id = :id
        RETURNING ${columns}`,
-      [today(), ...values(input), id],
+      { today: today(), ...input, id },
     );
+    const { rows } = await pool.query<CertificationRow>(query.text, query.values);
     if (!rows[0]) throw new HttpError(404, notFoundMessage);
     res.json({ certification: rows[0] });
   });
@@ -189,21 +205,4 @@ export function registerCertificationRoutes(app: Express, pool: Pool, today: () 
     if (!rowCount) throw new HttpError(404, notFoundMessage);
     res.status(204).end();
   });
-}
-
-function values(input: z.infer<typeof certificationInput>) {
-  return [
-    input.name,
-    input.category,
-    input.issuer,
-    input.status,
-    input.goalText,
-    input.targetScore,
-    input.targetExamDate,
-    input.validityKind,
-    input.validityMonths,
-    input.memo,
-    input.gradeScale,
-    input.targetGrade,
-  ];
 }

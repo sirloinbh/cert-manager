@@ -179,3 +179,72 @@ test(
     );
   },
 );
+
+// #140: a changed validity rule recomputes the expiry of passed and scored attempts.
+test(
+  'changing the validity months or kind recomputes the attempts expiry dates',
+  { skip: !url },
+  async (t) => {
+    const pool = new Pool({ connectionString: url });
+    let goal = 0;
+    t.after(async () => {
+      if (goal) await pool.query('DELETE FROM certifications WHERE id = $1', [goal]);
+      await pool.end();
+    });
+    await withApi(pool, async (call) => {
+      const created = await call('/api/certifications', {
+        method: 'POST',
+        body: {
+          name: '#140 validity',
+          category: 'english',
+          validityKind: 'months',
+          validityMonths: 24,
+        },
+      });
+      assert.equal(created.status, 201, JSON.stringify(created.data));
+      goal = (created.data.certification as { id: number }).id;
+      const attempt = async (body: object) => {
+        const { data } = await call(`/api/certifications/${goal}/attempts`, {
+          method: 'POST',
+          body,
+        });
+        return data.attempt as Attempt;
+      };
+      const passed = await attempt({ examDate: '2025-03-15', outcome: 'passed' });
+      const failed = await attempt({ examDate: '2025-06-01', outcome: 'failed' });
+      assert.equal(passed.expiresOn, '2027-03-15');
+      assert.equal(failed.expiresOn, null);
+
+      const update = (validityKind: string, validityMonths: number | null) =>
+        call(`/api/certifications/${goal}`, {
+          method: 'PUT',
+          body: { name: '#140 validity', category: 'english', validityKind, validityMonths },
+        });
+      const expiries = async () => {
+        const { data } = await call(`/api/certifications/${goal}/attempts`);
+        return Object.fromEntries(
+          (data.attempts as Attempt[]).map((a) => [a.outcome, a.expiresOn]),
+        );
+      };
+
+      assert.equal((await update('months', 36)).status, 200);
+      assert.deepEqual(await expiries(), { passed: '2028-03-15', failed: null });
+
+      assert.equal((await update('unknown', null)).status, 200);
+      assert.deepEqual(await expiries(), { passed: null, failed: null });
+    });
+  },
+);
+
+test('an expiry date on a failed or pending attempt is refused', async () => {
+  // Validation runs before any query, so this needs no database.
+  const pool = { query: async () => ({ rows: [], rowCount: 0 }) } as unknown as Pool;
+  await withApi(pool, async (call) => {
+    const { status, data } = await call('/api/certifications/1/attempts', {
+      method: 'POST',
+      body: { examDate: '2026-03-15', outcome: 'failed', expiresOn: '2028-03-15' },
+    });
+    assert.equal(status, 400);
+    assert.match(String(data.error), /Only a passed or scored attempt/);
+  });
+});

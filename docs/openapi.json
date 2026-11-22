@@ -1155,7 +1155,7 @@
     },
     "/api/daily-words": {
       "get": {
-        "summary": "Get the words of a day (today by default), choosing them the first time today is opened",
+        "summary": "Get the words saved for a day (today by default); read only, a day with no words answers an empty list",
         "parameters": [
           {
             "name": "day",
@@ -1180,6 +1180,44 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Sign-in required (no session from the shared sign-in)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The shared sign-in is unavailable or not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Choose today's words if they are not chosen yet and answer them; safe to repeat",
+        "responses": {
+          "200": {
+            "description": "Success"
           },
           "401": {
             "description": "Sign-in required (no session from the shared sign-in)",

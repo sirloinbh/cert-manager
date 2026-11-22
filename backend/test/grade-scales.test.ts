@@ -46,7 +46,7 @@ test('a goal saves its scale and a target grade from that scale', async () => {
     });
     assert.equal(status, 201);
   });
-  assert.deepEqual(queries[0]?.values.slice(-2), ['toeic', 'B2']);
+  assert.deepEqual(queries[0]?.values.slice(-3, -1), ['toeic', 'B2']);
 });
 
 test('a scale without a target is allowed: the target is not decided yet', async () => {
@@ -57,7 +57,7 @@ test('a scale without a target is allowed: the target is not decided yet', async
       201,
     );
   });
-  assert.deepEqual(queries[0]?.values.slice(-2), ['toeic', null]);
+  assert.deepEqual(queries[0]?.values.slice(-3, -1), ['toeic', null]);
 });
 
 test('an unknown scale or a target outside the scale is a Korean 400', async () => {
