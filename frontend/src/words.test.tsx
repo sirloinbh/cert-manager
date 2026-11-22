@@ -1,7 +1,8 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { expect, test, vi } from 'vitest';
+import { expect, test } from 'vitest';
 
 import { App } from './app';
+import { fakeRoutes, reply } from './test/fake-routes';
 import { morphemeForm, searchWords, type Word, type WordRow, type WordSource } from './word-data';
 
 const rows: WordRow[] = [
@@ -67,26 +68,30 @@ function open(
     missing?: boolean;
   } = {},
 ) {
-  const reply = (status: number, body: object) =>
-    Promise.resolve(new Response(JSON.stringify(body), { status }));
-  vi.stubGlobal(
-    'fetch',
-    vi.fn((url: string) => {
-      if (url === '/api/health') return reply(200, { ok: true, today: '2026-11-01' });
-      if (url === '/api/user-actions') return reply(200, { today: '2026-11-01', actions: [] });
-      if (url === '/api/words') {
-        return options.failed
+  fakeRoutes([
+    ['GET', '/api/health', () => reply(200, { ok: true, today: '2026-11-01' })],
+    ['GET', '/api/user-actions', () => reply(200, { today: '2026-11-01', actions: [] })],
+    [
+      'GET',
+      '/api/words',
+      () =>
+        options.failed
           ? reply(500, { error: 'Word server error' })
-          : reply(200, { words: options.words ?? rows, sources: options.sources ?? sources });
-      }
-      if (options.missing) return reply(404, { error: 'Word not found' });
-      const id = Number(url.split('/').pop());
-      return reply(200, {
-        word: { ...(options.word ?? word), id },
-        sources: options.sources ?? sources,
-      });
-    }),
-  );
+          : reply(200, { words: options.words ?? rows, sources: options.sources ?? sources }),
+    ],
+    [
+      'GET',
+      /\/api\/words\/\d+/,
+      ({ path }) => {
+        if (options.missing) return reply(404, { error: 'Word not found' });
+        const id = Number(path.split('/').pop());
+        return reply(200, {
+          word: { ...(options.word ?? word), id },
+          sources: options.sources ?? sources,
+        });
+      },
+    ],
+  ]);
   window.history.pushState({}, '', path);
   render(<App />);
 }

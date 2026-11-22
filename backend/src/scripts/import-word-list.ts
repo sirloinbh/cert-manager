@@ -11,7 +11,7 @@ import { ngslFileName, ngslUrl, parseWordList, saveWordList } from './word-list.
 // Loads the NGSL word list into the database named by DATABASE_URL (#36). Safe to run again.
 // The file stays in .local/ because its license asks for attribution wherever it is shared.
 
-const sourcesDir = fileURLToPath(new URL('../../.local/sources/', import.meta.url));
+const sourcesDir = fileURLToPath(new URL('../../../.local/sources/', import.meta.url));
 
 const url = scriptDatabaseUrl();
 const response = await politeGet(ngslUrl, {

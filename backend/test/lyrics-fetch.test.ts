@@ -4,8 +4,8 @@ import { test } from 'node:test';
 
 import type { Pool } from 'pg';
 
-import { fetchMissingLyrics, requestLyrics } from '../src/lyrics-fetch.js';
-import { scriptDatabaseUrl } from '../src/script-database.js';
+import { fetchMissingLyrics, requestLyrics } from '../src/scripts/lyrics-fetch.js';
+import { scriptDatabaseUrl } from '../src/scripts/script-database.js';
 import { listenLocally } from './helpers.js';
 
 // A fake LRCLIB. All lyrics here are made up for the test.

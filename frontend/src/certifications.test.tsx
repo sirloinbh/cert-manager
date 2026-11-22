@@ -1,11 +1,11 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { expect, test, vi } from 'vitest';
+import { expect, test } from 'vitest';
 
 import { App } from './app';
 import type { Certification } from './certification-data';
+import { emptyDailyWords, fakeRoutes, reply } from './test/fake-routes';
 
 const today = '2026-10-30';
-const order = ['english', 'dev', 'life'];
 
 function days(date: string | null) {
   if (date === null) return null;
@@ -29,15 +29,11 @@ const goal = (
   daysUntilExam: days(fields.targetExamDate ?? null),
 });
 
-type Sent = { method: string; path: string; body?: Record<string, unknown> };
-
-// An in-memory stand-in for the API that keeps the server's list order and status codes.
+// An in-memory stand-in for the API. The list is served in the order the test gives it, which is the server's order
+// (category, then nearest exam, then id), so the screen is what is tested, not a copy of the server's sort.
 function fakeApi(initial: Certification[] = [], options: { deleteFails?: boolean } = {}) {
   let store = [...initial];
   let nextId = Math.max(0, ...store.map((item) => item.id)) + 1;
-  const sent: Sent[] = [];
-  const reply = (status: number, body?: object) =>
-    Promise.resolve(new Response(body === undefined ? null : JSON.stringify(body), { status }));
   const save = (id: number, body: Record<string, unknown>) =>
     goal({
       ...(body as Partial<Certification>),
@@ -45,53 +41,65 @@ function fakeApi(initial: Certification[] = [], options: { deleteFails?: boolean
       name: String(body.name).trim(),
       category: body.category as Certification['category'],
     });
+  const one = (path: string) => {
+    const id = Number(/^\/api\/certifications\/(\d+)$/.exec(path)?.[1]);
+    return { id, found: store.find((item) => item.id === id) };
+  };
+  const notFound = () => reply(404, { error: 'Certification goal not found' });
 
-  vi.stubGlobal(
-    'fetch',
-    vi.fn((path: string, init: { method?: string; body?: string } = {}) => {
-      const method = init.method ?? 'GET';
-      const body =
-        init.body === undefined ? undefined : (JSON.parse(init.body) as Record<string, unknown>);
-      sent.push({ method, path, body });
-      if (path === '/api/health') return reply(200, { ok: true, today });
-      // The attempt and plan screens have their own tests.
-      if (path === '/api/exam-attempts/latest' || path.endsWith('/attempts'))
-        return reply(200, { today, attempts: [] });
-      if (path === '/api/study-tasks/today') return reply(200, { today, tasks: [] });
-      if (path.endsWith('/plan')) return reply(200, { today, stages: [] });
-      if (path === '/api/grade-scales') return reply(200, { scales: [] });
-      if (path === '/api/user-actions') return reply(200, { today, actions: [] });
-      if (path === '/api/certifications' && method === 'GET') {
-        const list = [...store].sort(
-          (a, b) =>
-            order.indexOf(a.category) - order.indexOf(b.category) ||
-            (a.targetExamDate ?? '9999').localeCompare(b.targetExamDate ?? '9999') ||
-            a.id - b.id,
-        );
-        return reply(200, { today, certifications: list });
-      }
-      if (path === '/api/certifications' && method === 'POST') {
+  return fakeRoutes([
+    ['GET', '/api/health', () => reply(200, { ok: true, today })],
+    // The attempt and plan screens have their own tests.
+    ['GET', '/api/exam-attempts/latest', () => reply(200, { today, attempts: [] })],
+    ['GET', /\/api\/certifications\/\d+\/attempts/, () => reply(200, { today, attempts: [] })],
+    ['GET', '/api/study-tasks/today', () => reply(200, { today, tasks: [] })],
+    ['GET', /\/api\/certifications\/\d+\/plan/, () => reply(200, { today, stages: [] })],
+    ...emptyDailyWords(today),
+    ['GET', '/api/grade-scales', () => reply(200, { scales: [] })],
+    ['GET', '/api/user-actions', () => reply(200, { today, actions: [] })],
+    ['GET', '/api/certifications', () => reply(200, { today, certifications: store })],
+    [
+      'POST',
+      '/api/certifications',
+      ({ body }) => {
         if (!String(body?.name ?? '').trim())
           return reply(400, { error: 'Certification name is required' });
         const created = save(nextId++, body ?? {});
         store.push(created);
         return reply(201, { certification: created });
-      }
-      const id = Number(/^\/api\/certifications\/(\d+)$/.exec(path)?.[1]);
-      const found = store.find((item) => item.id === id);
-      if (!found) return reply(404, { error: 'Certification goal not found' });
-      if (method === 'GET') return reply(200, { today, certification: found });
-      if (method === 'PUT') {
+      },
+    ],
+    [
+      'GET',
+      /\/api\/certifications\/\d+/,
+      ({ path }) => {
+        const { found } = one(path);
+        return found ? reply(200, { today, certification: found }) : notFound();
+      },
+    ],
+    [
+      'PUT',
+      /\/api\/certifications\/\d+/,
+      ({ path, body }) => {
+        const { id, found } = one(path);
+        if (!found) return notFound();
         const updated = save(id, body ?? {});
         store = store.map((item) => (item.id === id ? updated : item));
         return reply(200, { certification: updated });
-      }
-      if (options.deleteFails) return reply(500, { error: 'A server error occurred' });
-      store = store.filter((item) => item.id !== id);
-      return reply(204);
-    }),
-  );
-  return { sent };
+      },
+    ],
+    [
+      'DELETE',
+      /\/api\/certifications\/\d+/,
+      ({ path }) => {
+        const { id, found } = one(path);
+        if (!found) return notFound();
+        if (options.deleteFails) return reply(500, { error: 'A server error occurred' });
+        store = store.filter((item) => item.id !== id);
+        return reply(204);
+      },
+    ],
+  ]);
 }
 
 const toeic = goal({
@@ -127,7 +135,7 @@ const open = (path: string) => {
 };
 
 test('the list groups goals by category with counts, nearest exam first and days left', async () => {
-  fakeApi([license, engineer, awsCp, toeic]);
+  fakeApi([toeic, awsCp, engineer, license]);
   open('/certifications');
   const groups = await screen.findAllByRole('heading', { level: 2 });
   expect(groups.map((heading) => heading.textContent)).toEqual([
@@ -293,7 +301,7 @@ test('a goal that no longer exists says so instead of an empty page', async () =
 });
 
 test('the dashboard card lists the nearest exams still ahead and links to each goal', async () => {
-  fakeApi([license, engineer, awsCp, toeic]);
+  fakeApi([toeic, awsCp, engineer, license]);
   open('/');
   const card = (await screen.findByRole('heading', { level: 2, name: 'Upcoming exams' })).closest(
     '[data-slot="card"]',

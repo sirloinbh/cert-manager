@@ -3,8 +3,8 @@ import { test } from 'node:test';
 
 import { Pool } from 'pg';
 
-import type { ListTrack } from '../src/song-list.js';
-import { saveSongList, type SongListInput } from '../src/song-list-save.js';
+import type { ListTrack } from '../src/scripts/song-list.js';
+import { saveSongList, type SongListInput } from '../src/scripts/song-list-save.js';
 
 const url = process.env.TEST_DATABASE_URL;
 

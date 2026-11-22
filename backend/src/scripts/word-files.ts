@@ -5,12 +5,14 @@ import { fileURLToPath } from 'node:url';
 import type { Pool } from 'pg';
 import { z } from 'zod/v4';
 
-import { inTransaction } from './lyrics-store.js';
+import { inTransaction } from '../lyrics-store.js';
 
 // Work files for filling in meanings, examples and word parts (#36), most frequent words first.
 // The folder is in .gitignore because the files hold Wiktionary text.
 
-export const wordBatchesDir = fileURLToPath(new URL('../../.local/word-batches/', import.meta.url));
+export const wordBatchesDir = fileURLToPath(
+  new URL('../../../.local/word-batches/', import.meta.url),
+);
 
 const text = (max: number) =>
   z

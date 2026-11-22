@@ -5,14 +5,14 @@ import { fileURLToPath } from 'node:url';
 import type { Pool } from 'pg';
 import { z } from 'zod/v4';
 
-import { inTransaction, lockSong, setTranslations } from './lyrics-store.js';
-import { HttpError } from './standard/http.js';
+import { inTransaction, lockSong, setTranslations } from '../lyrics-store.js';
+import { HttpError } from '../standard/http.js';
 
 // Translation work files (#64): one JSON per song, filled in by hand or by a translation tool.
 // The folder is in .gitignore because the files hold lyrics.
 
 export const translationsDir = fileURLToPath(
-  new URL('../../.local/translations/', import.meta.url),
+  new URL('../../../.local/translations/', import.meta.url),
 );
 
 const fileSchema = z.object({

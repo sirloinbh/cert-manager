@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 
-import { moveToImported } from '../src/translation-files.js';
+import { moveToImported } from '../src/scripts/translation-files.js';
 
 test('a second import of the same song keeps both files (#148)', async (t) => {
   const dir = await mkdtemp(join(tmpdir(), 'translations-'));

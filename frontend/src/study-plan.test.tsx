@@ -1,9 +1,10 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { expect, test, vi } from 'vitest';
+import { expect, test } from 'vitest';
 
 import { App } from './app';
 import type { Certification } from './certification-data';
 import type { StudyStage, StudyTask, TodayTask } from './study-plan-data';
+import { emptyDailyWords, fakeRoutes, reply } from './test/fake-routes';
 
 const today = '2026-10-30';
 
@@ -42,8 +43,6 @@ const stage = (fields: Partial<StudyStage> & Pick<StudyStage, 'id' | 'title'>): 
   ...fields,
 });
 
-type Sent = { method: string; path: string; body?: Record<string, unknown> };
-
 // A stand-in for the API that keeps a plan in memory, in the shape the server answers.
 function fakeApi(
   options: {
@@ -62,39 +61,41 @@ function fakeApi(
   let stages = options.stages ?? [];
   let nextId = 100;
   let planned = 0;
-  const sent: Sent[] = [];
-  const reply = (status: number, body?: object) =>
-    Promise.resolve(new Response(body === undefined ? null : JSON.stringify(body), { status }));
   const updateTasks = (change: (item: StudyTask) => StudyTask | null) => {
     stages = stages.map((row) => ({
       ...row,
       tasks: row.tasks.flatMap((item) => change(item) ?? []),
     }));
   };
+  const idIn = (path: string, pattern: RegExp) => Number(pattern.exec(path)?.[1]);
+  const stagePath = /^\/api\/study-stages\/(\d+)$/;
+  const stageTasksPath = /^\/api\/study-stages\/(\d+)\/tasks$/;
+  const taskPath = /^\/api\/study-tasks\/(\d+)$/;
+  const completionPath = /^\/api\/study-tasks\/(\d+)\/completion$/;
 
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (path: string, init: { method?: string; body?: string } = {}) => {
-      const method = init.method ?? 'GET';
-      const body =
-        init.body === undefined ? undefined : (JSON.parse(init.body) as Record<string, unknown>);
-      sent.push({ method, path, body });
-      if (path === '/api/health') return reply(200, { ok: true, today });
-      if (path === '/api/grade-scales') return reply(200, { scales: [] });
-      if (path === '/api/user-actions') return reply(200, { today, actions: [] });
-      if (path === '/api/daily-words') return reply(200, { today, day: today, words: [] });
-      if (path === '/api/exam-attempts/latest') return reply(200, { today, attempts: [] });
-      if (path === '/api/study-tasks/today')
-        return reply(200, { today, tasks: options.todayTasks ?? [] });
-      if (path === '/api/certifications') return reply(200, { today, certifications: [goal] });
-      if (path === '/api/certifications/1') return reply(200, { today, certification: goal });
-      if (path === '/api/certifications/1/attempts') return reply(200, { today, attempts: [] });
-      if (path === '/api/certifications/1/plan') {
+  return fakeRoutes([
+    ['GET', '/api/health', () => reply(200, { ok: true, today })],
+    ['GET', '/api/grade-scales', () => reply(200, { scales: [] })],
+    ['GET', '/api/user-actions', () => reply(200, { today, actions: [] })],
+    ...emptyDailyWords(today),
+    ['GET', '/api/exam-attempts/latest', () => reply(200, { today, attempts: [] })],
+    ['GET', '/api/study-tasks/today', () => reply(200, { today, tasks: options.todayTasks ?? [] })],
+    ['GET', '/api/certifications', () => reply(200, { today, certifications: [goal] })],
+    ['GET', '/api/certifications/1', () => reply(200, { today, certification: goal })],
+    ['GET', '/api/certifications/1/attempts', () => reply(200, { today, attempts: [] })],
+    [
+      'GET',
+      '/api/certifications/1/plan',
+      () => {
         planned += 1;
         if (options.reloadFails && planned > 1) return reply(500, { error: 'Could not reload' });
         return reply(200, { today, stages });
-      }
-      if (path === '/api/certifications/1/stages') {
+      },
+    ],
+    [
+      'POST',
+      '/api/certifications/1/stages',
+      async ({ body }) => {
         await options.createHold;
         if (options.createFails) return reply(400, { error: options.createFails });
         const created = stage({
@@ -105,9 +106,13 @@ function fakeApi(
         });
         stages = [...stages, created];
         return reply(201, { stage: created });
-      }
-      const stageId = Number(/^\/api\/study-stages\/(\d+)/.exec(path)?.[1]);
-      if (path.endsWith('/tasks')) {
+      },
+    ],
+    [
+      'POST',
+      stageTasksPath,
+      ({ path, body }) => {
+        const stageId = idIn(path, stageTasksPath);
         const created = task({
           ...(body as Partial<StudyTask>),
           id: nextId++,
@@ -118,21 +123,35 @@ function fakeApi(
           row.id === stageId ? { ...row, tasks: [...row.tasks, created] } : row,
         );
         return reply(201, { task: created });
-      }
-      if (path.startsWith('/api/study-stages/')) {
-        if (method === 'DELETE') {
-          stages = stages.filter((row) => row.id !== stageId);
-          return reply(204);
-        }
+      },
+    ],
+    [
+      'PUT',
+      stagePath,
+      ({ path, body }) => {
+        const stageId = idIn(path, stagePath);
         stages = stages.map((row) =>
           row.id === stageId ? { ...row, ...(body as Partial<StudyStage>) } : row,
         );
         // The server answers a stage without its tasks.
         const { tasks: _tasks, ...saved } = stages.find((row) => row.id === stageId) as StudyStage;
         return reply(200, { stage: saved });
-      }
-      const taskId = Number(/^\/api\/study-tasks\/(\d+)/.exec(path)?.[1]);
-      if (path.endsWith('/completion')) {
+      },
+    ],
+    [
+      'DELETE',
+      stagePath,
+      ({ path }) => {
+        const stageId = idIn(path, stagePath);
+        stages = stages.filter((row) => row.id !== stageId);
+        return reply(204);
+      },
+    ],
+    [
+      'PATCH',
+      completionPath,
+      async ({ path, body }) => {
+        const taskId = idIn(path, completionPath);
         await options.completionHold;
         if (options.completionFails) return reply(500, { error: 'Could not save the completion' });
         let saved: StudyTask | undefined;
@@ -142,21 +161,32 @@ function fakeApi(
           return saved;
         });
         return reply(200, { task: saved });
-      }
-      if (method === 'DELETE') {
+      },
+    ],
+    [
+      'DELETE',
+      taskPath,
+      ({ path }) => {
+        const taskId = idIn(path, taskPath);
         updateTasks((item) => (item.id === taskId ? null : item));
         return reply(204);
-      }
-      let saved: StudyTask | undefined;
-      updateTasks((item) => {
-        if (item.id !== taskId) return item;
-        saved = { ...item, ...(body as Partial<StudyTask>) };
-        return saved;
-      });
-      return reply(200, { task: saved });
-    }),
-  );
-  return { sent };
+      },
+    ],
+    [
+      'PUT',
+      taskPath,
+      ({ path, body }) => {
+        const taskId = idIn(path, taskPath);
+        let saved: StudyTask | undefined;
+        updateTasks((item) => {
+          if (item.id !== taskId) return item;
+          saved = { ...item, ...(body as Partial<StudyTask>) };
+          return saved;
+        });
+        return reply(200, { task: saved });
+      },
+    ],
+  ]);
 }
 
 const openDetail = async (options?: Parameters<typeof fakeApi>[0]) => {

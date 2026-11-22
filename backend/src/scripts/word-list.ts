@@ -1,6 +1,6 @@
 import type { Pool } from 'pg';
 
-import { inTransaction } from './lyrics-store.js';
+import { inTransaction } from '../lyrics-store.js';
 
 // The NGSL 1.2 word list (#36). Source and license: docs/research/english-content-sources.md section 4.
 

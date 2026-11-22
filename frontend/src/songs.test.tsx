@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, expect, test, vi } from 'vitest';
+import { afterEach, expect, test } from 'vitest';
 
 import { App } from './app';
 import { toast } from './components/ui/sonner';
@@ -12,13 +12,12 @@ import {
   textLineCount,
   translationProgress,
 } from './song-data';
+import { fakeRoutes, reply } from './test/fake-routes';
 
 // All lyrics here are made up for the test.
 
-const settle = () =>
-  act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  });
+// Lets pending React updates and promises run, without waiting on the clock.
+const flush = () => act(async () => {});
 
 afterEach(() => {
   toast.dismiss();
@@ -82,8 +81,6 @@ const translated: Song = {
   ],
 };
 
-type Sent = { method: string; path: string; body?: Record<string, string> };
-
 function fakeApi(
   options: {
     albums?: SongAlbum[];
@@ -96,36 +93,33 @@ function fakeApi(
     saveGate?: Promise<void>;
   } = {},
 ) {
-  const sent: Sent[] = [];
-  const reply = (status: number, body?: object) =>
-    Promise.resolve(new Response(body === undefined ? null : JSON.stringify(body), { status }));
-  vi.stubGlobal(
-    'fetch',
-    vi.fn((path: string, init: { method?: string; body?: string } = {}) => {
-      const method = init.method ?? 'GET';
-      sent.push({
-        method,
-        path,
-        body:
-          init.body === undefined ? undefined : (JSON.parse(init.body) as Record<string, string>),
-      });
-      if (path === '/api/health') return reply(200, { ok: true, today: '2026-10-31' });
-      if (path === '/api/user-actions') return reply(200, { today: '2026-10-31', actions: [] });
-      if (path === '/api/songs')
-        return options.listFails
+  const saved = () =>
+    (options.saveGate ?? Promise.resolve()).then(() =>
+      options.saveError
+        ? reply(400, { error: options.saveError })
+        : reply(200, { song: options.saved ?? translated }),
+    );
+  const song = () =>
+    options.missing
+      ? reply(404, { error: 'Song not found' })
+      : reply(200, { song: options.song ?? withLyrics });
+  const songPath = /\/api\/songs\/\d+/;
+
+  return fakeRoutes([
+    ['GET', '/api/health', () => reply(200, { ok: true, today: '2026-10-31' })],
+    ['GET', '/api/user-actions', () => reply(200, { today: '2026-10-31', actions: [] })],
+    [
+      'GET',
+      '/api/songs',
+      () =>
+        options.listFails
           ? reply(500, { error: 'List server error' })
-          : reply(200, { albums: options.albums ?? albums });
-      if (method === 'PUT')
-        return (options.saveGate ?? Promise.resolve()).then(() =>
-          options.saveError
-            ? reply(400, { error: options.saveError })
-            : reply(200, { song: options.saved ?? translated }),
-        );
-      if (options.missing) return reply(404, { error: 'Song not found' });
-      return reply(200, { song: options.song ?? withLyrics });
-    }),
-  );
-  return { sent };
+          : reply(200, { albums: options.albums ?? albums }),
+    ],
+    ['GET', songPath, song],
+    ['PUT', /\/api\/songs\/\d+\/lyrics/, saved],
+    ['PUT', /\/api\/songs\/\d+\/translation/, saved],
+  ]);
 }
 
 const open = (path: string, options?: Parameters<typeof fakeApi>[0]) => {
@@ -280,7 +274,7 @@ test('a rejected translation stays in the form with the reason', async () => {
   expect(await screen.findByRole('alert')).toHaveTextContent('The translation has 1 lines');
   expect(screen.getByRole('dialog', { name: 'Paste translation' })).toBeInTheDocument();
   expect(screen.getByLabelText('Korean translation')).toHaveValue('한 줄');
-  await settle();
+  await flush();
 });
 
 test('closing the form puts focus back on the button that opened it', async () => {
@@ -326,7 +320,7 @@ test('Esc keeps a form with typed text, and closes an untouched one', async () =
   });
   expect(field).not.toBeInTheDocument();
   fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
-  await settle();
+  await flush();
   expect(screen.getByLabelText('Korean translation')).toHaveValue('쓰던 번역');
   // The form's own buttons still close it.
   fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
