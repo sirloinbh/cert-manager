@@ -13,4 +13,4 @@ npm run db:migrate
 
 Do not pipe the file through PowerShell, as in `Get-Content … | docker compose exec … psql`. Windows PowerShell 5.1 sends ASCII to an external program, so Korean text turns into `?`.
 
-Rules: write every migration so it is safe to run again. Reserve a number when you start a parallel branch. Keep the meaning of existing data, and leave values you could not confirm as NULL. For Korean literals in SQL, use the `U&'\XXXX'` escape where possible.
+Rules: applied migration files are frozen. Never edit one: `CREATE TABLE IF NOT EXISTS` skips a changed definition on an existing database, so an edit only reaches new databases. Put every change in a new numbered file. Write every migration so it is safe to run again. Reserve a number when you start a parallel branch. Keep the meaning of existing data, and leave values you could not confirm as NULL. For Korean literals in SQL, use the `U&'\XXXX'` escape where possible.
