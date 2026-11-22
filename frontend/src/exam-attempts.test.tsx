@@ -1,9 +1,10 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { expect, test, vi } from 'vitest';
+import { expect, test } from 'vitest';
 
 import { App } from './app';
 import type { Certification } from './certification-data';
 import type { ExamAttempt, LatestAttempt } from './exam-attempt-data';
+import { emptyDailyWords, type FakeRequest, fakeRoutes, reply } from './test/fake-routes';
 
 const today = '2026-10-30';
 
@@ -36,8 +37,6 @@ const attempt = (fields: Partial<ExamAttempt> & Pick<ExamAttempt, 'id'>): ExamAt
   ...fields,
 });
 
-type Sent = { method: string; path: string; body?: Record<string, unknown> };
-
 // A stand-in for the API that answers the attempts in the order and shape the server does.
 function fakeApi(
   options: {
@@ -56,58 +55,72 @@ function fakeApi(
   let attempts = options.attempts ?? [];
   let nextId = 100;
   let listed = 0;
-  const sent: Sent[] = [];
-  const reply = (status: number, body?: object) =>
-    Promise.resolve(new Response(body === undefined ? null : JSON.stringify(body), { status }));
+  const attemptId = (path: string) => Number(/\/attempts\/(\d+)$/.exec(path)?.[1]);
 
-  vi.stubGlobal(
-    'fetch',
-    vi.fn((path: string, init: { method?: string; body?: string } = {}) => {
-      const method = init.method ?? 'GET';
-      const body =
-        init.body === undefined ? undefined : (JSON.parse(init.body) as Record<string, unknown>);
-      sent.push({ method, path, body });
-      if (path === '/api/health') return reply(200, { ok: true, today });
-      if (path === '/api/grade-scales') return reply(200, { scales: [] });
-      if (path === '/api/user-actions') return reply(200, { today, actions: [] });
-      if (path === '/api/exam-attempts/latest')
-        return reply(200, { today, attempts: options.latest ?? [] });
-      if (path === '/api/study-tasks/today') return reply(200, { today, tasks: [] });
-      if (path === '/api/certifications/1/plan') return reply(200, { today, stages: [] });
-      if (path === '/api/certifications') return reply(200, { today, certifications: [goal] });
-      if (path === '/api/certifications/1/status' && method === 'PATCH') {
+  return fakeRoutes([
+    ['GET', '/api/health', () => reply(200, { ok: true, today })],
+    ...emptyDailyWords(today),
+    ['GET', '/api/grade-scales', () => reply(200, { scales: [] })],
+    ['GET', '/api/user-actions', () => reply(200, { today, actions: [] })],
+    [
+      'GET',
+      '/api/exam-attempts/latest',
+      () => reply(200, { today, attempts: options.latest ?? [] }),
+    ],
+    ['GET', '/api/study-tasks/today', () => reply(200, { today, tasks: [] })],
+    ['GET', '/api/certifications/1/plan', () => reply(200, { today, stages: [] })],
+    ['GET', '/api/certifications', () => reply(200, { today, certifications: [goal] })],
+    [
+      'PATCH',
+      '/api/certifications/1/status',
+      ({ body }) => {
         if (options.goalUpdateFails) return reply(500, { error: options.goalUpdateFails });
         goal = { ...goal, status: body?.status as Certification['status'] };
         return reply(200, { certification: goal });
-      }
-      if (path === '/api/certifications/1') return reply(200, { today, certification: goal });
-      if (path === '/api/certifications/1/attempts' && method === 'GET') {
+      },
+    ],
+    ['GET', '/api/certifications/1', () => reply(200, { today, certification: goal })],
+    [
+      'GET',
+      '/api/certifications/1/attempts',
+      () => {
         listed += 1;
         if (options.reloadFails && listed > 1) return reply(500, { error: 'Could not reload' });
         return reply(200, { today, attempts });
-      }
-      if (path === '/api/certifications/1/attempts' && method === 'POST') {
-        const created = async () => {
-          await options.createHold;
-          if (options.createFails) return reply(400, { error: options.createFails });
-          const saved = attempt({ ...(body as Partial<ExamAttempt>), id: nextId++ });
-          attempts = [saved, ...attempts];
-          return reply(201, { attempt: saved });
-        };
-        return created();
-      }
-      const id = Number(/\/attempts\/(\d+)$/.exec(path)?.[1]);
-      if (method === 'PUT') {
+      },
+    ],
+    [
+      'POST',
+      '/api/certifications/1/attempts',
+      async ({ body }) => {
+        await options.createHold;
+        if (options.createFails) return reply(400, { error: options.createFails });
+        const saved = attempt({ ...(body as Partial<ExamAttempt>), id: nextId++ });
+        attempts = [saved, ...attempts];
+        return reply(201, { attempt: saved });
+      },
+    ],
+    [
+      'PUT',
+      /\/api\/certifications\/1\/attempts\/\d+/,
+      ({ path, body }) => {
+        const id = attemptId(path);
         attempts = attempts.map((item) =>
           item.id === id ? { ...item, ...(body as Partial<ExamAttempt>) } : item,
         );
         return reply(200, { attempt: attempts.find((item) => item.id === id) });
-      }
-      attempts = attempts.filter((item) => item.id !== id);
-      return reply(204);
-    }),
-  );
-  return { sent };
+      },
+    ],
+    [
+      'DELETE',
+      /\/api\/certifications\/1\/attempts\/\d+/,
+      ({ path }) => {
+        const id = attemptId(path);
+        attempts = attempts.filter((item) => item.id !== id);
+        return reply(204);
+      },
+    ],
+  ]);
 }
 
 const openDetail = async (options?: Parameters<typeof fakeApi>[0]) => {
@@ -121,7 +134,7 @@ const openDetail = async (options?: Parameters<typeof fakeApi>[0]) => {
 const change = (label: string, value: string) =>
   fireEvent.change(screen.getByLabelText(label), { target: { value } });
 
-const sentBody = (api: { sent: Sent[] }, method: string) =>
+const sentBody = (api: { sent: FakeRequest[] }, method: string) =>
   api.sent.find((item) => item.method === method && item.path.includes('/attempts'))?.body;
 
 test('a new score fills the expiry from the goal, two years after the exam', async () => {

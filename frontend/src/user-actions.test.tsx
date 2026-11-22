@@ -3,15 +3,13 @@ import { afterEach, expect, test, vi } from 'vitest';
 
 import { App } from './app';
 import { toast } from './components/ui/sonner';
+import { emptyDailyWords, fakeRoutes, reply } from './test/fake-routes';
 import { alertCount, type UserAction } from './user-action-data';
 
 const today = '2027-03-08';
 
-// Long enough for pending requests to answer and for sonner, which draws after a timeout, to show a toast.
-const settle = () =>
-  act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  });
+// Lets pending React updates and promises run, without waiting on the clock.
+const flush = () => act(async () => {});
 
 // Toasts live outside the component tree, so they would carry over into the next test.
 afterEach(() => {
@@ -39,8 +37,6 @@ const register = action({
 const late = action({ id: 2, title: '서류 제출 확인', dueDate: '2027-03-01', daysUntilDue: -7 });
 const open = action({ id: 3, title: '기한 확인' });
 
-type Sent = { method: string; path: string; body?: unknown };
-
 function fakeApi(
   options: {
     actions?: UserAction[];
@@ -58,20 +54,15 @@ function fakeApi(
 ) {
   let actions = options.actions ?? [];
   let listed = 0;
-  const sent: Sent[] = [];
-  const reply = (status: number, body?: object) =>
-    Promise.resolve(new Response(body === undefined ? null : JSON.stringify(body), { status }));
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (path: string, init: { method?: string; body?: string } = {}) => {
-      const method = init.method ?? 'GET';
-      sent.push({
-        method,
-        path,
-        body: init.body === undefined ? undefined : JSON.parse(init.body),
-      });
-      if (path === '/api/health') return reply(200, { ok: true, today });
-      if (path === '/api/user-actions') {
+  const completion = /\/api\/user-actions\/(\d+)\/completion/;
+  const empty = { today, certifications: [], attempts: [], tasks: [], words: [] };
+
+  return fakeRoutes([
+    ['GET', '/api/health', () => reply(200, { ok: true, today })],
+    [
+      'GET',
+      '/api/user-actions',
+      () => {
         listed += 1;
         if (
           options.listFails ||
@@ -80,9 +71,13 @@ function fakeApi(
         )
           return reply(500, { error: 'Alert server error' });
         return reply(200, { today, actions });
-      }
-      const id = Number(/\/user-actions\/(\d+)\/completion$/.exec(path)?.[1]);
-      if (id) {
+      },
+    ],
+    [
+      'PUT',
+      completion,
+      async ({ path }) => {
+        const id = Number(completion.exec(path)?.[1]);
         await options.completeHold;
         if (options.completeGone) {
           actions = actions.filter((item) => item.id !== id);
@@ -92,11 +87,14 @@ function fakeApi(
         const done = actions.find((item) => item.id === id);
         actions = actions.filter((item) => item.id !== id);
         return reply(200, { action: { ...done, completedAt: '2027-03-08T00:00:00Z' } });
-      }
-      return reply(200, { today, certifications: [], attempts: [], tasks: [], words: [] });
-    }),
-  );
-  return { sent };
+      },
+    ],
+    // The overview behind the bell: nothing else is of interest in these tests.
+    ['GET', '/api/certifications', () => reply(200, empty)],
+    ['GET', '/api/exam-attempts/latest', () => reply(200, empty)],
+    ['GET', '/api/study-tasks/today', () => reply(200, empty)],
+    ...emptyDailyWords(today),
+  ]);
 }
 
 const openApp = (options?: Parameters<typeof fakeApi>[0]) => {
@@ -142,7 +140,7 @@ test('with nothing waiting there is no count and no announcement', async () => {
   openApp();
   const panel = await openPanel('Manual task alerts');
   expect(within(panel).getByText('No manual tasks right now.')).toBeInTheDocument();
-  await settle();
+  await flush();
   expect(screen.queryByText(/You have \d+ manual tasks/)).not.toBeInTheDocument();
 });
 
@@ -229,10 +227,10 @@ test('opening the panel and completing an alert do not announce again', async ()
   openApp({ actions: [register, open] });
   await screen.findByText('You have 2 manual tasks');
   const panel = await openPanel('2 manual task alerts');
-  await settle();
+  await flush();
   fireEvent.click(within(panel).getByRole('button', { name: "Complete '기한 확인'" }));
   await screen.findByText('Marked as done');
-  await settle();
+  await flush();
   expect(screen.getAllByText(/You have \d+ manual tasks/)).toHaveLength(1);
 });
 
@@ -242,7 +240,7 @@ test('a failed first load looks different from nothing to do, and a retry recove
   const panel = await openPanel('Could not load the manual task alerts');
   await within(panel).findByText('Alert server error');
   expect(within(panel).queryByText('No manual tasks right now.')).not.toBeInTheDocument();
-  await settle();
+  await flush();
   const retry = within(panel).getByRole('button', { name: 'Reload' });
   retry.focus();
   fireEvent.click(retry);
@@ -258,7 +256,7 @@ test('the failure stays visible while reading again, and the retry button keeps 
   openApp({ listFails: true });
   const panel = await openPanel('Could not load the manual task alerts');
   await within(panel).findByText('Alert server error');
-  await settle();
+  await flush();
   const retry = within(panel).getByRole('button', { name: 'Reload' });
   retry.focus();
   fireEvent.click(retry);
@@ -266,7 +264,7 @@ test('the failure stays visible while reading again, and the retry button keeps 
   expect(within(panel).getByText('Alert server error')).toBeInTheDocument();
   expect(retry).toBeInTheDocument();
   expect(retry).toHaveFocus();
-  await settle();
+  await flush();
   expect(
     screen.getByRole('button', { name: 'Could not load the manual task alerts', hidden: true }),
   ).toBeInTheDocument();
@@ -305,7 +303,7 @@ test('leaving the tab does not read the list', async () => {
   const before = api.sent.filter((item) => item.path === '/api/user-actions').length;
   const hidden = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
   document.dispatchEvent(new Event('visibilitychange'));
-  await settle();
+  await flush();
   hidden.mockRestore();
   expect(api.sent.filter((item) => item.path === '/api/user-actions')).toHaveLength(before);
 });
@@ -313,7 +311,7 @@ test('leaving the tab does not read the list', async () => {
 test('an alert removed elsewhere goes away after its completion fails', async () => {
   openApp({ actions: [open, register], completeGone: true });
   const panel = await openPanel('2 manual task alerts');
-  await settle();
+  await flush();
   fireEvent.click(within(panel).getByRole('button', { name: "Complete '기한 확인'" }));
   await screen.findByText('Custom task not found');
   await waitFor(() => expect(within(panel).queryByText('기한 확인')).not.toBeInTheDocument());
