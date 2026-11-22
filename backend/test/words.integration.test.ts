@@ -108,11 +108,19 @@ test(
 
     const exported = await exportWordBatch(pool, dir, 2);
     assert.deepEqual(exported, { file: 'words-900001-900002.json', written: true, waiting: [] });
-    assert.deepEqual(
-      await exportWordBatch(pool, dir, 2),
-      { file: null, written: false, waiting: ['words-900001-900002.json'] },
-      'work in progress stays and its words are not handed out again',
-    );
+    // The words of the waiting file are not handed out again: the next export holds the other two.
+    const second = await exportWordBatch(pool, dir, 2);
+    assert.deepEqual(second, {
+      file: 'words-900003-900004.json',
+      written: true,
+      waiting: ['words-900001-900002.json'],
+    });
+    assert.deepEqual(await exportWordBatch(pool, dir, 2), {
+      file: null,
+      written: false,
+      waiting: ['words-900001-900002.json', 'words-900003-900004.json'],
+    });
+    await rm(join(dir, second.file ?? ''));
     const name = exported.file ?? '';
     const batchFile = JSON.parse(await readFile(join(dir, name), 'utf8')) as {
       morphemes: unknown[];
@@ -197,7 +205,7 @@ test(
       nextFile.morphemes.map((part) => part.key).filter((key) => key.includes('zz')),
       ['root:zzcarry', 'root:zzport'],
     );
-    await rm(join(dir, next.file ?? ''));
+    await rm(join(dir, second.file ?? ''));
     await writeFile(
       join(dir, 'second.json'),
       JSON.stringify({
