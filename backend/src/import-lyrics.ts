@@ -9,12 +9,13 @@ import { scriptDatabaseUrl } from './script-database.js';
 const pool = new Pool({ connectionString: scriptDatabaseUrl() });
 try {
   const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
-  const { saved, missing, failed, stopped } = await fetchMissingLyrics(
+  const { saved, missing, failed, gone, stopped } = await fetchMissingLyrics(
     pool,
     { baseUrl: lrclibUrl, sleep },
     console.log,
   );
   console.log(`Saved ${saved.length} songs, ${missing.length} not found, ${failed.length} failed`);
+  if (gone.length > 0) console.log(`${gone.length} songs were deleted during the run and skipped.`);
   if (missing.length > 0) console.log('Songs that were not found can be pasted in on the screen.');
   if (stopped)
     console.warn(

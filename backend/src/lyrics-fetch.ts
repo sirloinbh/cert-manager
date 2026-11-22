@@ -10,6 +10,7 @@ import {
   ServiceError,
 } from './polite-fetch.js';
 import { songTitle } from './song-list.js';
+import { HttpError } from './standard/http.js';
 
 // Fills songs without lyrics from LRCLIB (#64). Rules: docs/research/english-content-sources.md section 1.
 // Prints titles and counts only, never the lyrics.
@@ -132,7 +133,14 @@ async function songsWithoutLyrics(pool: Pool) {
   return rows;
 }
 
-async function saveLyrics(pool: Pool, id: number, lines: string[], sourceUrl: string) {
+/** Saves one song's lyrics. `provenanceUrl` records where they came from in the same transaction, so a saved song always has it (#148). */
+async function saveLyrics(
+  pool: Pool,
+  id: number,
+  lines: string[],
+  sourceUrl: string,
+  provenanceUrl: string | null,
+) {
   let saved = false;
   await inTransaction(pool, async (client) => {
     await lockSong(client, id);
@@ -151,6 +159,14 @@ async function saveLyrics(pool: Pool, id: number, lines: string[], sourceUrl: st
        SELECT $1, n, o FROM unnest($2::int[], $3::text[]) AS v(n, o)`,
       [id, lines.map((_line, index) => index + 1), lines],
     );
+    if (provenanceUrl) {
+      // The documentation shows no license, which is what the empty text records.
+      await client.query(
+        `INSERT INTO import_sources (kind, url, license, fetched_at)
+         VALUES ('lrclib', $1, '', now())`,
+        [provenanceUrl],
+      );
+    }
     saved = true;
   });
   return saved;
@@ -169,6 +185,8 @@ export async function fetchMissingLyrics(
     saved: [] as string[],
     missing: [] as string[],
     failed: [] as string[],
+    /** Songs deleted while the run was going. */
+    gone: [] as string[],
     stopped: null as string | null,
   };
   let failuresInARow = 0;
@@ -192,18 +210,21 @@ export async function fetchMissingLyrics(
     if (!found) {
       result.missing.push(song.title);
       log(`Not found: ${song.title}`);
-    } else if (await saveLyrics(pool, Number(song.id), found.lines, found.sourceUrl)) {
-      result.saved.push(song.title);
-      log(`Saved: ${song.title}`);
+    } else {
+      try {
+        // One provenance row per run, written with the first save so a later failure cannot leave lyrics without it.
+        const provenanceUrl = result.saved.length === 0 ? `${source.baseUrl}/api` : null;
+        if (await saveLyrics(pool, Number(song.id), found.lines, found.sourceUrl, provenanceUrl)) {
+          result.saved.push(song.title);
+          log(`Saved: ${song.title}`);
+        }
+      } catch (error) {
+        // lockSong's 404: the song was deleted after the run started. The others still get their lyrics.
+        if (!(error instanceof HttpError && error.status === 404)) throw error;
+        result.gone.push(song.title);
+        log(`Gone: ${song.title} (deleted during the run)`);
+      }
     }
-  }
-  if (result.saved.length > 0) {
-    // The documentation shows no license, which is what the empty text records.
-    await pool.query(
-      `INSERT INTO import_sources (kind, url, license, fetched_at)
-       VALUES ('lrclib', $1, '', now())`,
-      [`${source.baseUrl}/api`],
-    );
   }
   return result;
 }

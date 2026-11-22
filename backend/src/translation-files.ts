@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { access, mkdir, readdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -140,6 +140,27 @@ function parseFile(name: string, text: string) {
 }
 
 /**
+ * Moves a saved file into imported/. A file of the same name already there is the record of an earlier
+ * translation, so the new one gets a timestamp instead of replacing it (#148).
+ */
+export async function moveToImported(dir: string, doneDir: string, name: string, now = new Date()) {
+  const target = (await exists(join(doneDir, name)))
+    ? name.replace(/\.json$/, `.${now.toISOString().replace(/[:.]/g, '-')}.json`)
+    : name;
+  await rename(join(dir, name), join(doneDir, target));
+  return target;
+}
+
+async function exists(path: string) {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Saves each file whose lines all match, then moves it to imported/ so a later run cannot undo
  * edits made on the screen. Files not filled in yet are skipped; bad ones stay and are named with the reason.
  */
@@ -183,7 +204,7 @@ export async function importTranslations(pool: Pool, dir: string) {
       if (skip) {
         result.skipped.push(name);
       } else {
-        await rename(join(dir, name), join(doneDir, name));
+        await moveToImported(dir, doneDir, name);
         result.saved.push(name);
       }
     } catch (error) {
