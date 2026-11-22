@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { politeGet } from '../src/polite-fetch.js';
+import { politeGet } from '../src/scripts/polite-fetch.js';
 
 test('politeGet waits the gap even when fetch throws', async (t) => {
   const waits: number[] = [];

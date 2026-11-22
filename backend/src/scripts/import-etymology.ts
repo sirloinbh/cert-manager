@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
 
-import { scriptDatabaseUrl } from './scripts/script-database.js';
+import { scriptDatabaseUrl } from './script-database.js';
 import { fetchMissingEtymology, kaikkiUrl } from './word-etymology.js';
 
 // Looks up each word's etymology in the database named by DATABASE_URL (#36). Takes about an hour

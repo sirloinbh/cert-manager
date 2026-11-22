@@ -2,15 +2,15 @@ import type { Pool } from 'pg';
 import { z } from 'zod/v4';
 
 import { inTransaction, lockSong, toLines } from '../lyrics-store.js';
+import { HttpError } from '../standard/http.js';
 import {
   mostFailuresInARow,
   politeGet,
   type PoliteSource,
   RateLimited,
   ServiceError,
-} from '../polite-fetch.js';
+} from './polite-fetch.js';
 import { songTitle } from './song-list.js';
-import { HttpError } from '../standard/http.js';
 
 // Fills songs without lyrics from LRCLIB (#64). Rules: docs/research/english-content-sources.md section 1.
 // Prints titles and counts only, never the lyrics.
