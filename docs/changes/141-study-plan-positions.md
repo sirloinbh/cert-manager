@@ -8,7 +8,7 @@ Two quick adds (a double-submit) to the same goal or stage both read the same `M
 
 ## Contents
 
-- `backend/src/routes/study-plans.ts`: `POST /api/certifications/:id/stages` and `POST /api/study-stages/:id/tasks` now run in one transaction. They lock the parent goal or stage row with `SELECT … FOR UPDATE` first, then insert in a separate statement, so the position is read after the lock is held (a single `INSERT … SELECT … FOR UPDATE` would still read `MAX` from the older snapshot). A missing parent is still a 404 with the same message.
+- `backend/src/routes/study-plans.ts`: `POST /api/certifications/:id/stages` and `POST /api/study-stages/:id/tasks` now run in one transaction. They lock the parent goal or stage row with `SELECT … FOR NO KEY UPDATE` first, then insert in a separate statement, so the position is read after the lock is held (a single `INSERT … SELECT … FOR UPDATE` would still read `MAX` from the older snapshot). A missing parent is still a 404 with the same message.
 - `backend/test/study-plans.test.ts`: the fake pool supports `connect()`; the add test checks the lock runs before the insert.
 - `backend/test/study-plans.integration.test.ts`: two parallel stage POSTs and two parallel task POSTs both answer 201 with positions 1 and 2.
 

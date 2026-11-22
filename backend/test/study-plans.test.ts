@@ -132,9 +132,9 @@ test('new stages and tasks trim the title and default their dates to null', asyn
     { today },
   );
   // Each add locks its parent row first (#141), then inserts.
-  assert.match(queries[0]?.text ?? '', /FROM certifications WHERE id = \$1 FOR UPDATE/);
+  assert.match(queries[0]?.text ?? '', /FROM certifications WHERE id = \$1 FOR NO KEY UPDATE/);
   assert.deepEqual(queries[1]?.values, [7, '1주차', null, null]);
-  assert.match(queries[2]?.text ?? '', /FROM study_stages WHERE id = \$1 FOR UPDATE/);
+  assert.match(queries[2]?.text ?? '', /FROM study_stages WHERE id = \$1 FOR NO KEY UPDATE/);
   assert.deepEqual(queries[3]?.values, [4, '기출 풀기', null, '2026-10-30']);
 });
 

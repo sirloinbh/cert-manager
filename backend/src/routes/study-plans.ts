@@ -138,9 +138,10 @@ export function registerStudyPlanRoutes(app: Express, pool: Pool, today: () => s
     const id = parseId(req.params.id, 'certification goal');
     const input = stageInput.parse(body(req.body));
     const stage = await withTransaction(pool, async (client) => {
-      const goal = await client.query('SELECT 1 FROM certifications WHERE id = $1 FOR UPDATE', [
-        id,
-      ]);
+      const goal = await client.query(
+        'SELECT 1 FROM certifications WHERE id = $1 FOR NO KEY UPDATE',
+        [id],
+      );
       if (!goal.rowCount) throw new HttpError(404, goalNotFound);
       const { rows } = await client.query<StageRow>(
         `INSERT INTO study_stages AS s (certification_id, title, position, start_date, end_date)
@@ -180,7 +181,10 @@ export function registerStudyPlanRoutes(app: Express, pool: Pool, today: () => s
     const id = parseId(req.params.id, 'study stage');
     const input = taskInput.parse(body(req.body));
     const task = await withTransaction(pool, async (client) => {
-      const stage = await client.query('SELECT 1 FROM study_stages WHERE id = $1 FOR UPDATE', [id]);
+      const stage = await client.query(
+        'SELECT 1 FROM study_stages WHERE id = $1 FOR NO KEY UPDATE',
+        [id],
+      );
       if (!stage.rowCount) throw new HttpError(404, stageNotFound);
       const { rows } = await client.query<TaskRow>(
         `INSERT INTO study_tasks AS t (stage_id, title, position, due_date)
