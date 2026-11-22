@@ -1,7 +1,7 @@
 // The API's operation table. The document is built by the managed standard/openapi.ts from Zod schemas
 // (z.toJSONSchema). `npm run openapi -w backend` writes docs/openapi.json; a test fails when it is out of date or
 // when the table and the registered routes differ.
-import { certificationInput } from './routes/certifications.js';
+import { certificationInput, certificationStatusInput } from './routes/certifications.js';
 import { learnedInput } from './routes/daily-words.js';
 import { attemptInput } from './routes/exam-attempts.js';
 import { lyricsInput, translationInput } from './routes/songs.js';
@@ -41,6 +41,11 @@ const routes: Record<string, Operation> = {
   'PUT /api/certifications/:id': {
     summary: 'Replace a certification goal; the same cross-field rules as adding apply',
     body: ['Certification', certificationInput],
+    status: [200, 400, 404],
+  },
+  'PATCH /api/certifications/:id/status': {
+    summary: 'Change only the status of a certification goal; other fields stay as stored',
+    body: ['CertificationStatus', certificationStatusInput],
     status: [200, 400, 404],
   },
   'DELETE /api/certifications/:id': {
