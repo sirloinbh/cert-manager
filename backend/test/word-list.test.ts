@@ -4,8 +4,8 @@ import { test } from 'node:test';
 
 import type { Pool } from 'pg';
 
-import { entryUrl, etymologyText, fetchMissingEtymology } from '../src/word-etymology.js';
-import { parseWordList } from '../src/word-list.js';
+import { entryUrl, etymologyText, fetchMissingEtymology } from '../src/scripts/word-etymology.js';
+import { parseWordList } from '../src/scripts/word-list.js';
 import { listenLocally } from './helpers.js';
 
 const csv = (rows: string[]) =>

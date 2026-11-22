@@ -6,8 +6,8 @@ import { test } from 'node:test';
 
 import type { Pool } from 'pg';
 
-import { entryUrl, etymologyText } from '../src/word-etymology.js';
-import { exportWordBatch } from '../src/word-files.js';
+import { entryUrl, etymologyText } from '../src/scripts/word-etymology.js';
+import { exportWordBatch } from '../src/scripts/word-files.js';
 
 test('entry URLs encode each path segment, by code point', () => {
   assert.equal(entryUrl('http://x', 'c++'), 'http://x/c/c%2B/c%2B%2B.jsonl');

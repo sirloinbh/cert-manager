@@ -7,12 +7,12 @@ import { test } from 'node:test';
 
 import { Pool } from 'pg';
 
-import { fetchMissingLyrics } from '../src/lyrics-fetch.js';
+import { fetchMissingLyrics } from '../src/scripts/lyrics-fetch.js';
 import {
   exportTranslations,
   importTranslations,
   translationsDir,
-} from '../src/translation-files.js';
+} from '../src/scripts/translation-files.js';
 import { listenLocally } from './helpers.js';
 
 const url = process.env.TEST_DATABASE_URL;

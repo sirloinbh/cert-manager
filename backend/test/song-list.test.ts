@@ -9,7 +9,7 @@ import {
   pickBaseRelease,
   pickVaultRelease,
   songTitle,
-} from '../src/song-list.js';
+} from '../src/scripts/song-list.js';
 
 const track = (title: string, id = title, length: number | null = 200_000) => ({
   title,

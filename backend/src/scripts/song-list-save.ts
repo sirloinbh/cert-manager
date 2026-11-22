@@ -1,7 +1,7 @@
 import type { Pool, PoolClient } from 'pg';
 
+import { withTransaction } from '../standard/db.js';
 import type { ListAlbum, ListTrack } from './song-list.js';
-import { withTransaction } from './standard/db.js';
 
 export type SongListInput = {
   artist: { id: string; name: string };
