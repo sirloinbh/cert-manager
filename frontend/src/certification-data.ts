@@ -117,5 +117,11 @@ export const certificationApi = {
     requestJson<{ certification: Certification }>(base, { method: 'POST', body: input }),
   update: (id: number, input: CertificationInput) =>
     requestJson<{ certification: Certification }>(`${base}/${id}`, { method: 'PUT', body: input }),
+  /** Changes the status alone, so edits made elsewhere to other fields are kept. */
+  setStatus: (id: number, status: Status) =>
+    requestJson<{ certification: Certification }>(`${base}/${id}/status`, {
+      method: 'PATCH',
+      body: { status },
+    }),
   remove: (id: number) => requestJson<undefined>(`${base}/${id}`, { method: 'DELETE' }),
 };
