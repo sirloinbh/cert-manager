@@ -7,9 +7,9 @@ import { test } from 'node:test';
 
 import { Pool } from 'pg';
 
-import { fetchMissingEtymology } from '../src/word-etymology.js';
-import { exportWordBatch, importWordBatches } from '../src/word-files.js';
-import { saveWordList } from '../src/word-list.js';
+import { fetchMissingEtymology } from '../src/scripts/word-etymology.js';
+import { exportWordBatch, importWordBatches } from '../src/scripts/word-files.js';
+import { saveWordList } from '../src/scripts/word-list.js';
 import { listenLocally, withApi } from './helpers.js';
 
 const url = process.env.TEST_DATABASE_URL;

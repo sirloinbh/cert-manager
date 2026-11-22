@@ -6,8 +6,8 @@ import { test } from 'node:test';
 
 import type { Pool } from 'pg';
 
-import { importTranslations } from '../src/translation-files.js';
-import { importWordBatches } from '../src/word-files.js';
+import { importTranslations } from '../src/scripts/translation-files.js';
+import { importWordBatches } from '../src/scripts/word-files.js';
 
 // The zod advisory GHSA-mrhx-c7xc-m3w5 reaches arrays without a length limit. A file over the limit stops at the
 // schema, so the pool here is never used.

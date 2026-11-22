@@ -2,7 +2,10 @@
 // Levels run from the lowest to the highest. The frontend reads this list from GET /api/grade-scales.
 
 type GradeLevel = {
+  /** Stable, saved with attempts and goals. Never change it; change `label` instead. */
   value: string;
+  /** What the screens show, in English. */
+  label: string;
   minScore: number | null;
   maxScore: number | null;
   /** A separate field rather than a step, so it is neither above nor below the others. */
@@ -19,8 +22,9 @@ type GradeScale = {
   levels: GradeLevel[];
 };
 
-const named = (value: string, fields: Partial<GradeLevel> = {}): GradeLevel => ({
+const named = (value: string, label: string, fields: Partial<GradeLevel> = {}): GradeLevel => ({
   value,
+  label,
   minScore: null,
   maxScore: null,
   ...fields,
@@ -28,6 +32,7 @@ const named = (value: string, fields: Partial<GradeLevel> = {}): GradeLevel => (
 
 const scored = (value: string, minScore: number, maxScore: number): GradeLevel => ({
   value,
+  label: value,
   minScore,
   maxScore,
 });
@@ -69,10 +74,15 @@ export const gradeScales: GradeScale[] = [
   {
     key: 'information_processing',
     label: 'National Technical Qualification (Information Processing)',
-    note: 'Only the levels that exist in the Information Processing field are included. Starting in 2026, the Gineungsa level is renamed Programming Gineungsa.',
+    note: 'Only the levels that exist in the Information Processing field are included. Starting in 2026, the Craftsman (Gineungsa) level is renamed Programming Craftsman (Programming Gineungsa).',
     sourceUrl: 'https://www.q-net.or.kr/crf005.do?id=crf00503&jmCd=1320',
     ranked: true,
-    levels: [named('기능사'), named('산업기사'), named('기사'), named('기술사')],
+    levels: [
+      named('기능사', 'Craftsman (Gineungsa)'),
+      named('산업기사', 'Industrial Engineer (Sanupgisa)'),
+      named('기사', 'Engineer (Gisa)'),
+      named('기술사', 'Professional Engineer (Gisulsa)'),
+    ],
   },
   {
     key: 'aws',
@@ -81,10 +91,10 @@ export const gradeScales: GradeScale[] = [
     sourceUrl: 'https://aws.amazon.com/certification/',
     ranked: true,
     levels: [
-      named('Foundational'),
-      named('Associate'),
-      named('Professional'),
-      named('Specialty', { offLadder: true }),
+      named('Foundational', 'Foundational'),
+      named('Associate', 'Associate'),
+      named('Professional', 'Professional'),
+      named('Specialty', 'Specialty', { offLadder: true }),
     ],
   },
   {
@@ -94,13 +104,13 @@ export const gradeScales: GradeScale[] = [
     sourceUrl: 'https://www.data.go.kr/biz/dcat/metadata/15160156.do',
     ranked: false,
     levels: [
-      named('2종 원동기'),
-      named('2종 소형'),
-      named('2종 보통'),
-      named('1종 소형'),
-      named('1종 보통'),
-      named('1종 대형'),
-      named('1종 특수'),
+      named('2종 원동기', 'Class 2 Motorcycle'),
+      named('2종 소형', 'Class 2 Small'),
+      named('2종 보통', 'Class 2 Regular'),
+      named('1종 소형', 'Class 1 Small'),
+      named('1종 보통', 'Class 1 Regular'),
+      named('1종 대형', 'Class 1 Large'),
+      named('1종 특수', 'Class 1 Special'),
     ],
   },
 ];
