@@ -223,6 +223,14 @@ test('empty optional fields are sent as not decided, and a server error keeps th
   });
 });
 
+test('an empty grade list says so instead of loading forever', async () => {
+  fakeApi([]);
+  open('/certifications/new');
+  expect(await screen.findByText('No grade scales are available.')).toBeInTheDocument();
+  expect(screen.queryByText('Loading the grade list.')).toBeNull();
+  expect(screen.getByLabelText('Grade scale')).toBeDisabled();
+});
+
 test('editing replaces the goal and the detail shows the new values', async () => {
   const { sent } = fakeApi([toeic]);
   open('/certifications/1');

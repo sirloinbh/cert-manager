@@ -9,5 +9,7 @@ export function useGradeScales() {
   return {
     scales: loaded.state === 'ok' ? loaded.data.scales : [],
     failed: loaded.state === 'error',
+    /** True once the list arrived, even when it is empty, so "loading" and "no scales" read differently. */
+    loaded: loaded.state === 'ok',
   };
 }

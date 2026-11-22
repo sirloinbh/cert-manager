@@ -102,6 +102,10 @@ function fakeApi(
         return reply(201, { certification: current });
       }
       if (path === '/api/certifications') return reply(200, { today, certifications: [current] });
+      if (path === '/api/certifications/1/status' && method === 'PATCH') {
+        current = { ...current, status: body?.status as Certification['status'] };
+        return reply(200, { certification: current });
+      }
       if (path === '/api/certifications/1') {
         if (method === 'PUT') current = goal({ ...(body as Partial<Certification>), id: 1 });
         return reply(200, { today, certification: current });
@@ -268,7 +272,7 @@ test('a grade typed before the list arrives stays afterwards', async () => {
   expect(screen.getByLabelText('Grade')).toHaveValue('B1');
 });
 
-test('marking the goal passed keeps its scale and target', async () => {
+test('marking the goal passed sends only the status, so its scale and target stay', async () => {
   const api = await openDetail();
   await addRecord();
   change('Result', 'passed');
@@ -277,10 +281,14 @@ test('marking the goal passed keeps its scale and target', async () => {
   const dialog = await screen.findByRole('dialog', { name: 'Change the goal status to Passed?' });
   fireEvent.click(within(dialog).getByRole('button', { name: 'Change' }));
   await waitFor(() =>
-    expect(
-      api.sent.find((item) => item.path === '/api/certifications/1' && item.method === 'PUT')?.body,
-    ).toMatchObject({ status: 'passed', gradeScale: 'toeic', targetGrade: 'B2' }),
+    expect(api.sent.find((item) => item.path === '/api/certifications/1/status')?.body).toEqual({
+      status: 'passed',
+    }),
   );
+  // Only the status is sent, so the stored scale and target are never rewritten.
+  expect(
+    api.sent.some((item) => item.path === '/api/certifications/1' && item.method === 'PUT'),
+  ).toBe(false);
 });
 
 test('the detail page says so when the list cannot load', async () => {

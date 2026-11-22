@@ -157,6 +157,57 @@ test('a missing goal is a Korean 404 for read, update and delete', async () => {
   });
 });
 
+test('the status route changes only the status and answers the stored goal', async () => {
+  const { pool, queries } = fakePool(() => ({ rows: [{ ...row, status: 'passed' }], rowCount: 1 }));
+  await withApi(
+    pool,
+    async (call) => {
+      const { status, data } = await call('/api/certifications/7/status', {
+        method: 'PATCH',
+        body: { status: 'passed' },
+      });
+      assert.equal(status, 200);
+      assert.deepEqual(data, { certification: { ...row, status: 'passed' } });
+    },
+    { today },
+  );
+  // Only the status (and its timestamp) is written; no other column appears in the SET list.
+  const update = queries[0]?.text ?? '';
+  const assigned = /SET (.*?) WHERE/s.exec(update)?.[1] ?? '';
+  assert.equal(assigned.replaceAll(/\s+/g, ' ').trim(), 'status = $1, updated_at = now()');
+  // Named parameters are numbered by first use: status, id, then :today from RETURNING.
+  assert.deepEqual(queries[0]?.values, ['passed', 7, '2026-10-30']);
+});
+
+test('the status route rejects a bad status, a missing goal and a malformed id', async () => {
+  const { pool, queries } = fakePool(() => ({ rows: [], rowCount: 0 }));
+  await withApi(pool, async (call) => {
+    const bad = await call('/api/certifications/7/status', {
+      method: 'PATCH',
+      body: { status: 'done' },
+    });
+    assert.equal(bad.status, 400);
+    assert.equal(
+      bad.data.error,
+      'Status must be Planned, Studying, Registered, Taken, Passed, or Failed',
+    );
+    const missing = await call('/api/certifications/7/status', { method: 'PATCH', body: {} });
+    assert.equal(missing.status, 400);
+    const gone = await call('/api/certifications/99/status', {
+      method: 'PATCH',
+      body: { status: 'passed' },
+    });
+    assert.equal(gone.status, 404);
+    assert.equal(gone.data.error, 'Certification goal not found');
+    const id = await call('/api/certifications/abc/status', {
+      method: 'PATCH',
+      body: { status: 'passed' },
+    });
+    assert.equal(id.status, 400);
+  });
+  assert.equal(queries.length, 1);
+});
+
 test('a malformed id is a Korean 400', async () => {
   const { pool, queries } = fakePool(() => ({ rows: [] }));
   await withApi(pool, async (call) => {

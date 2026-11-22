@@ -13,6 +13,13 @@ const categories = ['english', 'dev', 'life'] as const;
 const statuses = ['planned', 'studying', 'registered', 'taken', 'passed', 'failed'] as const;
 const validityKinds = ['months', 'none', 'unknown'] as const;
 
+// The status alone, for "Mark as passed": PUT would overwrite edits made elsewhere (#152).
+export const certificationStatusInput = z.object({
+  status: z.enum(statuses, {
+    error: 'Status must be Planned, Studying, Registered, Taken, Passed, or Failed',
+  }),
+});
+
 // PUT replaces the whole goal, so POST and PUT share one input; omitted optional fields take their defaults.
 export const certificationInput = z
   .object(
@@ -192,6 +199,19 @@ export function registerCertificationRoutes(app: Express, pool: Pool, today: () 
        WHERE id = :id
        RETURNING ${columns}`,
       { today: today(), ...input, id },
+    );
+    const { rows } = await pool.query<CertificationRow>(query.text, query.values);
+    if (!rows[0]) throw new HttpError(404, notFoundMessage);
+    res.json({ certification: rows[0] });
+  });
+
+  // Changes only the status, so every other field stays as stored.
+  app.patch('/api/certifications/:id/status', async (req, res) => {
+    const id = parseId(req.params.id, 'certification goal');
+    const { status } = certificationStatusInput.parse(body(req.body));
+    const query = named(
+      `UPDATE certifications SET status = :status, updated_at = now() WHERE id = :id RETURNING ${columns}`,
+      { today: today(), status, id },
     );
     const { rows } = await pool.query<CertificationRow>(query.text, query.values);
     if (!rows[0]) throw new HttpError(404, notFoundMessage);
