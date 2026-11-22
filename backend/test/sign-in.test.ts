@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { createAuthMiddleware } from '@sirloinbh/auth-client';
+import type express from 'express';
 import type { Pool } from 'pg';
 
 import { createApp } from '../src/app.js';
@@ -64,4 +65,22 @@ test('with a session the API answers and /api/me returns the user', async () => 
     assert.deepEqual(await me.json(), { user });
     assert.equal((await fetch(`${base}/certifications`, signedIn)).status, 200);
   });
+});
+
+test('/api/health answers 200 even when the auth middleware rejects every request (#139)', async () => {
+  const reject: express.RequestHandler = (_req, res) => {
+    res.status(401).json({ error: 'no' });
+  };
+  const pool = { query: async () => ({ rows: [] }) } as unknown as Pool;
+  const server = createApp(pool, { auth: reject }).listen(0, '127.0.0.1');
+  await new Promise<void>((resolve) => server.once('listening', resolve));
+  const address = server.address();
+  assert.ok(address && typeof address !== 'string');
+  try {
+    const base = `http://127.0.0.1:${address.port}/api`;
+    assert.equal((await fetch(`${base}/health`)).status, 200);
+    assert.equal((await fetch(`${base}/certifications`)).status, 401);
+  } finally {
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  }
 });
