@@ -21,7 +21,8 @@ export const actionInput = z
       // The link becomes an href, so only web addresses are accepted.
       linkUrl: z
         .string({ error: 'Link must be text' })
-        .regex(/^(https?:\/\/\S+)?$/i, 'Link must be an http or https address')
+        // Spelled with character classes, not the i flag, so the OpenAPI pattern stays case-insensitive (#143).
+        .regex(/^([hH][tT][tT][pP][sS]?:\/\/\S+)?$/, 'Link must be an http or https address')
         .default(''),
       remindFrom: calendarDate('Reminder start date'),
       dueDate: calendarDate('Due date').nullable().default(null),
