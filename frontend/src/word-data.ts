@@ -109,3 +109,26 @@ export const dailyWordApi = {
   setLearned: (id: number, learned: boolean) =>
     requestJson(`${base}/${id}/learned`, { method: 'PUT', body: { learned } }),
 };
+
+/** The answers to a word, as the API names them (#209). */
+export type ReviewAnswer = 'know' | 'unsure' | 'dontKnow';
+
+export const reviewAnswerLabels: Record<ReviewAnswer, string> = {
+  know: 'Know',
+  unsure: 'Unsure',
+  dontKnow: 'Don’t know',
+};
+
+type DueWord = Pick<WordRow, 'id' | 'lemma' | 'rank' | 'partOfSpeech' | 'meaningKo'> & {
+  step: number;
+  nextReviewOn: string;
+  lastAnswer: ReviewAnswer;
+};
+
+export type DueWords = { today: string; day: string; count: number; words: DueWord[] };
+
+export const wordReviewApi = {
+  due: () => requestJson<DueWords>('/api/word-reviews/due'),
+  answer: (id: number, answer: ReviewAnswer) =>
+    requestJson(`${base}/${id}/review`, { method: 'PUT', body: { answer } }),
+};

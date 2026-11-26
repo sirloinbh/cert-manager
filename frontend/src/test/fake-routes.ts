@@ -58,12 +58,13 @@ export function fakeRoutes(routes: readonly Route[]) {
   return { sent };
 }
 
-/** The dashboard's daily words card, with no words: for screen tests that render the overview but not this card. */
+/** The word cards (daily words and words to review), with no words: for screen tests that render the overview but not these cards. */
 export function emptyDailyWords(today: string): Route[] {
   const day = { today, day: today, previousDay: null, nextDay: null, words: [], sources: [] };
   return [
     ['GET', '/api/daily-words', () => reply(200, day)],
     // The server picks the day's words on the first ask.
     ['POST', '/api/daily-words', () => reply(200, day)],
+    ['GET', '/api/word-reviews/due', () => reply(200, { today, day: today, count: 0, words: [] })],
   ];
 }

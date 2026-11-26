@@ -34,6 +34,7 @@ import { SongDetail, SongList } from './songs';
 import { TodayTasks } from './study-plan';
 import { UserActionAlerts } from './user-actions';
 import { serviceToday, type WordPaths } from './word-data';
+import { DueWordsCard } from './word-review';
 import { WordDetail, WordList } from './words';
 
 // Every page URL lives here (central docs/directory-rules.md, docs/design/scope-and-data-model.md section 3).
@@ -220,6 +221,7 @@ function AppRoutes() {
                     <UpcomingExams paths={certificationPaths} />
                     <ExpiringCertifications paths={certificationPaths} />
                     <PlanProgress paths={certificationPaths} />
+                    <DueWordsCard paths={wordPaths} />
                   </div>
                 </Page>
               }
