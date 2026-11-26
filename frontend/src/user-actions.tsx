@@ -170,7 +170,7 @@ export function UserActionAlerts() {
           {failed || count > 0 ? (
             <span
               aria-hidden
-              className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[0.625rem] leading-none font-semibold text-white"
+              className="absolute -top-0.5 -right-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-xs leading-none font-semibold text-white"
             >
               {failed ? '!' : alertCount(count)}
             </span>
