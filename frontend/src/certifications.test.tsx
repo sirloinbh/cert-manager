@@ -314,3 +314,15 @@ test('the dashboard card lists the nearest exams still ahead and links to each g
   fireEvent.click(within(card as HTMLElement).getByRole('link', { name: '토익' }));
   expect(window.location.pathname).toBe('/certifications/1');
 });
+
+test('the issuer field offers the issuers already used and still takes a new one', async () => {
+  fakeApi([toeic]);
+  open('/certifications/new');
+  const field = await screen.findByLabelText('Issuer');
+  fireEvent.focus(field);
+  fireEvent.keyDown(field, { key: 'ArrowDown' });
+  fireEvent.click(await screen.findByRole('option', { name: 'YBM' }));
+  expect(field).toHaveValue('YBM');
+  fireEvent.change(field, { target: { value: 'Pearson' } });
+  expect(field).toHaveValue('Pearson');
+});

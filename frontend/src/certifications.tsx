@@ -14,6 +14,7 @@ import {
   statuses,
   statusLabels,
   upcomingExams,
+  usedIssuers,
   validityKinds,
   validityLabels,
   validityText,
@@ -21,6 +22,7 @@ import {
 import { Badge } from './components/ui/badge';
 import { Button } from './components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
+import { Combobox } from './components/ui/combobox';
 import { ConfirmDialog } from './components/ui/confirm-dialog';
 import { EmptyState } from './components/ui/empty-state';
 import { Input } from './components/ui/input';
@@ -501,6 +503,10 @@ function FormFields({
   const id = useId();
   const { scales, failed, loaded } = useGradeScales();
   const scale = scales.find((item) => item.key === form.gradeScale);
+  // Issuers already used, most used first, so a repeated issuer is picked instead of typed (#219).
+  // Without the list (still loading or failed) the field is plain text.
+  const goals = useLoad('all', loadList);
+  const issuers = goals.state === 'ok' ? usedIssuers(goals.data.certifications) : [];
   const set =
     <K extends keyof FormState>(key: K) =>
     (value: FormState[K]) =>
@@ -567,12 +573,14 @@ function FormFields({
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor={`${id}-issuer`}>Issuer</Label>
-        <Input
+        <Combobox
           id={`${id}-issuer`}
           maxLength={200}
           value={form.issuer}
-          onChange={(e) => set('issuer')(e.target.value)}
-          placeholder="e.g. YBM, HRD Korea, AWS"
+          onValueChange={set('issuer')}
+          options={issuers}
+          listLabel="Issuers already used"
+          placeholder="Pick one you used, or type a new issuer"
         />
       </div>
       <div className="grid gap-5 sm:grid-cols-2">

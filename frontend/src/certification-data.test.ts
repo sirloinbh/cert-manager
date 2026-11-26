@@ -6,6 +6,7 @@ import {
   examCountdown,
   groupByCategory,
   upcomingExams,
+  usedIssuers,
   validityText,
 } from './certification-data';
 
@@ -75,4 +76,18 @@ test('upcoming exams are the nearest dates from today among goals still preparin
   ];
   expect(upcomingExams(list).map((item) => item.id)).toEqual([4, 6, 1]);
   expect(upcomingExams(list, 5).map((item) => item.id)).toEqual([4, 6, 1, 7]);
+});
+
+test('usedIssuers lists each issuer once, most used first, without blanks', () => {
+  expect(
+    usedIssuers([
+      { issuer: 'AWS' },
+      { issuer: 'YBM' },
+      { issuer: ' ' },
+      { issuer: 'YBM' },
+      { issuer: '' },
+      { issuer: 'HRD Korea' },
+    ]),
+  ).toEqual(['YBM', 'AWS', 'HRD Korea']);
+  expect(usedIssuers([])).toEqual([]);
 });

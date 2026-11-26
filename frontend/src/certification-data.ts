@@ -99,6 +99,18 @@ export function groupByCategory(list: Certification[]) {
 const preparing: Status[] = ['planned', 'studying', 'registered'];
 
 /** The nearest exams from today on, for the dashboard card. */
+/** The issuers already used, most used first (ties in alphabetical order); blank issuers are left out. */
+export function usedIssuers(list: Pick<Certification, 'issuer'>[]) {
+  const counts = new Map<string, number>();
+  for (const { issuer } of list) {
+    const name = issuer.trim();
+    if (name) counts.set(name, (counts.get(name) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([name]) => name);
+}
+
 export function upcomingExams(list: Certification[], limit = 3) {
   return list
     .filter(
