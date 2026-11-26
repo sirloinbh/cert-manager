@@ -10,13 +10,19 @@ const url = process.env.TEST_DATABASE_URL;
 // Requires a dedicated test DB with database/migrations applied. Skipped (not passed) without it.
 test('answers schedule reviews and the due list follows Seoul today', { skip: !url }, async (t) => {
   const pool = new Pool({ connectionString: url });
+  const source = await pool.query<{ id: number }>(
+    "INSERT INTO import_sources (kind, url, fetched_at) VALUES ('ngsl', 'https://example.test/209', now()) RETURNING id",
+  );
+  const sourceId = source.rows[0]?.id;
   const made = await pool.query<{ id: number }>(
-    `INSERT INTO words (lemma, frequency_rank) VALUES ('zz209word', (SELECT COALESCE(max(frequency_rank), 0) + 1 FROM words))
-     RETURNING id`,
+    `INSERT INTO words (lemma, frequency_rank, list_source_id)
+     VALUES ('zz209word', (SELECT COALESCE(max(frequency_rank), 0) + 1 FROM words), $1) RETURNING id`,
+    [sourceId],
   );
   const id = made.rows[0]?.id;
   t.after(async () => {
     await pool.query('DELETE FROM words WHERE id = $1', [id]);
+    await pool.query('DELETE FROM import_sources WHERE id = $1', [sourceId]);
     await pool.end();
   });
   let day = '2026-11-27';
