@@ -12,6 +12,7 @@ import {
   taskInput,
 } from './routes/study-plans.js';
 import { actionInput, completionInput as actionCompletionInput } from './routes/user-actions.js';
+import { reviewInput } from './routes/word-reviews.js';
 import { buildOpenApi, type Operation } from './standard/openapi.js';
 import { dayQuery } from './validation.js';
 
@@ -173,6 +174,17 @@ const routes: Record<string, Operation> = {
     summary: 'Mark a word learned or not learned',
     body: ['WordLearned', learnedInput],
     status: [200, 400, 404],
+  },
+  'PUT /api/words/:id/review': {
+    summary:
+      'Record Know, Unsure or Dont know for a word and schedule its next review (1, 3, 7, 14, 30 days)',
+    body: ['WordReview', reviewInput],
+    status: [200, 400, 404],
+  },
+  'GET /api/word-reviews/due': {
+    summary: 'List the words to review on a day (today by default), the longest overdue first',
+    query: dayQuery,
+    status: [200, 400],
   },
 };
 

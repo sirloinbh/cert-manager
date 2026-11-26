@@ -26,6 +26,7 @@ import {
   type WordSource,
   wordsPath,
 } from './word-data';
+import { ReviewButtons } from './word-review';
 
 // Screens for the word list (#36): most frequent first with search, and one word with its word parts.
 
@@ -340,6 +341,7 @@ function WordPage({ id, paths }: { id: string; paths: WordPaths }) {
         <p className="text-body-sm break-keep text-muted-foreground">
           {[`Rank ${word.rank}`, word.partOfSpeech].filter(Boolean).join(' · ')}
         </p>
+        <ReviewButtons id={word.id} lemma={word.lemma} />
       </header>
       {word.meaningKo === null ? (
         <p className="text-body-sm break-keep text-muted-foreground">
