@@ -106,7 +106,7 @@ export const exportTables: readonly Table[] = [
   },
 ];
 
-export type ExportTables = Record<string, Record<string, unknown>[]>;
+type ExportTables = Record<string, Record<string, unknown>[]>;
 
 export type ExportFile = {
   version: number;
