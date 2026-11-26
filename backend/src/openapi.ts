@@ -1,6 +1,9 @@
 // The API's operation table. The document is built by the managed standard/openapi.ts from Zod schemas
 // (z.toJSONSchema). `npm run openapi -w backend` writes docs/openapi.json; a test fails when it is out of date or
 // when the table and the registered routes differ.
+import { z } from 'zod/v4';
+
+import { exportTables } from './data-transfer.js';
 import { certificationInput, certificationStatusInput } from './routes/certifications.js';
 import { learnedInput } from './routes/daily-words.js';
 import { attemptInput } from './routes/exam-attempts.js';
@@ -174,6 +177,19 @@ const routes: Record<string, Operation> = {
     summary: 'Mark a word learned or not learned',
     body: ['WordLearned', learnedInput],
     status: [200, 400, 404],
+  },
+
+  'GET /api/data-transfer/export': {
+    summary:
+      'Download all personal data as one JSON file (version, export time, and the certifications, exam attempts, study stages, study tasks and custom tasks); words and songs are left out',
+    status: [200],
+  },
+  'GET /api/data-transfer/export/:table': {
+    summary:
+      'Download one table of the export as a CSV file for a spreadsheet; the table is certifications, examAttempts, studyStages, studyTasks or userActions',
+    params: { table: z.enum(exportTables.map((table) => table.name) as [string, ...string[]]) },
+    produces: 'text/csv',
+    status: [200, 404],
   },
   'PUT /api/words/:id/review': {
     summary:
