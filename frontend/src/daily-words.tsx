@@ -19,6 +19,7 @@ import {
   serviceToday,
   type WordPaths,
 } from './word-data';
+import { ReviewButtons } from './word-review';
 import { SourceNote } from './words';
 
 // The dashboard card for the day's words (#37). The meaning stays folded, so the word can be tried first.
@@ -217,6 +218,9 @@ export function DailyWords({ paths }: { paths: WordPaths }) {
                         {learned ? <Check aria-hidden /> : null}
                         Learned
                       </Button>
+                    </div>
+                    <div className="mt-2">
+                      <ReviewButtons id={word.id} lemma={word.lemma} />
                     </div>
                     <details className="group mt-1 text-body-sm">
                       <summary className="flex min-h-9 w-fit cursor-pointer items-center rounded-md text-muted-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 pointer-coarse:min-h-11">
