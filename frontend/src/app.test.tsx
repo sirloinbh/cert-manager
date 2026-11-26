@@ -6,7 +6,7 @@ import { App } from './app';
 const json = (body: object, status = 200) =>
   Promise.resolve(new Response(JSON.stringify(body), { status }));
 
-// /api/health answers with the given body; the dashboard's lists are empty.
+// /api/health answers with the given body; every list is empty.
 const health = (body: object, status = 200) =>
   vi.stubGlobal(
     'fetch',
@@ -20,14 +20,15 @@ const health = (body: object, status = 200) =>
             tasks: [],
             actions: [],
             words: [],
+            goals: [],
           }),
     ),
   );
 
-test('shows the server date from /api/health on the overview', async () => {
+test('shows the server date from /api/health on the Today page', async () => {
   health({ today: '2026-10-26' });
   render(<App />);
-  expect(screen.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { level: 1, name: 'Today' })).toBeInTheDocument();
   expect(await screen.findByText('Server connected · 2026-10-26')).toBeInTheDocument();
 });
 
@@ -44,7 +45,7 @@ test('reports a server error as an alert', async () => {
   expect(await screen.findByRole('alert')).toHaveTextContent('Could not connect to the database');
 });
 
-test('the main menu lists the five areas in order', () => {
+test('the main menu runs Today, Week, 12 weeks, the other areas, Dashboard and Settings', () => {
   health({ today: '2026-10-26' });
   render(<App />);
   const menu = screen.getByRole('navigation', { name: 'Main menu' });
@@ -52,20 +53,33 @@ test('the main menu lists the five areas in order', () => {
     within(menu)
       .getAllByRole('link')
       .map((link) => link.textContent),
-  ).toEqual(['Dashboard', 'Certifications', 'Song lyrics', 'Vocabulary', 'Settings']);
+  ).toEqual([
+    'Today',
+    'Week',
+    '12 weeks',
+    'Certifications',
+    'Song lyrics',
+    'Vocabulary',
+    'Dashboard',
+    'Settings',
+  ]);
 });
 
 test('each page has its own address and is marked in the main menu', async () => {
   health({ today: '2026-10-26' });
   render(<App />);
   const menu = screen.getByRole('navigation', { name: 'Main menu' });
-  fireEvent.click(within(menu).getByRole('link', { name: 'Settings' }));
-  expect(window.location.pathname).toBe('/settings');
-  expect(await screen.findByRole('heading', { level: 1, name: 'Settings' })).toBeInTheDocument();
-  expect(within(menu).getByRole('link', { name: 'Settings' })).toHaveAttribute(
-    'aria-current',
-    'page',
-  );
+  for (const [label, path] of [
+    ['Week', '/week'],
+    ['12 weeks', '/weeks'],
+    ['Dashboard', '/dashboard'],
+    ['Settings', '/settings'],
+  ]) {
+    fireEvent.click(within(menu).getByRole('link', { name: label }));
+    expect(window.location.pathname).toBe(path);
+    expect(await screen.findByRole('heading', { level: 1, name: label })).toBeInTheDocument();
+    expect(within(menu).getByRole('link', { name: label })).toHaveAttribute('aria-current', 'page');
+  }
 });
 
 test('menu areas without features yet show the empty notice', async () => {
@@ -80,10 +94,10 @@ test('menu areas without features yet show the empty notice', async () => {
   expect(notice.closest('[data-slot="empty-state"]')).toHaveClass('break-keep');
 });
 
-test('an unknown address falls back to the overview', async () => {
+test('an unknown address falls back to the Today page', async () => {
   health({ today: '2026-10-26' });
   window.history.replaceState(null, '', '/no-such-page');
   render(<App />);
-  expect(await screen.findByRole('heading', { level: 1, name: 'Dashboard' })).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { level: 1, name: 'Today' })).toBeInTheDocument();
   expect(window.location.pathname).toBe('/');
 });

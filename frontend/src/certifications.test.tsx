@@ -53,6 +53,7 @@ function fakeApi(initial: Certification[] = [], options: { deleteFails?: boolean
     ['GET', '/api/exam-attempts/latest', () => reply(200, { today, attempts: [] })],
     ['GET', /\/api\/certifications\/\d+\/attempts/, () => reply(200, { today, attempts: [] })],
     ['GET', '/api/study-tasks/today', () => reply(200, { today, tasks: [] })],
+    ['GET', '/api/study-tasks/progress', () => reply(200, { goals: [] })],
     ['GET', /\/api\/certifications\/\d+\/plan/, () => reply(200, { today, stages: [] })],
     ...emptyDailyWords(today),
     ['GET', '/api/grade-scales', () => reply(200, { scales: [] })],
@@ -302,7 +303,7 @@ test('a goal that no longer exists says so instead of an empty page', async () =
 
 test('the dashboard card lists the nearest exams still ahead and links to each goal', async () => {
   fakeApi([toeic, awsCp, engineer, license]);
-  open('/');
+  open('/dashboard');
   const card = (await screen.findByRole('heading', { level: 2, name: 'Upcoming exams' })).closest(
     '[data-slot="card"]',
   )!;

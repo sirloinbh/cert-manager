@@ -255,3 +255,75 @@ test(
     });
   },
 );
+
+// #217: the Week and 12 weeks pages read tasks by due date, and the dashboard reads the progress of each plan.
+test('tasks can be listed by due date range and counted per goal', { skip: !url }, async (t) => {
+  const pool = new Pool({ connectionString: url });
+  const created: number[] = [];
+  t.after(async () => {
+    await pool.query('DELETE FROM certifications WHERE id = ANY($1::bigint[])', [created]);
+    await pool.end();
+  });
+  await withApi(
+    pool,
+    async (call) => {
+      const post = async <T>(path: string, body: object, key: string) => {
+        const { status, data } = await call(path, { method: 'POST', body });
+        assert.equal(status, 201, JSON.stringify(data));
+        return data[key] as T;
+      };
+      const goal = (
+        await post<{ id: number }>(
+          '/api/certifications',
+          { name: '#217 range', category: 'english' },
+          'certification',
+        )
+      ).id;
+      created.push(goal);
+      const stage = await post<{ id: number }>(
+        `/api/certifications/${goal}/stages`,
+        { title: 'Stage' },
+        'stage',
+      );
+      const add = (title: string, dueDate: string | null) =>
+        post<{ id: number }>(`/api/study-stages/${stage.id}/tasks`, { title, dueDate }, 'task');
+      const before = await add('before', '2026-11-21');
+      await add('first day', '2026-11-22');
+      const last = await add('last day', '2026-11-28');
+      await add('after', '2026-11-29');
+      await add('undated', null);
+      assert.ok(before.id);
+      await call(`/api/study-tasks/${last.id}/completion`, {
+        method: 'PATCH',
+        body: { completed: true },
+      });
+
+      const inRange = await call('/api/study-tasks?from=2026-11-22&to=2026-11-28');
+      assert.equal(inRange.status, 200);
+      const titles = (inRange.data.tasks as { title: string; certificationId: number }[])
+        .filter((task) => task.certificationId === goal)
+        .map((task) => task.title);
+      // Both ends included, by due date; done tasks too; no undated one.
+      assert.deepEqual(titles, ['first day', 'last day']);
+
+      const progress = await call('/api/study-tasks/progress');
+      assert.equal(progress.status, 200);
+      const mine = (
+        progress.data.goals as { certificationId: number; total: number; done: number }[]
+      ).find((row) => row.certificationId === goal);
+      assert.deepEqual([mine?.total, mine?.done], [5, 1]);
+
+      // The range must be given, real, in order and at most a year long.
+      for (const query of [
+        '',
+        '?from=2026-11-22',
+        '?from=2026-11-28&to=2026-11-22',
+        '?from=2026-02-30&to=2026-03-01',
+        '?from=2025-01-01&to=2026-11-22',
+      ]) {
+        assert.equal((await call(`/api/study-tasks${query}`)).status, 400, query);
+      }
+    },
+    { today: () => '2026-11-26' },
+  );
+});

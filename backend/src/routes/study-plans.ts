@@ -51,6 +51,29 @@ export const completionInput = z.object(
   objectMessage,
 );
 
+// ?from=YYYY-MM-DD&to=YYYY-MM-DD, both required, at most a year apart (the Week and 12 weeks pages ask for 7 and 84 days).
+const maxRangeDays = 366;
+export const rangeQuery = z
+  .object({ from: calendarDate('From date'), to: calendarDate('To date') })
+  .superRefine((range, ctx) => {
+    if (range.from > range.to) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['to'],
+        message: 'To date must be on or after the from date',
+      });
+    } else if (
+      (Date.parse(`${range.to}T00:00:00Z`) - Date.parse(`${range.from}T00:00:00Z`)) / 86_400_000 >=
+      maxRangeDays
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['to'],
+        message: `The range must be at most ${maxRangeDays} days`,
+      });
+    }
+  });
+
 type StageRow = {
   id: number;
   certificationId: number;
@@ -129,6 +152,43 @@ export function registerStudyPlanRoutes(app: Express, pool: Pool, today: () => s
       today: current,
       tasks: rows.map((row) => ({ ...row, certificationId: row.certificationId })),
     });
+  });
+
+  // The Week and 12 weeks pages: every task (done or not) due from one day to another, both included, by due date.
+  app.get('/api/study-tasks', async (req, res) => {
+    const { from, to } = rangeQuery.parse(req.query);
+    const current = today();
+    const { rows } = await pool.query<
+      TaskRow & { certificationId: number; certificationName: string }
+    >(
+      `SELECT ${taskColumns('$1')}, c.id AS "certificationId", c.name AS "certificationName"
+       FROM study_tasks t
+       JOIN study_stages s ON s.id = t.stage_id
+       JOIN certifications c ON c.id = s.certification_id
+       WHERE t.due_date BETWEEN $2::date AND $3::date
+       ORDER BY t.due_date, c.id, s.position, t.position`,
+      [current, from, to],
+    );
+    res.json({ today: current, from, to, tasks: rows });
+  });
+
+  // The dashboard's plan progress: the tasks of each goal that has any, done and in all.
+  app.get('/api/study-tasks/progress', async (_req, res) => {
+    const { rows } = await pool.query<{
+      certificationId: number;
+      certificationName: string;
+      total: number;
+      done: number;
+    }>(
+      `SELECT c.id AS "certificationId", c.name AS "certificationName",
+         count(t.id)::int AS total, count(t.completed_at)::int AS done
+       FROM certifications c
+       JOIN study_stages s ON s.certification_id = c.id
+       JOIN study_tasks t ON t.stage_id = s.id
+       GROUP BY c.id, c.name
+       ORDER BY c.name, c.id`,
+    );
+    res.json({ goals: rows });
   });
 
   // A new stage or task goes last. The parent goal or stage row is locked first, in one transaction, so two quick

@@ -7,6 +7,7 @@ import { attemptInput } from './routes/exam-attempts.js';
 import { lyricsInput, translationInput } from './routes/songs.js';
 import {
   completionInput as taskCompletionInput,
+  rangeQuery,
   stageInput,
   taskInput,
 } from './routes/study-plans.js';
@@ -83,6 +84,15 @@ const routes: Record<string, Operation> = {
   },
   'GET /api/study-tasks/today': {
     summary: 'List the open study tasks due today or earlier',
+    status: [200],
+  },
+  'GET /api/study-tasks': {
+    summary: 'List the study tasks due from one day to another, both included (at most 366 days)',
+    query: rangeQuery,
+    status: [200, 400],
+  },
+  'GET /api/study-tasks/progress': {
+    summary: 'List the goals that have study tasks with how many tasks are done and in all',
     status: [200],
   },
   'POST /api/certifications/:id/stages': {
