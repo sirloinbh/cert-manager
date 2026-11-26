@@ -68,6 +68,7 @@ function fakeApi(
       () => reply(200, { today, attempts: options.latest ?? [] }),
     ],
     ['GET', '/api/study-tasks/today', () => reply(200, { today, tasks: [] })],
+    ['GET', '/api/study-tasks/progress', () => reply(200, { goals: [] })],
     ['GET', '/api/certifications/1/plan', () => reply(200, { today, stages: [] })],
     ['GET', '/api/certifications', () => reply(200, { today, certifications: [goal] })],
     [
@@ -338,7 +339,7 @@ test('the dashboard card lists goals close to expiry and links to them', async (
       latest({ id: 3, name: 'TOEIC Speaking', expiresOn: '2026-10-01', daysUntilExpiry: -29 }),
     ],
   });
-  window.history.pushState({}, '', '/');
+  window.history.pushState({}, '', '/dashboard');
   render(<App />);
   const items = await within(
     (await screen.findByText('Expiring soon', { selector: 'h2' })).closest(
@@ -356,7 +357,7 @@ test('the dashboard card lists goals close to expiry and links to them', async (
 
 test('the dashboard card says so when nothing is close to expiry', async () => {
   fakeApi();
-  window.history.pushState({}, '', '/');
+  window.history.pushState({}, '', '/dashboard');
   render(<App />);
   expect(await screen.findByText(/No certifications are close to expiring/)).toBeInTheDocument();
 });

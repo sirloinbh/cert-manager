@@ -1,5 +1,14 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { Award, BookOpenText, LayoutDashboard, Music, Settings2 } from 'lucide-react';
+import {
+  Award,
+  BookOpenText,
+  CalendarDays,
+  CalendarRange,
+  LayoutDashboard,
+  ListTodo,
+  Music,
+  Settings2,
+} from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
 import { BrowserRouter, generatePath, Navigate, Route, Routes } from 'react-router';
 
@@ -18,17 +27,21 @@ import { DailyWords } from './daily-words';
 import { ExpiringCertifications } from './exam-attempts';
 import { type Health, healthText } from './health';
 import { createQueryClient } from './lib/query';
+import { PlanProgress, Week, Weeks } from './plan-weeks';
 import { AccountActions, SignInGate } from './sign-in';
 import type { SongPaths } from './song-data';
 import { SongDetail, SongList } from './songs';
 import { TodayTasks } from './study-plan';
 import { UserActionAlerts } from './user-actions';
-import type { WordPaths } from './word-data';
+import { serviceToday, type WordPaths } from './word-data';
 import { WordDetail, WordList } from './words';
 
 // Every page URL lives here (central docs/directory-rules.md, docs/design/scope-and-data-model.md section 3).
 const pages = {
-  overview: '/',
+  today: '/',
+  week: '/week',
+  weeks: '/weeks',
+  dashboard: '/dashboard',
   certifications: '/certifications',
   newCertification: '/certifications/new',
   certification: '/certifications/:id',
@@ -59,10 +72,13 @@ const wordPaths: WordPaths = {
 
 // Main menu (LNB) items, in display order.
 const nav: NavItem[] = [
-  { to: pages.overview, label: 'Dashboard', icon: LayoutDashboard },
+  { to: pages.today, label: 'Today', icon: ListTodo },
+  { to: pages.week, label: 'Week', icon: CalendarDays },
+  { to: pages.weeks, label: '12 weeks', icon: CalendarRange },
   { to: pages.certifications, label: 'Certifications', icon: Award },
   { to: pages.songs, label: 'Song lyrics', icon: Music },
   { to: pages.words, label: 'Vocabulary', icon: BookOpenText },
+  { to: pages.dashboard, label: 'Dashboard', icon: LayoutDashboard },
   { to: pages.settings, label: 'Settings', icon: Settings2 },
 ];
 
@@ -81,6 +97,21 @@ function useHealth() {
       .catch(() => setHealth({ state: 'error', message: 'Could not connect to the server' }));
   }, []);
   return health;
+}
+
+// The service date, kept current at midnight and when the tab is shown again.
+function useServiceToday() {
+  const [today, setToday] = useState(() => serviceToday());
+  useEffect(() => {
+    const refresh = () => setToday(serviceToday());
+    const timer = setInterval(refresh, 60_000);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, []);
+  return today;
 }
 
 function Page({
@@ -122,6 +153,7 @@ function Page({
 
 function AppRoutes() {
   const health = useHealth();
+  const today = useServiceToday();
   return (
     // The song search box takes its value from the URL, and React says not to update a typed value in a transition.
     <BrowserRouter useTransitions={false}>
@@ -138,18 +170,56 @@ function AppRoutes() {
         >
           <Routes>
             <Route
-              path={pages.overview}
+              path={pages.today}
+              element={
+                <Page
+                  title="Today"
+                  description="See what to study today: the tasks due and the words of the day."
+                  health={health}
+                >
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <TodayTasks paths={certificationPaths} />
+                    <DailyWords paths={wordPaths} />
+                  </div>
+                </Page>
+              }
+            />
+            <Route
+              path={pages.week}
+              element={
+                <Page
+                  title="Week"
+                  description="The exams and study tasks of each day of a week."
+                  health={health}
+                >
+                  <Week today={today} paths={certificationPaths} />
+                </Page>
+              }
+            />
+            <Route
+              path={pages.weeks}
+              element={
+                <Page
+                  title="12 weeks"
+                  description="The study tasks and exams of the next 12 weeks at a glance."
+                  health={health}
+                >
+                  <Weeks today={today} />
+                </Page>
+              }
+            />
+            <Route
+              path={pages.dashboard}
               element={
                 <Page
                   title="Dashboard"
-                  description="See what to look at today from your certification goals and English study."
+                  description="Upcoming exams, certifications about to expire and how far each study plan has come."
                   health={health}
                 >
                   <div className="grid gap-4 lg:grid-cols-2">
                     <UpcomingExams paths={certificationPaths} />
-                    <TodayTasks paths={certificationPaths} />
                     <ExpiringCertifications paths={certificationPaths} />
-                    <DailyWords paths={wordPaths} />
+                    <PlanProgress paths={certificationPaths} />
                   </div>
                 </Page>
               }
@@ -184,7 +254,7 @@ function AppRoutes() {
                 />
               }
             />
-            <Route path="*" element={<Navigate to={pages.overview} replace />} />
+            <Route path="*" element={<Navigate to={pages.today} replace />} />
           </Routes>
         </AppShell>
         <Toaster />

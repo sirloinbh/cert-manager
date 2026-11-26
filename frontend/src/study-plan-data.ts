@@ -28,6 +28,17 @@ export type StudyStage = {
 
 export type TodayTask = StudyTask & { certificationId: number; certificationName: string };
 
+/** A task with the goal it belongs to, as the Week, 12 weeks and Today views list it. */
+export type PlannedTask = TodayTask;
+
+/** How many tasks of a goal are done and in all, for the dashboard. */
+export type GoalProgress = {
+  certificationId: number;
+  certificationName: string;
+  total: number;
+  done: number;
+};
+
 export type StudyPlan = { today: string; stages: StudyStage[] };
 
 export type StageInput = Pick<StudyStage, 'title' | 'startDate' | 'endDate'>;
@@ -68,6 +79,12 @@ const planPath = (certificationId: number) => `/api/certifications/${certificati
 export const studyPlanApi = {
   plan: (certificationId: number) => requestJson<StudyPlan>(`${planPath(certificationId)}/plan`),
   today: () => requestJson<{ today: string; tasks: TodayTask[] }>('/api/study-tasks/today'),
+  /** Every task due from one day to another, both included. */
+  range: (from: string, to: string) =>
+    requestJson<{ today: string; from: string; to: string; tasks: PlannedTask[] }>(
+      `/api/study-tasks?from=${from}&to=${to}`,
+    ),
+  progress: () => requestJson<{ goals: GoalProgress[] }>('/api/study-tasks/progress'),
   createStage: (certificationId: number, input: StageInput) =>
     requestJson<{ stage: StudyStage }>(`${planPath(certificationId)}/stages`, {
       method: 'POST',

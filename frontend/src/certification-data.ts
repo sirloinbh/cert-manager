@@ -98,7 +98,6 @@ export function groupByCategory(list: Certification[]) {
 // Goals still heading for the exam; taken, passed and failed ones have had theirs.
 const preparing: Status[] = ['planned', 'studying', 'registered'];
 
-/** The nearest exams from today on, for the dashboard card. */
 /** The issuers already used, most used first (ties in alphabetical order); blank issuers are left out. */
 export function usedIssuers(list: Pick<Certification, 'issuer'>[]) {
   const counts = new Map<string, number>();
@@ -111,6 +110,7 @@ export function usedIssuers(list: Pick<Certification, 'issuer'>[]) {
     .map(([name]) => name);
 }
 
+/** The nearest exams from today on, for the dashboard card. */
 export function upcomingExams(list: Certification[], limit = 3) {
   return list
     .filter(

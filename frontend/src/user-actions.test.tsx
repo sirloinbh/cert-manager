@@ -212,7 +212,7 @@ test('a completed alert stays gone even if reloading the list fails', async () =
 
 test('a failed list says so in the panel, and the rest of the app still works', async () => {
   openApp({ listFails: true });
-  expect(await screen.findByRole('heading', { level: 1, name: 'Dashboard' })).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { level: 1, name: 'Today' })).toBeInTheDocument();
   const panel = await openPanel('Could not load the manual task alerts');
   await within(panel).findByText('Alert server error');
 });
