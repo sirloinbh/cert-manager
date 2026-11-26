@@ -3,7 +3,7 @@ import type { StudyStage } from './study-plan-data';
 // Study pace (#212): how many tasks to finish a day to be ready for the exam, worked out in the browser
 // from the plan and the days left. The screen is in study-pace.tsx.
 
-export type StudyPace = {
+type StudyPace = {
   open: number;
   daysLeft: number;
   /** Open tasks divided by the days left, rounded up. */
