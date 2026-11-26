@@ -11,7 +11,7 @@ import { body, dayQuery } from '../validation.js';
 export const reviewIntervals = [1, 3, 7, 14, 30] as const;
 const lastStep = reviewIntervals.length - 1;
 
-export const answers = ['know', 'unsure', 'dontKnow'] as const;
+const answers = ['know', 'unsure', 'dontKnow'] as const;
 export type ReviewAnswer = (typeof answers)[number];
 
 export const reviewInput = z.object(

@@ -119,7 +119,7 @@ export const reviewAnswerLabels: Record<ReviewAnswer, string> = {
   dontKnow: 'Don’t know',
 };
 
-export type DueWord = Pick<WordRow, 'id' | 'lemma' | 'rank' | 'partOfSpeech' | 'meaningKo'> & {
+type DueWord = Pick<WordRow, 'id' | 'lemma' | 'rank' | 'partOfSpeech' | 'meaningKo'> & {
   step: number;
   nextReviewOn: string;
   lastAnswer: ReviewAnswer;
