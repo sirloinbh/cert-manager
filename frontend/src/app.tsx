@@ -24,6 +24,7 @@ import { AppShell, type NavItem } from './components/layout/app-shell';
 import { EmptyState } from './components/ui/empty-state';
 import { Toaster } from './components/ui/sonner';
 import { DailyWords } from './daily-words';
+import { DataExport } from './data-transfer';
 import { ExpiringCertifications } from './exam-attempts';
 import { type Health, healthText } from './health';
 import { createQueryClient } from './lib/query';
@@ -34,6 +35,7 @@ import { SongDetail, SongList } from './songs';
 import { TodayTasks } from './study-plan';
 import { UserActionAlerts } from './user-actions';
 import { serviceToday, type WordPaths } from './word-data';
+import { DueWordsCard } from './word-review';
 import { WordDetail, WordList } from './words';
 
 // Every page URL lives here (central docs/directory-rules.md, docs/design/scope-and-data-model.md section 3).
@@ -220,6 +222,7 @@ function AppRoutes() {
                     <UpcomingExams paths={certificationPaths} />
                     <ExpiringCertifications paths={certificationPaths} />
                     <PlanProgress paths={certificationPaths} />
+                    <DueWordsCard paths={wordPaths} />
                   </div>
                 </Page>
               }
@@ -251,7 +254,9 @@ function AppRoutes() {
                   title="Settings"
                   description="App environment and data management"
                   health={health}
-                />
+                >
+                  <DataExport />
+                </Page>
               }
             />
             <Route path="*" element={<Navigate to={pages.today} replace />} />

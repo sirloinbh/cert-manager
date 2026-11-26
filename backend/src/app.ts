@@ -6,10 +6,12 @@ import { types } from 'pg';
 import { tools } from './ai-tools.js';
 import { registerCertificationRoutes } from './routes/certifications.js';
 import { registerDailyWordRoutes } from './routes/daily-words.js';
+import { registerDataTransferRoutes } from './routes/data-transfer.js';
 import { registerExamAttemptRoutes } from './routes/exam-attempts.js';
 import { registerSongRoutes } from './routes/songs.js';
 import { registerStudyPlanRoutes } from './routes/study-plans.js';
 import { registerUserActionRoutes } from './routes/user-actions.js';
+import { registerWordReviewRoutes } from './routes/word-reviews.js';
 import { registerWordRoutes } from './routes/words.js';
 import { setInt8Parser } from './standard/db.js';
 import { errorHandler, notFound, requestLog, serviceDate } from './standard/http.js';
@@ -53,6 +55,8 @@ export function createApp(
   registerSongRoutes(app, pool);
   registerWordRoutes(app, pool);
   registerDailyWordRoutes(app, pool, today);
+  registerDataTransferRoutes(app, pool, today);
+  registerWordReviewRoutes(app, pool, today);
   // AI tools for shared-ai on /internal/tools: outside /api, so nginx never forwards them and the signed call
   // token, not the session, is the check. shared-ai signs the tool and jti claims, so the app requires them.
   registerToolRoutes(app, {

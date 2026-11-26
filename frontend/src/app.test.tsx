@@ -82,16 +82,17 @@ test('each page has its own address and is marked in the main menu', async () =>
   }
 });
 
-test('menu areas without features yet show the empty notice', async () => {
+test('the Settings page offers the data export', async () => {
   health({ today: '2026-10-26' });
   render(<App />);
   const menu = screen.getByRole('navigation', { name: 'Main menu' });
   fireEvent.click(within(menu).getByRole('link', { name: 'Settings' }));
   expect(window.location.pathname).toBe('/settings');
   expect(await screen.findByRole('heading', { level: 1, name: 'Settings' })).toBeInTheDocument();
-  const notice = screen.getByRole('heading', { name: 'No features yet' });
-  // Korean words stay whole when the notice wraps on a phone.
-  expect(notice.closest('[data-slot="empty-state"]')).toHaveClass('break-keep');
+  expect(screen.getByRole('link', { name: 'Export data (JSON)' })).toHaveAttribute(
+    'href',
+    '/api/data-transfer/export',
+  );
 });
 
 test('an unknown address falls back to the Today page', async () => {
