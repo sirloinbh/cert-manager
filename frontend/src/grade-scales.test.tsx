@@ -249,7 +249,7 @@ test('Information Processing levels show English labels and keep their saved val
   // The goal's target grade and a saved result show the label too, not the saved Korean value.
   expect(screen.getByText('Target grade').nextElementSibling).toHaveTextContent('Engineer (Gisa)');
   // Once in the ladder and once as the saved result.
-  expect(await screen.findAllByText('Craftsman (Gineungsa)')).toHaveLength(2);
+  await waitFor(() => expect(screen.getAllByText('Craftsman (Gineungsa)')).toHaveLength(2));
   expect(document.body).not.toHaveTextContent('기능사');
 });
 
