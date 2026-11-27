@@ -18,6 +18,10 @@ Restore mode is **merge, keep existing**: rows from the file are added, rows tha
 
 A child row follows its parent's match: when a certification already exists, the file's stages are matched against the stages of that existing certification. A stage or task keeps its file position when it is free under its parent and takes the next free position otherwise. The keys live in one place, `backend/src/data-transfer-import.ts`.
 
+## Grade scales
+
+There is no grade-scale table: the scale definitions are fixed in code (`backend/src/grade-scales.ts`) and a goal stores only its `gradeScale` and `targetGrade`. Those two columns travel with the certification row, so they follow the same merge rule: a new certification is added with its scale and target grade (checked against the known scales and levels), and an existing certification is skipped, so its scale is never overwritten.
+
 ## Changes
 
 | File                                                                 | Change                                                                                                                       |
