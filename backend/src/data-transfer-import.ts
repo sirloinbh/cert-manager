@@ -14,8 +14,8 @@ import type { ImportFile } from './data-transfer-file.js';
 //   studyTasks      stage + title
 //   userActions     title + reminder start date
 
-export type TableResult = { added: number; skipped: number };
-export type ImportResult = Record<keyof ImportFile['tables'], TableResult>;
+type TableResult = { added: number; skipped: number };
+type ImportResult = Record<keyof ImportFile['tables'], TableResult>;
 
 type Ids = Map<number, number>;
 

@@ -14,7 +14,7 @@ const exportPath = '/api/data-transfer/export';
 export const importPath = '/api/data-transfer/import';
 // An export holds every record, so it is far bigger than the 256kb every other route accepts. The shared parser
 // skips this path (app.ts) and this one reads it.
-export const importLimit = '16mb';
+const importLimit = '16mb';
 
 export function registerDataTransferRoutes(app: Express, pool: Pool, today: () => string) {
   app.get(exportPath, async (_req, res) => {

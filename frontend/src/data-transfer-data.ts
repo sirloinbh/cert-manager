@@ -15,9 +15,9 @@ export const exportTables = [
 export const exportCsvPath = (table: string) => `${exportJsonPath}/${table}`;
 
 // Restore (#211): merge a file into the database, keeping what exists.
-export const importPath = '/api/data-transfer/import';
+const importPath = '/api/data-transfer/import';
 
-export type TableResult = { added: number; skipped: number };
+type TableResult = { added: number; skipped: number };
 export type ImportResult = Record<(typeof exportTables)[number]['name'], TableResult>;
 
 export const importApi = {
