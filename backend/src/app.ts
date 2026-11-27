@@ -6,7 +6,7 @@ import { types } from 'pg';
 import { tools } from './ai-tools.js';
 import { registerCertificationRoutes } from './routes/certifications.js';
 import { registerDailyWordRoutes } from './routes/daily-words.js';
-import { registerDataTransferRoutes } from './routes/data-transfer.js';
+import { importPath, registerDataTransferRoutes } from './routes/data-transfer.js';
 import { registerExamAttemptRoutes } from './routes/exam-attempts.js';
 import { registerSongRoutes } from './routes/songs.js';
 import { registerStudyPlanRoutes } from './routes/study-plans.js';
@@ -39,7 +39,9 @@ export function createApp(
   app.use(requestLog);
   // Before the body parser and every route, so a refused request costs neither parsing nor a query.
   apiRateLimit(app, { limitPerMinute: options.requestsPerMinute });
-  app.use(express.json({ limit: '256kb' }));
+  const smallJson = express.json({ limit: '256kb' });
+  // The data import takes a whole backup file, so its route reads its own body with a larger limit.
+  app.use((req, res, next) => (req.path === importPath ? next() : smallJson(req, res, next)));
   // #139: health is registered before the guard, so it is public by route order, not by the guard's skip list.
   app.get('/api/health', async (_req, res) => {
     await pool.query('SELECT 1');

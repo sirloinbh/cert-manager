@@ -4,6 +4,7 @@
 import { z } from 'zod/v4';
 
 import { exportTables } from './data-transfer.js';
+import { importFile } from './data-transfer-file.js';
 import { certificationInput, certificationStatusInput } from './routes/certifications.js';
 import { learnedInput } from './routes/daily-words.js';
 import { attemptInput } from './routes/exam-attempts.js';
@@ -190,6 +191,12 @@ const routes: Record<string, Operation> = {
     params: { table: z.enum(exportTables.map((table) => table.name) as [string, ...string[]]) },
     produces: 'text/csv',
     status: [200, 404],
+  },
+  'POST /api/data-transfer/import': {
+    summary:
+      'Merge an export file into the database, keeping what exists: rows whose natural key is already stored are skipped and never overwritten, the rest are added in one transaction; a bad file changes nothing',
+    body: ['DataExport', importFile],
+    status: [200, 400],
   },
   'PUT /api/words/:id/review': {
     summary:
