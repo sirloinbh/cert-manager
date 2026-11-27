@@ -38,7 +38,9 @@ import { gradeLabel, type GradeScale } from './grade-scale-data';
 import { RequestError } from './lib/api';
 import { errorText, useNotice } from './lib/use-notice';
 import { cn } from './lib/utils';
+import { StudyPaceMessage } from './study-pace';
 import { StudyPlan } from './study-plan';
+import type { StudyStage } from './study-plan-data';
 import { useGradeScales } from './use-grade-scales';
 import { useLoad } from './use-load';
 
@@ -295,6 +297,8 @@ export function CertificationDetail({ paths }: { paths: CertificationPaths }) {
   const navigate = useNavigate();
   // The goal as last saved from this page, so the status changes without reloading the attempts below.
   const [changed, setChanged] = useState<Certification>();
+  // The study plan as its section shows it, for the pace message under the exam date.
+  const [stages, setStages] = useState<StudyStage[]>();
 
   if (loaded.state !== 'ok') {
     return (
@@ -403,7 +407,15 @@ export function CertificationDetail({ paths }: { paths: CertificationPaths }) {
             }
           />
         )}
-        <Field label="Target exam date" value={<ExamDate item={item} />} />
+        <Field
+          label="Target exam date"
+          value={
+            <>
+              <ExamDate item={item} />
+              <StudyPaceMessage certification={item} stages={stages} />
+            </>
+          }
+        />
         <Field label="Validity" value={validityText(item)} />
         <Field
           label="Memo"
@@ -424,7 +436,7 @@ export function CertificationDetail({ paths }: { paths: CertificationPaths }) {
         gradeScale={gradeScale}
         onMarkPassed={markPassed}
       />
-      <StudyPlan key={`plan-${item.id}`} certification={item} />
+      <StudyPlan key={`plan-${item.id}`} certification={item} onPlanChange={setStages} />
     </section>
   );
 }

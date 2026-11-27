@@ -1,5 +1,5 @@
 import { ListChecks, Pencil, Plus, Trash2 } from 'lucide-react';
-import { type FormEvent, type MouseEvent, useId, useState } from 'react';
+import { type FormEvent, type MouseEvent, useEffect, useId, useState } from 'react';
 import { Link } from 'react-router';
 
 import {
@@ -199,8 +199,17 @@ const withTask = (saved: StudyTask) => (plan: Plan) => ({
 const loadPlan = (id: string) => studyPlanApi.plan(Number(id));
 
 /** The section on a goal's detail page. */
-export function StudyPlan({ certification }: { certification: Certification }) {
+export function StudyPlan({
+  certification,
+  onPlanChange,
+}: {
+  certification: Certification;
+  /** Called with the plan as shown, each time it changes, so the page can show the study pace (#212). */
+  onPlanChange?: (stages: StudyStage[] | undefined) => void;
+}) {
   const { loaded, data, reload } = useReloading(String(certification.id), loadPlan);
+  const shownStages = data?.stages;
+  useEffect(() => onPlanChange?.(shownStages), [onPlanChange, shownStages]);
   // The target stays while the dialog closes, so its title and form do not change as it fades out.
   const [editing, setEditing] = useState<{ open: boolean; target: Target }>({
     open: false,
