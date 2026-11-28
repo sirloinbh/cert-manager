@@ -1,5 +1,5 @@
-import { formatDate } from './date-format';
 import { requestJson } from './lib/api';
+import { formatDate } from './lib/format';
 
 // Study plans (#33): API calls and display rules. The screens are in study-plan.tsx.
 // Rules: docs/design/scope-and-data-model.md section 5.

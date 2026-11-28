@@ -82,16 +82,6 @@ export function isLearned(
   return changed[word.id] ?? word.learnedAt !== null;
 }
 
-/** Today in the service's time zone, to notice that the day on screen has ended. */
-export function serviceToday(now = new Date()) {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Seoul',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(now);
-}
-
 const base = '/api/words';
 
 /** The word list's API path; the list screen loads it through the shared query layer. */

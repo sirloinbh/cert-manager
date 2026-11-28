@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
 import { Notice } from './components/ui/notice';
 import { SkeletonList } from './components/ui/skeleton';
 import { toast } from './components/ui/sonner';
-import { formatDate } from './date-format';
+import { formatDate } from './lib/format';
+import { serviceToday } from './lib/format';
 import { errorText } from './lib/use-notice';
 import { useLoad } from './use-load';
 import {
@@ -16,7 +17,6 @@ import {
   dailyWordApi,
   type DailyWordsDay,
   isLearned,
-  serviceToday,
   type WordPaths,
 } from './word-data';
 import { ReviewButtons } from './word-review';

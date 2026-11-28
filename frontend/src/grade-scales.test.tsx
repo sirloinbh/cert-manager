@@ -311,7 +311,7 @@ test('a chosen grade stays when the score changes afterwards', async () => {
 
 test('a saved grade from an older format stays selectable', async () => {
   await openDetail({ attempts: [attempt({ score: 170, grade: 'Level 7' })] });
-  fireEvent.click(await screen.findByRole('button', { name: 'Edit attempt on March 15, 2026' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit attempt on Mar 15, 2026' }));
   expect(screen.getByLabelText('Grade')).toHaveValue('Level 7');
 });
 
@@ -334,7 +334,7 @@ test('a goal with both targets needs both', async () => {
 
 test('a waiting attempt fills its grade once the result and score are in', async () => {
   await openDetail({ attempts: [attempt({ outcome: 'waiting', grade: null })] });
-  fireEvent.click(await screen.findByRole('button', { name: 'Edit attempt on March 15, 2026' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit attempt on Mar 15, 2026' }));
   change('Outcome', 'scored');
   change('Score', '800');
   expect(screen.getByLabelText('Grade')).toHaveValue('B2');
@@ -349,13 +349,13 @@ test('a saved grade stays when the score changes, and an empty one follows the s
       attempt({ id: 6, examDate: '2026-01-10', score: 800, grade: '' }),
     ],
   });
-  fireEvent.click(await screen.findByRole('button', { name: 'Edit attempt on March 15, 2026' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit attempt on Mar 15, 2026' }));
   change('Score', '900');
   expect(screen.getByLabelText('Grade')).toHaveValue('B1');
   fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 
-  fireEvent.click(screen.getByRole('button', { name: 'Edit attempt on January 10, 2026' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Edit attempt on Jan 10, 2026' }));
   expect(screen.getByLabelText('Grade')).toHaveValue('B2');
 });
 

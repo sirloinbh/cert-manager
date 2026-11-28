@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 
-import { addDays, upcomingWeeks, weekDays, weekStart, weekTitle } from './week-range';
+import { addDays, weekDays, weekStart } from './components/period-nav/periods';
+import { upcomingWeeks, weekTitle } from './week-range';
 
 test('weeks run Sunday to Saturday', () => {
   expect(weekStart('2026-11-26')).toBe('2026-11-22');

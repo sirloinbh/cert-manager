@@ -10,9 +10,9 @@ import { Label } from './components/ui/label';
 import { Notice } from './components/ui/notice';
 import { SkeletonList } from './components/ui/skeleton';
 import { RequestError } from './lib/api';
+import { plural } from './lib/format';
 import { apiKey, useApiQuery } from './lib/query';
 import { errorText } from './lib/use-notice';
-import { quantity } from './plural';
 import { useLoad } from './use-load';
 import {
   kindLabels,
@@ -95,7 +95,7 @@ export function WordList({ paths }: { paths: WordPaths }) {
         </p>
         {words.length > 0 ? (
           <p role="status" className="text-caption text-muted-foreground">
-            {quantity(words.length, 'word')} · {filled} with meanings
+            {plural(words.length, 'word')} · {filled} with meanings
           </p>
         ) : null}
       </header>
@@ -168,7 +168,7 @@ export function WordList({ paths }: { paths: WordPaths }) {
           className="w-fit self-center"
           onClick={() => setPaging({ search, pages: pages + 1 })}
         >
-          Show more ({quantity(matching.length - shown.length, 'word')} left)
+          Show more ({plural(matching.length - shown.length, 'word')} left)
         </Button>
       ) : null}
       {loaded.data && words.length > 0 ? <SourceNote sources={loaded.data.sources} /> : null}
