@@ -1,5 +1,5 @@
 {
-  "centralSha": "5fde9f5d08468f52e8a5ec678d5e23b8ed865446",
+  "centralSha": "620af59ec986f5af7fffc4adc1a50ba67dcbd3a4",
   "profile": "app",
   "project": "cert-manager",
   "files": {
@@ -70,7 +70,7 @@
     },
     ".claude/skills/std-foundation/SKILL.md": {
       "mode": "full",
-      "sha256": "63ab4c84706601670e99b7f3e01caf7dcdde9606fe12f39778c13a2111681287",
+      "sha256": "444e46415b406d32181df24cd0498f928f97f1cba115c3a26a8e7b48fedb12e7",
       "source": "templates/app/skills/std-foundation/SKILL.md"
     },
     ".claude/skills/std-git-writing/SKILL.md": {
@@ -80,7 +80,7 @@
     },
     ".claude/skills/std-implementation/SKILL.md": {
       "mode": "full",
-      "sha256": "c1a73cfaf9cf8d6d71ac79b02462315fc68bedd4fb68216b3fcf15add63258a3",
+      "sha256": "e4cdc5582918a370e8c09ee5f284f9eb445bd56a866341dffeff65bb31b32781",
       "source": "templates/common/skills/std-implementation/SKILL.md"
     },
     ".claude/skills/std-session-notes/SKILL.md": {
@@ -95,8 +95,8 @@
     },
     ".claude/skills/std-ux-audit/SKILL.md": {
       "mode": "full",
-      "sha256": "fe6871207c79c8d662f879ce8e6e0b201eaa33474e788a5cb79bc6f528ef78e8",
-      "source": "templates/app/skills/std-ux-audit/SKILL.md"
+      "sha256": "2f732ed519069ce2d0478ba2ef499fca10949d633af071353fe8ede104857c1c",
+      "source": "templates/ui/skills/std-ux-audit/SKILL.md.tmpl"
     },
     ".codex/hooks.json": {
       "mode": "full",
@@ -180,7 +180,7 @@
     },
     ".standards/check.mjs": {
       "mode": "full",
-      "sha256": "20784e05a5d7a620f489d0eed0311dd9ee57d52051ef36710f0f8d70fb4d6d4b",
+      "sha256": "bdde46d4e9c4a75813e998fd565f06a42f212b49e45c4a05003b13aabfa50f3f",
       "source": "scripts/standards-check.mjs"
     },
     ".standards/ci-migrate.sh": {
@@ -212,6 +212,11 @@
       "mode": "full",
       "sha256": "109f91dba8789a498bd342610e3ebda04662a74b420694efbf2beab8bdbd058d",
       "source": "scripts/lib/render.mjs"
+    },
+    ".standards/lib/screen-checks.mjs": {
+      "mode": "full",
+      "sha256": "639113659cf5e550865edc6aa3320848a3438b6821640d77c3e117a5aa8de985",
+      "source": "scripts/lib/screen-checks.mjs"
     },
     ".standards/license-check.mjs": {
       "mode": "full",
@@ -490,7 +495,7 @@
         "engines.node": "24.21.0",
         "engines.npm": "11.19.0",
         "dependencies.@sirloinbh/auth-client": "1.1.0",
-        "dependencies.@sirloinbh/design-tokens": "1.1.0",
+        "dependencies.@sirloinbh/design-tokens": "1.1.1",
         "devDependencies.@sirloinbh/tsconfig": "1.0.0",
         "dependencies.class-variance-authority": "0.7.1",
         "dependencies.clsx": "2.1.1",
@@ -1155,7 +1160,7 @@
     },
     "skills/std-foundation/SKILL.md": {
       "mode": "full",
-      "sha256": "63ab4c84706601670e99b7f3e01caf7dcdde9606fe12f39778c13a2111681287",
+      "sha256": "444e46415b406d32181df24cd0498f928f97f1cba115c3a26a8e7b48fedb12e7",
       "source": "templates/app/skills/std-foundation/SKILL.md"
     },
     "skills/std-git-writing/SKILL.md": {
@@ -1165,7 +1170,7 @@
     },
     "skills/std-implementation/SKILL.md": {
       "mode": "full",
-      "sha256": "c1a73cfaf9cf8d6d71ac79b02462315fc68bedd4fb68216b3fcf15add63258a3",
+      "sha256": "e4cdc5582918a370e8c09ee5f284f9eb445bd56a866341dffeff65bb31b32781",
       "source": "templates/common/skills/std-implementation/SKILL.md"
     },
     "skills/std-session-notes/SKILL.md": {
@@ -1180,15 +1185,15 @@
     },
     "skills/std-ux-audit/SKILL.md": {
       "mode": "full",
-      "sha256": "fe6871207c79c8d662f879ce8e6e0b201eaa33474e788a5cb79bc6f528ef78e8",
-      "source": "templates/app/skills/std-ux-audit/SKILL.md"
+      "sha256": "2f732ed519069ce2d0478ba2ef499fca10949d633af071353fe8ede104857c1c",
+      "source": "templates/ui/skills/std-ux-audit/SKILL.md.tmpl"
     }
   },
   "packages": {
     "@sirloinbh/eslint-config": "1.2.0",
     "@sirloinbh/prettier-config": "1.0.0",
     "@sirloinbh/tsconfig": "1.0.0",
-    "@sirloinbh/design-tokens": "1.1.0",
+    "@sirloinbh/design-tokens": "1.1.1",
     "@sirloinbh/auth-client": "1.1.0"
   },
   "registry": {
