@@ -1,16 +1,14 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import {
-  Award,
-  BookOpenText,
-  CalendarDays,
-  CalendarRange,
-  LayoutDashboard,
-  ListTodo,
-  Music,
-  Settings2,
-} from 'lucide-react';
+import { Award, BookOpenText, LayoutDashboard, ListTodo, Music, Settings2 } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
-import { BrowserRouter, generatePath, Navigate, Route, Routes } from 'react-router';
+import {
+  BrowserRouter,
+  generatePath,
+  Navigate,
+  Route,
+  Routes,
+  useSearchParams,
+} from 'react-router';
 
 import type { CertificationPaths } from './certification-data';
 import {
@@ -22,6 +20,7 @@ import {
 } from './certifications';
 import { AppShell, type NavItem } from './components/layout/app-shell';
 import { EmptyState } from './components/ui/empty-state';
+import { SegmentedControl } from './components/ui/segmented-control';
 import { Toaster } from './components/ui/sonner';
 import { DailyWords } from './daily-words';
 import { DataExport, DataImport } from './data-transfer';
@@ -42,8 +41,6 @@ import { WordDetail, WordList } from './words';
 // Every page URL lives here (central docs/directory-rules.md, docs/design/scope-and-data-model.md section 3).
 const pages = {
   today: '/',
-  week: '/week',
-  weeks: '/weeks',
   dashboard: '/dashboard',
   certifications: '/certifications',
   newCertification: '/certifications/new',
@@ -76,14 +73,52 @@ const wordPaths: WordPaths = {
 // Main menu (LNB) items, in display order.
 const nav: NavItem[] = [
   { to: pages.today, label: 'Today', icon: ListTodo },
-  { to: pages.week, label: 'Week', icon: CalendarDays },
-  { to: pages.weeks, label: '12 weeks', icon: CalendarRange },
   { to: pages.certifications, label: 'Certifications', icon: Award },
   { to: pages.songs, label: 'Song lyrics', icon: Music },
   { to: pages.words, label: 'Vocabulary', icon: BookOpenText },
   { to: pages.dashboard, label: 'Dashboard', icon: LayoutDashboard },
   { to: pages.settings, label: 'Settings', icon: Settings2 },
 ];
+
+const dashboardViews = [
+  { value: 'summary', label: 'Summary' },
+  { value: 'week', label: 'Week' },
+  { value: '12weeks', label: '12 weeks' },
+] as const;
+type DashboardView = (typeof dashboardViews)[number]['value'];
+
+/** #244 The Dashboard: the summary, the Week view and the 12 weeks view behind one choice (?view=). */
+function DashboardViews({ today }: { today: string }) {
+  const [params, setParams] = useSearchParams();
+  const asked = params.get('view');
+  const view: DashboardView = dashboardViews.some((v) => v.value === asked)
+    ? (asked as DashboardView)
+    : 'summary';
+  return (
+    <div className="flex flex-col gap-4">
+      <SegmentedControl
+        label="Dashboard view"
+        options={dashboardViews}
+        value={view}
+        onValueChange={(next) =>
+          setParams(next === 'summary' ? {} : { view: next }, { replace: true })
+        }
+      />
+      {view === 'week' ? (
+        <Week today={today} paths={certificationPaths} />
+      ) : view === '12weeks' ? (
+        <Weeks today={today} />
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <UpcomingExams paths={certificationPaths} />
+          <ExpiringCertifications paths={certificationPaths} />
+          <PlanProgress paths={certificationPaths} />
+          <DueWordsCard paths={wordPaths} />
+        </div>
+      )}
+    </div>
+  );
+}
 
 function useHealth() {
   const [health, setHealth] = useState<Health>({ state: 'loading' });
@@ -187,29 +222,14 @@ function AppRoutes() {
                 </Page>
               }
             />
+            {/* #244 Week and 12 weeks are views of the Dashboard. */}
             <Route
-              path={pages.week}
-              element={
-                <Page
-                  title="Week"
-                  description="The exams and study tasks of each day of a week."
-                  health={health}
-                >
-                  <Week today={today} paths={certificationPaths} />
-                </Page>
-              }
+              path="/week"
+              element={<Navigate to={`${pages.dashboard}?view=week`} replace />}
             />
             <Route
-              path={pages.weeks}
-              element={
-                <Page
-                  title="12 weeks"
-                  description="The study tasks and exams of the next 12 weeks at a glance."
-                  health={health}
-                >
-                  <Weeks today={today} />
-                </Page>
-              }
+              path="/weeks"
+              element={<Navigate to={`${pages.dashboard}?view=12weeks`} replace />}
             />
             <Route
               path={pages.dashboard}
@@ -219,12 +239,7 @@ function AppRoutes() {
                   description="Upcoming exams, certifications about to expire and how far each study plan has come."
                   health={health}
                 >
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    <UpcomingExams paths={certificationPaths} />
-                    <ExpiringCertifications paths={certificationPaths} />
-                    <PlanProgress paths={certificationPaths} />
-                    <DueWordsCard paths={wordPaths} />
-                  </div>
+                  <DashboardViews today={today} />
                 </Page>
               }
             />
