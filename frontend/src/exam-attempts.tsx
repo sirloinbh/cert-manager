@@ -263,7 +263,6 @@ function AttemptForm({
                   setGradeEdited(true);
                   set('grade')(e.target.value);
                 }}
-                placeholder="e.g. Level 7, IH"
               />
             )}
           </div>
@@ -284,13 +283,7 @@ function AttemptForm({
               setExpiryEdited(true);
               set('expiresOn')(e.target.value);
             }}
-            aria-describedby={`${id}-expires-hint`}
           />
-          <p id={`${id}-expires-hint`} className="text-caption break-keep text-muted-foreground">
-            {months === null
-              ? 'This goal has no validity period set. Leave the expiry date empty if you do not know it.'
-              : 'If left empty, it is saved as "Expiry unknown".'}
-          </p>
           {prefilled !== '' && expiresOn !== prefilled ? (
             <Button
               type="button"

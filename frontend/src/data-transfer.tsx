@@ -24,10 +24,6 @@ export function DataExport() {
         <CardTitle>Export data</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <p className="text-body-sm text-muted-foreground">
-          Save your certifications, exam attempts, study plans and custom tasks. Words, daily words
-          and songs are not included.
-        </p>
         <div className="flex flex-col gap-2">
           <Button asChild className="self-start">
             <a href={exportJsonPath} download>
@@ -35,9 +31,6 @@ export function DataExport() {
               Export data (JSON)
             </a>
           </Button>
-          <p className="text-caption text-muted-foreground">
-            The JSON file is the backup. It can be restored later.
-          </p>
         </div>
         <div className="flex flex-col gap-2">
           <h3 className="text-body font-medium">Spreadsheet files (CSV)</h3>
@@ -99,10 +92,6 @@ export function DataImport() {
         <CardTitle>Import data</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <p className="text-body-sm text-muted-foreground">
-          Add the data of an exported JSON file. Rows that already exist are skipped and nothing is
-          changed or deleted. If the file has an error, nothing is saved.
-        </p>
         <input
           ref={input}
           type="file"

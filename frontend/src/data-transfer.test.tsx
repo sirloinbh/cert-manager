@@ -23,11 +23,6 @@ test('there is one CSV link for each included table', () => {
   ]);
 });
 
-test('it says that words and songs are not included', () => {
-  render(<DataExport />);
-  expect(screen.getByText(/Words, daily words and songs are not included/)).toBeTruthy();
-});
-
 describe('import', () => {
   const backup = {
     version: 1,
