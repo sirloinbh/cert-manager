@@ -102,11 +102,7 @@ export function CertificationList({ paths }: { paths: CertificationPaths }) {
   );
   return (
     <section aria-labelledby="page-title" className="flex flex-col gap-6">
-      <PageHeader
-        title="Certifications"
-        description="See the certifications you want and their target exam dates by category."
-        actions={addButton}
-      />
+      <PageHeader title="Certifications" actions={addButton} />
       {loaded.state === 'loading' ? <SkeletonList rows={3} /> : null}
       {loaded.state === 'error' ? (
         <Notice
@@ -515,7 +511,6 @@ function FormFields({
           maxLength={200}
           value={form.name}
           onChange={(e) => set('name')(e.target.value)}
-          placeholder="e.g. TOEIC"
         />
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
@@ -559,7 +554,6 @@ function FormFields({
           onValueChange={set('issuer')}
           options={issuers}
           listLabel="Issuers already used"
-          placeholder="Pick one you used, or type a new issuer"
         />
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
@@ -570,7 +564,6 @@ function FormFields({
             maxLength={200}
             value={form.goalText}
             onChange={(e) => set('goalText')(e.target.value)}
-            placeholder="e.g. 900 or higher, pass"
           />
         </div>
         <div className="flex flex-col gap-2">
@@ -582,11 +575,7 @@ function FormFields({
             min={0}
             value={form.targetScore}
             onChange={(e) => set('targetScore')(e.target.value)}
-            aria-describedby={`${id}-score-hint`}
           />
-          <p id={`${id}-score-hint`} className="text-caption text-muted-foreground">
-            Leave empty if the exam has no score.
-          </p>
         </div>
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
@@ -651,11 +640,7 @@ function FormFields({
           className="sm:max-w-60"
           value={form.targetExamDate}
           onChange={(e) => set('targetExamDate')(e.target.value)}
-          aria-describedby={`${id}-date-hint`}
         />
-        <p id={`${id}-date-hint`} className="text-caption text-muted-foreground">
-          Leave empty if not decided yet.
-        </p>
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
@@ -684,7 +669,6 @@ function FormFields({
               required
               value={form.validityMonths}
               onChange={(e) => set('validityMonths')(e.target.value)}
-              placeholder="e.g. 24"
             />
           </div>
         ) : null}
@@ -697,7 +681,6 @@ function FormFields({
           className={cn(controlClass, 'min-h-24 py-2')}
           value={form.memo}
           onChange={(e) => set('memo')(e.target.value)}
-          placeholder="Registration period, things to bring, etc."
         />
       </div>
       <Notice notice={notice.notice} />
@@ -723,11 +706,7 @@ export function NewCertification({ paths }: { paths: CertificationPaths }) {
   };
   return (
     <section aria-labelledby="page-title" className="flex flex-col gap-6">
-      <PageHeader
-        backTo={{ to: paths.list, label: 'Certification list' }}
-        title="Add goal"
-        description="Enter the certification you want and your goal. Only the name and category are required."
-      />
+      <PageHeader backTo={{ to: paths.list, label: 'Certification list' }} title="Add goal" />
       <FormFields initial={emptyForm} submitLabel="Add" cancelTo={paths.list} onSubmit={create} />
     </section>
   );

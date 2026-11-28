@@ -81,14 +81,12 @@ type DateField = { key: string; label: string };
 /** The form for a stage or a task: a title and the dates each one has. */
 function ItemForm({
   titleLabel,
-  placeholder,
   title,
   fields,
   dates,
   onSubmit,
 }: {
   titleLabel: string;
-  placeholder: string;
   title: string;
   fields: DateField[];
   dates: Record<string, string | null>;
@@ -120,7 +118,6 @@ function ItemForm({
           maxLength={200}
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={placeholder}
         />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -435,7 +432,6 @@ export function StudyPlan({
           {target.kind === 'stage' ? (
             <ItemForm
               titleLabel="Stage name"
-              placeholder="e.g. Week 1, past exam practice"
               title={target.stage?.title ?? ''}
               fields={stageFields}
               dates={{
@@ -447,7 +443,6 @@ export function StudyPlan({
           ) : (
             <ItemForm
               titleLabel="Task"
-              placeholder="e.g. Solve past exam 1"
               title={target.task?.title ?? ''}
               fields={taskFields}
               dates={{ dueDate: target.task?.dueDate ?? null }}

@@ -159,7 +159,7 @@ function Page({
   children,
 }: {
   title: string;
-  description: string;
+  description?: string;
   health: Health;
   children?: ReactNode;
 }) {
@@ -167,7 +167,7 @@ function Page({
     <section aria-labelledby="page-title" className="flex flex-col gap-6">
       <header className="flex flex-col gap-2">
         <h1 id="page-title">{title}</h1>
-        <p className="text-body text-muted-foreground">{description}</p>
+        {description ? <p className="text-body text-muted-foreground">{description}</p> : null}
         {health.state === 'error' ? (
           <p role="alert" className="text-body-sm text-destructive">
             {healthText(health)}
@@ -178,13 +178,7 @@ function Page({
           </p>
         )}
       </header>
-      {children ?? (
-        <EmptyState
-          className="break-keep"
-          title="No features yet"
-          description="Features are registered as GitHub issue cards and added one at a time."
-        />
-      )}
+      {children ?? <EmptyState className="break-keep" title="No features yet" />}
     </section>
   );
 }
@@ -210,11 +204,7 @@ function AppRoutes() {
             <Route
               path={pages.today}
               element={
-                <Page
-                  title="Today"
-                  description="See what to study today: the tasks due and the words of the day."
-                  health={health}
-                >
+                <Page title="Today" health={health}>
                   <div className="grid gap-4 lg:grid-cols-2">
                     <TodayTasks paths={certificationPaths} />
                     <DailyWords paths={wordPaths} />
@@ -234,11 +224,7 @@ function AppRoutes() {
             <Route
               path={pages.dashboard}
               element={
-                <Page
-                  title="Dashboard"
-                  description="Upcoming exams, certifications about to expire and how far each study plan has come."
-                  health={health}
-                >
+                <Page title="Dashboard" health={health}>
                   <DashboardViews today={today} />
                 </Page>
               }
@@ -266,11 +252,7 @@ function AppRoutes() {
             <Route
               path={pages.settings}
               element={
-                <Page
-                  title="Settings"
-                  description="App environment and data management"
-                  health={health}
-                >
+                <Page title="Settings" health={health}>
                   <DataExport />
                   <DataImport />
                 </Page>
