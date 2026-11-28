@@ -45,7 +45,7 @@ test('reports a server error as an alert', async () => {
   expect(await screen.findByRole('alert')).toHaveTextContent('Could not connect to the database');
 });
 
-test('the main menu runs Today, Week, 12 weeks, the other areas, Dashboard and Settings', () => {
+test('the main menu runs Today, the other areas, Dashboard and Settings, with no Week or 12 weeks item', () => {
   health({ today: '2026-10-26' });
   render(<App />);
   const menu = screen.getByRole('navigation', { name: 'Main menu' });
@@ -53,16 +53,7 @@ test('the main menu runs Today, Week, 12 weeks, the other areas, Dashboard and S
     within(menu)
       .getAllByRole('link')
       .map((link) => link.textContent),
-  ).toEqual([
-    'Today',
-    'Week',
-    '12 weeks',
-    'Certifications',
-    'Song lyrics',
-    'Vocabulary',
-    'Dashboard',
-    'Settings',
-  ]);
+  ).toEqual(['Today', 'Certifications', 'Song lyrics', 'Vocabulary', 'Dashboard', 'Settings']);
 });
 
 test('each page has its own address and is marked in the main menu', async () => {
@@ -70,8 +61,6 @@ test('each page has its own address and is marked in the main menu', async () =>
   render(<App />);
   const menu = screen.getByRole('navigation', { name: 'Main menu' });
   for (const [label, path] of [
-    ['Week', '/week'],
-    ['12 weeks', '/weeks'],
     ['Dashboard', '/dashboard'],
     ['Settings', '/settings'],
   ]) {
@@ -101,4 +90,16 @@ test('an unknown address falls back to the Today page', async () => {
   render(<App />);
   expect(await screen.findByRole('heading', { level: 1, name: 'Today' })).toBeInTheDocument();
   expect(window.location.pathname).toBe('/');
+});
+
+test.each([
+  ['/week', '/dashboard?view=week', 'Week'],
+  ['/weeks', '/dashboard?view=12weeks', '12 weeks'],
+])('the old address %s opens the Dashboard on that view (#244)', async (from, to, view) => {
+  health({ today: '2026-10-26' });
+  window.history.replaceState(null, '', from);
+  render(<App />);
+  expect(await screen.findByRole('heading', { level: 1, name: 'Dashboard' })).toBeInTheDocument();
+  expect(window.location.pathname + window.location.search).toBe(to);
+  expect(screen.getByRole('radio', { name: view })).toBeChecked();
 });
