@@ -27,6 +27,7 @@ import { DailyWords } from './daily-words';
 import { DataExport, DataImport } from './data-transfer';
 import { ExpiringCertifications } from './exam-attempts';
 import { type Health, healthText } from './health';
+import { serviceToday } from './lib/format';
 import { createQueryClient } from './lib/query';
 import { PlanProgress, Week, Weeks } from './plan-weeks';
 import { AccountActions, SignInGate } from './sign-in';
@@ -34,7 +35,7 @@ import type { SongPaths } from './song-data';
 import { SongDetail, SongList } from './songs';
 import { TodayTasks } from './study-plan';
 import { UserActionAlerts } from './user-actions';
-import { serviceToday, type WordPaths } from './word-data';
+import { type WordPaths } from './word-data';
 import { DueWordsCard } from './word-review';
 import { WordDetail, WordList } from './words';
 

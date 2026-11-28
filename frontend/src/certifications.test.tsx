@@ -150,7 +150,7 @@ test('the list groups goals by category with counts, nearest exam first and days
     'AWS Cloud Practitioner',
     '정보처리기사',
   ]);
-  expect(items[0]).toHaveTextContent('November 20, 2026 · 21 days left');
+  expect(items[0]).toHaveTextContent('Nov 20, 2026 · 21 days left');
   expect(items[0]).toHaveTextContent('Studying');
   expect(items[1]).toHaveTextContent('Exam date not set');
   expect(screen.getByRole('link', { name: '운전면허' }).closest('li')).toHaveTextContent(
@@ -309,8 +309,8 @@ test('the dashboard card lists the nearest exams still ahead and links to each g
   )!;
   const rows = await within(card as HTMLElement).findAllByRole('listitem');
   expect(rows.map((row) => row.textContent)).toEqual([
-    'AWS Cloud PractitionerNovember 20, 202621 days left',
-    '토익December 13, 202644 days left',
+    'AWS Cloud PractitionerNov 20, 202621 days left',
+    '토익Dec 13, 202644 days left',
   ]);
   fireEvent.click(within(card as HTMLElement).getByRole('link', { name: '토익' }));
   expect(window.location.pathname).toBe('/certifications/1');

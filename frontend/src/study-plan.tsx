@@ -28,11 +28,11 @@ import { Notice } from './components/ui/notice';
 import { SkeletonList } from './components/ui/skeleton';
 import { toast } from './components/ui/sonner';
 import { Spinner } from './components/ui/spinner';
-import { formatDate } from './date-format';
 import { RequestError } from './lib/api';
+import { formatDate } from './lib/format';
+import { plural } from './lib/format';
 import { errorText, useNotice } from './lib/use-notice';
 import { cn } from './lib/utils';
-import { quantity } from './plural';
 import {
   isOverdue,
   periodText,
@@ -362,7 +362,7 @@ export function StudyPlan({
                     title="Delete this stage?"
                     description={
                       <span className="wrap-anywhere break-keep">
-                        {`This deletes the '${stage.title}' stage and its ${quantity(stage.tasks.length, 'task')}. This cannot be undone.`}
+                        {`This deletes the '${stage.title}' stage and its ${plural(stage.tasks.length, 'task')}. This cannot be undone.`}
                       </span>
                     }
                     onConfirm={() =>

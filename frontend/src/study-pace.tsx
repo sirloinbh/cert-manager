@@ -1,6 +1,6 @@
 import type { Certification } from './certification-data';
+import { plural } from './lib/format';
 import { cn } from './lib/utils';
-import { quantity } from './plural';
 import { studyPace } from './study-pace-data';
 import type { StudyStage } from './study-plan-data';
 
@@ -18,8 +18,8 @@ export function StudyPaceMessage({
   return (
     <p className="text-body-sm" data-testid="study-pace">
       <span>
-        {quantity(pace.perDay, 'task')} a day · {quantity(pace.open, 'task')} open,{' '}
-        {quantity(pace.daysLeft, 'day')} left
+        {plural(pace.perDay, 'task')} a day · {plural(pace.open, 'task')} open,{' '}
+        {plural(pace.daysLeft, 'day')} left
       </span>
       {pace.behind ? (
         <strong className={cn('ml-2 font-medium text-destructive')}>Behind plan</strong>

@@ -44,10 +44,10 @@ test.each([
 
 test('the period names whichever dates are set', () => {
   expect(periodText({ startDate: '2026-11-01', endDate: '2026-11-07' })).toBe(
-    'November 1, 2026 – November 7, 2026',
+    'Nov 1, 2026 – Nov 7, 2026',
   );
-  expect(periodText({ startDate: '2026-11-01', endDate: null })).toBe('From November 1, 2026');
-  expect(periodText({ startDate: null, endDate: '2026-11-07' })).toBe('Until November 7, 2026');
+  expect(periodText({ startDate: '2026-11-01', endDate: null })).toBe('From Nov 1, 2026');
+  expect(periodText({ startDate: null, endDate: '2026-11-07' })).toBe('Until Nov 7, 2026');
   expect(periodText({ startDate: null, endDate: null })).toBe('');
 });
 

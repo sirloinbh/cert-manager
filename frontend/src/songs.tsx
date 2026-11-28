@@ -22,9 +22,9 @@ import { toast } from './components/ui/sonner';
 import { Spinner } from './components/ui/spinner';
 import { controlClass } from './form-fields';
 import { RequestError } from './lib/api';
+import { plural } from './lib/format';
 import { errorText, useNotice } from './lib/use-notice';
 import { cn } from './lib/utils';
-import { quantity } from './plural';
 import {
   durationText,
   linesAsText,
@@ -73,7 +73,7 @@ export function SongList({ paths }: { paths: SongPaths }) {
         </p>
         {progress.total > 0 ? (
           <p role="status" className="text-caption text-muted-foreground">
-            {quantity(progress.total, 'song')} · {progress.withLyrics} with lyrics ·{' '}
+            {plural(progress.total, 'song')} · {progress.withLyrics} with lyrics ·{' '}
             {progress.translated} translated
           </p>
         ) : null}
@@ -228,8 +228,8 @@ function PasteForm({
         />
         <p id={`${id}-hint`} className="text-caption break-keep text-muted-foreground">
           {kind === 'lyrics'
-            ? `${quantity(typed, 'line')}. Translations of lines whose text changed are cleared.`
-            : `Write one line per original line (${originals}). Currently ${quantity(typed, 'line')}. Blank lines are not counted.`}
+            ? `${plural(typed, 'line')}. Translations of lines whose text changed are cleared.`
+            : `Write one line per original line (${originals}). Currently ${plural(typed, 'line')}. Blank lines are not counted.`}
         </p>
       </div>
       <Notice notice={notice.notice} />

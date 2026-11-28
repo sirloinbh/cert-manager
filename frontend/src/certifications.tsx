@@ -1,4 +1,4 @@
-import { ArrowLeft, Award, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Award, Pencil, Plus, Trash2 } from 'lucide-react';
 import { type FormEvent, type ReactNode, useId, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 
@@ -28,14 +28,15 @@ import { EmptyState } from './components/ui/empty-state';
 import { Input } from './components/ui/input';
 import { Label } from './components/ui/label';
 import { Notice } from './components/ui/notice';
+import { PageHeader } from './components/ui/page-header';
 import { SkeletonList } from './components/ui/skeleton';
 import { toast } from './components/ui/sonner';
 import { Spinner } from './components/ui/spinner';
-import { formatDate } from './date-format';
 import { ExamAttempts } from './exam-attempts';
 import { controlClass, toNumber } from './form-fields';
 import { gradeLabel, type GradeScale } from './grade-scale-data';
 import { RequestError } from './lib/api';
+import { formatDate } from './lib/format';
 import { errorText, useNotice } from './lib/use-notice';
 import { cn } from './lib/utils';
 import { StudyPaceMessage } from './study-pace';
@@ -64,42 +65,6 @@ const statusVariant: Record<
 
 function StatusBadge({ status }: { status: Certification['status'] }) {
   return <Badge variant={statusVariant[status]}>{statusLabels[status]}</Badge>;
-}
-
-function PageHeader({
-  title,
-  description,
-  actions,
-}: {
-  title: string;
-  description?: string;
-  actions?: ReactNode;
-}) {
-  return (
-    <header className="flex flex-wrap items-end justify-between gap-3">
-      <div className="flex min-w-0 flex-col gap-2">
-        <h1 id="page-title" className="break-keep">
-          {title}
-        </h1>
-        {description ? (
-          <p className="text-body break-keep text-muted-foreground">{description}</p>
-        ) : null}
-      </div>
-      {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
-    </header>
-  );
-}
-
-function BackLink({ to, children }: { to: string; children: ReactNode }) {
-  return (
-    <Link
-      to={to}
-      className="inline-flex min-h-9 w-fit items-center gap-1 rounded-md text-body-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 pointer-coarse:min-h-11"
-    >
-      <ArrowLeft className="size-4" aria-hidden />
-      {children}
-    </Link>
-  );
 }
 
 function goalSummary(item: Certification, scales: GradeScale[]) {
@@ -303,8 +268,10 @@ export function CertificationDetail({ paths }: { paths: CertificationPaths }) {
   if (loaded.state !== 'ok') {
     return (
       <section aria-labelledby="page-title" className="flex flex-col gap-6">
-        <BackLink to={paths.list}>Certification list</BackLink>
-        <PageHeader title="Certification goal" />
+        <PageHeader
+          backTo={{ to: paths.list, label: 'Certification list' }}
+          title="Certification goal"
+        />
         {loaded.state === 'loading' ? (
           <SkeletonList rows={4} />
         ) : (
@@ -345,8 +312,8 @@ export function CertificationDetail({ paths }: { paths: CertificationPaths }) {
 
   return (
     <section aria-labelledby="page-title" className="flex flex-col gap-6">
-      <BackLink to={paths.list}>Certification list</BackLink>
       <PageHeader
+        backTo={{ to: paths.list, label: 'Certification list' }}
         title={item.name}
         actions={
           <>
@@ -756,8 +723,8 @@ export function NewCertification({ paths }: { paths: CertificationPaths }) {
   };
   return (
     <section aria-labelledby="page-title" className="flex flex-col gap-6">
-      <BackLink to={paths.list}>Certification list</BackLink>
       <PageHeader
+        backTo={{ to: paths.list, label: 'Certification list' }}
         title="Add goal"
         description="Enter the certification you want and your goal. Only the name and category are required."
       />
@@ -777,12 +744,13 @@ export function EditCertification({ paths }: { paths: CertificationPaths }) {
   };
   return (
     <section aria-labelledby="page-title" className="flex flex-col gap-6">
-      <BackLink
-        to={loaded.state === 'ok' ? paths.detail(loaded.data.certification.id) : paths.list}
-      >
-        {loaded.state === 'ok' ? loaded.data.certification.name : 'Certification list'}
-      </BackLink>
-      <PageHeader title="Edit goal" />
+      <PageHeader
+        backTo={{
+          to: loaded.state === 'ok' ? paths.detail(loaded.data.certification.id) : paths.list,
+          label: loaded.state === 'ok' ? loaded.data.certification.name : 'Certification list',
+        }}
+        title="Edit goal"
+      />
       {loaded.state === 'loading' ? <SkeletonList rows={4} /> : null}
       {loaded.state === 'error' ? (
         <Notice notice={{ kind: 'error', text: notFoundText(loaded.error) }} />

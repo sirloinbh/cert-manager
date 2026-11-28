@@ -116,7 +116,7 @@ test('the bell counts what is waiting, and the panel shows the details', async (
   expect(items).toHaveLength(2);
   expect(items[0]).toHaveTextContent('실기 1회 접수');
   expect(items[0]).toHaveTextContent('응시일은 4월 안의 날로 고릅니다');
-  expect(items[0]).toHaveTextContent('March 22, 2027 · 14 days left');
+  expect(items[0]).toHaveTextContent('Mar 22, 2027 · 14 days left');
   expect(
     within(items[0]).getByRole('link', { name: "Open the link for '실기 1회 접수' (new tab)" }),
   ).toHaveAttribute('href', 'https://www.q-net.or.kr/');

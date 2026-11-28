@@ -3,16 +3,17 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 
 import { certificationApi, type CertificationPaths } from './certification-data';
+import { addDays, weekDays, weekStart } from './components/period-nav/periods';
 import { Button } from './components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
 import { Notice } from './components/ui/notice';
 import { SkeletonList } from './components/ui/skeleton';
-import { formatDate } from './date-format';
+import { formatDate } from './lib/format';
+import { plural } from './lib/format';
 import { errorText } from './lib/use-notice';
-import { quantity } from './plural';
 import { studyPlanApi } from './study-plan-data';
 import { useLoad } from './use-load';
-import { addDays, upcomingWeeks, weekDays, weekStart, weekTitle } from './week-range';
+import { upcomingWeeks, weekTitle } from './week-range';
 
 const weekCount = 12;
 
@@ -182,8 +183,8 @@ export function Weeks({ today }: { today: string }) {
                   <span className="text-body-sm text-muted-foreground">
                     {week.tasks === 0
                       ? 'No tasks'
-                      : `${week.done} of ${quantity(week.tasks, 'task')} done`}
-                    {week.exams > 0 ? ` · ${quantity(week.exams, 'exam')}` : ''}
+                      : `${week.done} of ${plural(week.tasks, 'task')} done`}
+                    {week.exams > 0 ? ` · ${plural(week.exams, 'exam')}` : ''}
                   </span>
                 </div>
                 <div aria-hidden="true" className="mt-2 h-2 rounded bg-muted">
@@ -239,7 +240,7 @@ export function PlanProgress({ paths }: { paths: CertificationPaths }) {
                     {goal.certificationName}
                   </Link>
                   <span className="text-body-sm text-muted-foreground">
-                    {goal.done} of {quantity(goal.total, 'task')} done
+                    {goal.done} of {plural(goal.total, 'task')} done
                   </span>
                 </div>
                 <div aria-hidden="true" className="mt-2 h-2 rounded bg-muted">

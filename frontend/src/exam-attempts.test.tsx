@@ -153,7 +153,7 @@ test('a new score fills the expiry from the goal, two years after the exam', asy
   expect(screen.getByLabelText('Expiry date')).toHaveValue('2028-03-15');
 
   fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-  expect(await screen.findByText('March 15, 2026')).toBeInTheDocument();
+  expect(await screen.findByText('Mar 15, 2026')).toBeInTheDocument();
   expect(sentBody(api, 'POST')).toEqual({
     examDate: '2026-03-15',
     outcome: 'scored',
@@ -177,7 +177,7 @@ test('the prefilled expiry can be changed or cleared', async () => {
   change('Exam date', '2026-03-16');
   expect(screen.getByLabelText('Expiry date')).toHaveValue('');
   fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-  await screen.findByText('March 16, 2026');
+  await screen.findByText('Mar 16, 2026');
   expect(sentBody(api, 'POST')?.expiresOn).toBeNull();
 });
 
@@ -188,7 +188,7 @@ test('a goal that never expires asks for no date and shows "No expiry"', async (
   });
   // Once as the goal's validity field, once as the attempt's badge.
   await waitFor(() => expect(screen.getAllByText('No expiry')).toHaveLength(2));
-  fireEvent.click(screen.getByRole('button', { name: 'Edit attempt on March 15, 2026' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Edit attempt on Mar 15, 2026' }));
   expect(screen.queryByLabelText('Expiry date')).not.toBeInTheDocument();
   expect(api.sent.some((item) => item.method === 'PUT')).toBe(false);
 });
@@ -291,7 +291,7 @@ test('editing an attempt that is already a pass does not ask again', async () =>
       attempt({ id: 1, outcome: 'passed', expiresOn: '2028-03-15', daysUntilExpiry: 867 }),
     ],
   });
-  fireEvent.click(await screen.findByRole('button', { name: 'Edit attempt on March 15, 2026' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit attempt on Mar 15, 2026' }));
   expect(screen.getByLabelText('Expiry date')).toHaveValue('2028-03-15');
   change('Memo', '성적표 받음');
   fireEvent.click(screen.getByRole('button', { name: 'Save' }));
@@ -301,7 +301,7 @@ test('editing an attempt that is already a pass does not ask again', async () =>
 
 test('a result entered later fills the expiry that was empty while waiting', async () => {
   await openDetail({ attempts: [attempt({ id: 1, outcome: 'waiting', grade: null })] });
-  fireEvent.click(await screen.findByRole('button', { name: 'Edit attempt on March 15, 2026' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit attempt on Mar 15, 2026' }));
   change('Outcome', 'scored');
   expect(screen.getByLabelText('Expiry date')).toHaveValue('2028-03-15');
 });
@@ -319,7 +319,7 @@ test('a server error stays in the form with the message', async () => {
 
 test('deleting an attempt asks first and removes it from the list', async () => {
   const api = await openDetail({ attempts: [attempt({ id: 7, score: 800 })] });
-  fireEvent.click(await screen.findByRole('button', { name: 'Delete attempt on March 15, 2026' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Delete attempt on Mar 15, 2026' }));
   const dialog = await screen.findByRole('dialog', { name: 'Delete this attempt?' });
   fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
   expect(await screen.findByText('No exam attempts yet')).toBeInTheDocument();
@@ -385,7 +385,7 @@ test('a save in progress keeps the dialog open, so its error is not lost', async
 
 test('closing the form returns focus to the button that opened it', async () => {
   await openDetail({ attempts: [attempt({ id: 1, score: 800 })] });
-  const edit = await screen.findByRole('button', { name: 'Edit attempt on March 15, 2026' });
+  const edit = await screen.findByRole('button', { name: 'Edit attempt on Mar 15, 2026' });
   edit.focus();
   fireEvent.click(edit);
   fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
@@ -398,7 +398,7 @@ test('focus moves to the heading when the opening button is gone after the first
   fireEvent.click(await screen.findByRole('button', { name: 'Add attempt' }));
   change('Exam date', '2026-03-15');
   fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-  await screen.findByText('March 15, 2026');
+  await screen.findByText('Mar 15, 2026');
   await waitFor(() =>
     expect(screen.getByRole('heading', { level: 2, name: 'Exam attempts' })).toHaveFocus(),
   );
@@ -415,7 +415,7 @@ test('the list stays on screen with the reason when reloading it fails', async (
     screen
       .getAllByRole('button', { name: /^Edit attempt on / })
       .map((button) => button.getAttribute('aria-label')),
-  ).toEqual(['Edit attempt on May 5, 2026', 'Edit attempt on March 15, 2026']);
+  ).toEqual(['Edit attempt on May 5, 2026', 'Edit attempt on Mar 15, 2026']);
 });
 
 test('a failed status change keeps the question open and says why', async () => {
@@ -434,9 +434,9 @@ test('a failed status change keeps the question open and says why', async () => 
 
 test('a saved pass with no date stays empty until the offered date is chosen', async () => {
   const api = await openDetail({ attempts: [attempt({ id: 1, outcome: 'passed' })] });
-  fireEvent.click(await screen.findByRole('button', { name: 'Edit attempt on March 15, 2026' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit attempt on Mar 15, 2026' }));
   expect(screen.getByLabelText('Expiry date')).toHaveValue('');
-  fireEvent.click(screen.getByRole('button', { name: /Fill in.*March 15, 2028/ }));
+  fireEvent.click(screen.getByRole('button', { name: /Fill in.*Mar 15, 2028/ }));
   expect(screen.getByLabelText('Expiry date')).toHaveValue('2028-03-15');
   expect(screen.getByLabelText('Expiry date')).toHaveFocus();
   expect(screen.queryByRole('button', { name: /Fill in/ })).not.toBeInTheDocument();
@@ -474,9 +474,7 @@ test('a deleted attempt leaves the list even if reloading fails, and focus goes 
   expect(
     screen.queryByRole('button', { name: 'Edit attempt on May 5, 2026' }),
   ).not.toBeInTheDocument();
-  expect(
-    screen.getByRole('button', { name: 'Edit attempt on March 15, 2026' }),
-  ).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Edit attempt on Mar 15, 2026' })).toBeInTheDocument();
   await waitFor(() =>
     expect(screen.getByRole('heading', { level: 2, name: 'Exam attempts' })).toHaveFocus(),
   );
@@ -484,7 +482,7 @@ test('a deleted attempt leaves the list even if reloading fails, and focus goes 
 
 test('deleting the only attempt still offers adding one when reloading fails', async () => {
   await openDetail({ attempts: [attempt({ id: 1, score: 800 })], reloadFails: true });
-  fireEvent.click(await screen.findByRole('button', { name: 'Delete attempt on March 15, 2026' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Delete attempt on Mar 15, 2026' }));
   const dialog = await screen.findByRole('dialog', { name: 'Delete this attempt?' });
   fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
   expect(await screen.findByText('Could not reload')).toBeInTheDocument();

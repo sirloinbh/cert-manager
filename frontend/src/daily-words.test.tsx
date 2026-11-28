@@ -127,7 +127,7 @@ test('the arrows move through the earlier days and back to today', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Previous day’s words' }));
   expect(await screen.findByRole('link', { name: 'carry' })).toBeInTheDocument();
   expect(fetcher).toHaveBeenCalledWith('/api/daily-words?day=2026-11-01', expect.anything());
-  expect(screen.getByRole('status')).toHaveTextContent('Words for November 1, 2026');
+  expect(screen.getByRole('status')).toHaveTextContent('Words for Nov 1, 2026');
   expect(screen.getByRole('button', { name: 'Mark carry as learned' })).toHaveAttribute(
     'aria-pressed',
     'true',
@@ -139,7 +139,7 @@ test('the arrows move through the earlier days and back to today', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Next day’s words' }));
   expect(await screen.findByRole('link', { name: 'export' })).toBeInTheDocument();
   expect(fetcher).toHaveBeenLastCalledWith('/api/daily-words', expect.anything());
-  expect(screen.getByRole('status')).toHaveTextContent('November 2, 2026');
+  expect(screen.getByRole('status')).toHaveTextContent('Nov 2, 2026');
 });
 
 test('no words gets a notice instead of an empty card', async () => {

@@ -27,7 +27,6 @@ import { Notice } from './components/ui/notice';
 import { SkeletonList } from './components/ui/skeleton';
 import { toast } from './components/ui/sonner';
 import { Spinner } from './components/ui/spinner';
-import { formatDate } from './date-format';
 import {
   addMonths,
   currentAttempt,
@@ -48,6 +47,7 @@ import { controlClass, toNumber } from './form-fields';
 import { gradeLabel, type GradeScale, gradesForScore } from './grade-scale-data';
 import { GradeLadder } from './grade-scales';
 import { RequestError } from './lib/api';
+import { formatDate } from './lib/format';
 import { errorText, useNotice } from './lib/use-notice';
 import { cn } from './lib/utils';
 import { useLoad, useReloading } from './use-load';

@@ -14,10 +14,10 @@ import {
 } from './components/ui/sheet';
 import { SkeletonList } from './components/ui/skeleton';
 import { toast } from './components/ui/sonner';
-import { formatDate } from './date-format';
+import { formatDate } from './lib/format';
+import { plural } from './lib/format';
 import { errorText } from './lib/use-notice';
 import { cn } from './lib/utils';
-import { quantity } from './plural';
 import { useReloading } from './use-load';
 import { alertCount, type UserAction, userActionApi } from './user-action-data';
 
@@ -116,7 +116,7 @@ export function UserActionAlerts() {
   useEffect(() => {
     if (announced.current || firstCount === 0) return;
     announced.current = true;
-    toast(`You have ${quantity(firstCount, 'manual task')}`, {
+    toast(`You have ${plural(firstCount, 'manual task')}`, {
       description: 'See them from the bell icon at the top.',
       // At the top it would cover the bell it points to.
       position: 'bottom-center',
@@ -162,7 +162,7 @@ export function UserActionAlerts() {
             failed
               ? 'Could not load the manual task alerts'
               : count > 0
-                ? quantity(count, 'manual task alert')
+                ? plural(count, 'manual task alert')
                 : 'Manual task alerts'
           }
         >

@@ -221,7 +221,7 @@ test('a first stage and task can be added, and the task then counts in the progr
   change('End date', '2026-11-07');
   fireEvent.click(saveButton());
   expect(await screen.findByRole('heading', { level: 3, name: '1주차' })).toBeInTheDocument();
-  expect(screen.getByText('November 1, 2026 – November 7, 2026')).toBeInTheDocument();
+  expect(screen.getByText('Nov 1, 2026 – Nov 7, 2026')).toBeInTheDocument();
   expect(api.sent.find((item) => item.path.endsWith('/stages'))?.body).toEqual({
     title: '1주차',
     startDate: '2026-11-01',

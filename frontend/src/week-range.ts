@@ -1,17 +1,6 @@
-const dayMs = 24 * 60 * 60 * 1000;
+import { addDays, weekStart } from './components/period-nav/periods';
 
 const toTime = (day: string) => Date.parse(`${day}T00:00:00Z`);
-
-/** "2026-11-26" moved by `delta` days. */
-export function addDays(day: string, delta: number) {
-  return new Date(toTime(day) + delta * dayMs).toISOString().slice(0, 10);
-}
-
-/** The Sunday on or before `day`; weeks run Sunday to Saturday. */
-export const weekStart = (day: string) => addDays(day, -new Date(toTime(day)).getUTCDay());
-
-/** The seven dates of the week that starts on `start`. */
-export const weekDays = (start: string) => Array.from({ length: 7 }, (_, i) => addDays(start, i));
 
 /** "Nov 22 – Nov 28" for the week that starts on `start`. */
 export function weekTitle(start: string) {
